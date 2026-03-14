@@ -4,7 +4,6 @@ import { tokens } from "../../../theme/common.Style";
 
 export const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: tokens.colors.bg, },
-
     wrap: { paddingHorizontal: 20, paddingBottom: 160, },
     
     // Topbar
@@ -30,7 +29,7 @@ export const styles = StyleSheet.create({
     questionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 7, },
     qBadge: { width: 28, height: 28, borderRadius: 5, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", marginRight: 12, },
     qBadgeText: { color: "#fff", fontWeight: "700", fontFamily: tokens.typography.fontFamily, },
-    questionText: { fontSize: 14, color: "#000", fontWeight: "700", lineHeight: 26, fontFamily: tokens.typography.fontFamily, marginTop: 7, },
+    questionText: { fontSize: 14, color: tokens.colors.ink, fontWeight: "700", lineHeight: 26, fontFamily: tokens.typography.fontFamily, marginTop: 7, },
     bottomSpacer: { height: 50, },
     
     // Closed mic button (웹 .mic-button)

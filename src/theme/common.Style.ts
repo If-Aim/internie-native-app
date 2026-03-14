@@ -12,7 +12,7 @@ export const tokens = {
     primary: "#0166FF",
     primaryLight: "#0166FF",
 
-    ink: "#111111",
+    ink: "#000",
     muted: "#AEAEAE",
     danger: "#ef4444",
 
@@ -35,11 +35,11 @@ export const tokens = {
     card: Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
       },
-      android: { elevation: 4 },
+      android: { elevation: 1 },
       default: {},
     }) as object,
 
@@ -63,20 +63,21 @@ export const tokens = {
 export const commonStyles = StyleSheet.create({
   appRoot: { flex: 1, backgroundColor: tokens.colors.bg, },
   screenBase: { flex: 1, backgroundColor: tokens.colors.bg, },
-
+  topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", },
+  
   // ====== wrap / screen ======
-  wrap: { minWidth: 300 as any, paddingHorizontal: 20, paddingBottom: 150, flex: 1, },
+  wrap: { minWidth: 300 as any, paddingHorizontal: 20, paddingBottom: 150, flexGrow: 1, },
   screen: { flex: 1, minHeight: "100%" as any, minWidth: 300 as any, flexDirection: "column", },
 
   // spacer-50 
   spacer50: { height: 30, width: "100%", flexShrink: 0, },
 
   // ====== 아이콘/버튼 공통 ======
-  iconbtn: { backgroundColor: "transparent", borderWidth: 0, padding: 0, },
+  iconbtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center",backgroundColor: "transparent", borderWidth: 0, padding: 0, },
   icon24: { width: 24, height: 24, },
 
   // ====== topbar-main ======
-  topbarMain: { paddingTop: 19, paddingHorizontal: 20, paddingBottom: 23,  width: "100%", backgroundColor: tokens.colors.bg, }, 
+  topbarMain: { paddingTop: 11, paddingHorizontal: 12, paddingBottom: 15,  width: "100%",  }, 
   
   // ====== Drawer ======
   drawerBackdrop: {
@@ -84,16 +85,17 @@ export const commonStyles = StyleSheet.create({
     zIndex: 2100,
   },
 
-  drawerPanel: { position: "absolute", top: 0, left: 0, bottom: 0, width: "95%", backgroundColor: "#fff", zIndex: 2101, flexDirection: "column", ...(tokens.shadow.card as any), },
+  drawerPanel: { position: "absolute", top: 0, left: 0, bottom: 0, width: "85%", backgroundColor: "#fff", zIndex: 2101, flexDirection: "column", ...(tokens.shadow.card as any), },
   drawerHeader: { paddingTop: 79, paddingHorizontal: 36, paddingBottom: 18, backgroundColor: "#EAF1FA", }, 
   profileWrap: { flexDirection: "row", gap: 20 as any, },
-  profileImg: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", },
-  profileName: { fontSize: 24, lineHeight: 20, fontWeight: "700", color: "#111", marginBottom: 5, fontFamily: tokens.typography.fontFamily, },
+  profileImgRadius: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", flexDirection: "row", justifyContent: "center", alignItems: "center",},
+  profileImg: { width: 50, height: 50, borderRadius: 25,},
+  profileName: { fontSize: 24, lineHeight: 26, fontWeight: "700", color: "#111", marginBottom: 5, fontFamily: tokens.typography.fontFamily, },
   profileEmail: { fontSize: 13, color: "rgba(0,0,0,0.50)", fontWeight: "500", lineHeight: 20, fontFamily: tokens.typography.fontFamily, },
 
   drawerBody: { flex: 1, paddingTop: 46, paddingHorizontal: 32, flexDirection: "column", },
   drawerMenuItem: { flexDirection: "row", alignItems: "center", gap: 14 as any, paddingVertical: 10, },
-  drawerMenuItemText: { fontSize: 16, fontWeight: "700", color: "#000", fontFamily: tokens.typography.fontFamily, },
+  drawerMenuItemText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, fontFamily: tokens.typography.fontFamily, },
 
   bottomSpacer: { height: 250,},
 
@@ -111,7 +113,7 @@ export const commonStyles = StyleSheet.create({
   periodSheetTitle: { fontSize: 24, fontWeight: "700", letterSpacing: -0.02 as any, fontFamily: tokens.typography.fontFamily, }, 
   periodSheetBody: {paddingTop: 10, paddingRight: 9, paddingBottom: 14, paddingLeft: 12, },
   periodSheetSection: { marginTop: 20, },
-  periodSheetLabel: { fontSize: 16, fontWeight: "500", color: "#000", marginBottom: 11, paddingLeft: 9, fontFamily: tokens.typography.fontFamily, },
+  periodSheetLabel: { fontSize: 16, fontWeight: "500", color: tokens.colors.ink, marginBottom: 11, paddingLeft: 9, fontFamily: tokens.typography.fontFamily, },
   sortRow: { flexDirection: "row", gap: 10 as any, },
   sortBtn: { flex: 1, height: 60, borderRadius: tokens.radius.r10, borderWidth: 1, borderColor: "#DFDFDF", backgroundColor: "#fff", alignItems: "center", justifyContent: "center", },
   sortBtnText: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", fontFamily: tokens.typography.fontFamily, },
@@ -136,7 +138,7 @@ export const commonStyles = StyleSheet.create({
 
   // ====== 로딩 ======
   preparingPage: { flex: 1, minHeight: "100%" as any, justifyContent: "center", paddingHorizontal: 20, paddingBottom: 50, backgroundColor: tokens.colors.bg, alignItems: "center", }, 
-  preparingTitle: { fontSize: 20, fontWeight: "700", color: "#000", lineHeight: 20, marginBottom: 21, fontFamily: tokens.typography.fontFamily, }, 
+  preparingTitle: { fontSize: 20, fontWeight: "700", color: tokens.colors.ink, lineHeight: 20, marginBottom: 21, fontFamily: tokens.typography.fontFamily, }, 
   preparingDesc: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.5)", lineHeight: 28, fontFamily: tokens.typography.fontFamily, },
   loadingDots: { flexDirection: "row", alignItems: "center", gap: 11 as any, marginBottom: 14, },
   loadingDot: { width: 12, height: 12, borderRadius: 9999, backgroundColor: tokens.colors.primary, },

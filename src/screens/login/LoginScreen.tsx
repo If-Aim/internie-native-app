@@ -16,74 +16,53 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function LoginScreen(_props: Props) {
-  const { t, i18n } = useTranslation();
-  const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
+	const { t } = useTranslation();
 
-  // ✅ Root 스택 네비게이션 (Auth -> Student 전환용)
-  const rootNav = useNavigation<RootNav>();
+	const rootNav = useNavigation<RootNav>();
+	
 
-  const toggleLang = async () => {
-    await i18n.changeLanguage(isKo ? "en" : "ko");
-  };
+	const onPressKakao = async () => {
+		try {
+			const kakaoToken = await kakaoLogin();
 
-  const onPressKakao = async () => {
-    try {
-      console.log("[LOGIN] Kakao button pressed");
+			const kakaoAccessToken =
+				(kakaoToken as any)?.accessToken ||
+				(kakaoToken as any)?.access_token ||
+				"";
 
-      const kakaoToken = await kakaoLogin();
-      console.log("[LOGIN] kakaoToken:", kakaoToken);
+			if (!kakaoAccessToken) {
+				console.error("Kakao access token not found");
+				return;
+			}
 
-      const kakaoAccessToken =
-        (kakaoToken as any)?.accessToken ||
-        (kakaoToken as any)?.access_token ||
-        "";
+			const res = await exchangeKakaoToken(kakaoAccessToken);
 
-      if (!kakaoAccessToken) {
-        console.error("[LOGIN] kakao access token not found");
-        return;
-      }
+			if (!res.ok) {
+				console.error("Server login failed", res.status);
+				return;
+			}
 
-      console.log("[LOGIN] exchangeKakaoToken start");
+			const auth =
+				res.headers.get("Authorization") ||
+				res.headers.get("authorization");
 
-      const res = await exchangeKakaoToken(kakaoAccessToken);
-      console.log("[LOGIN] exchange response status:", res.status);
+			const body = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        console.error(
-          "[LOGIN] 서버 로그인 실패:",
-          res.status,
-          await res.text().catch(() => "")
-        );
-        return;
-      }
+			if (!auth) {
+				console.error("Authorization header missing");
+				return;
+			}
 
-      const auth =
-        res.headers.get("Authorization") ||
-        res.headers.get("authorization");
+			await saveAccessToken(auth);
 
-      console.log("[LOGIN] Authorization header:", auth);
-
-      if (!auth) {
-        console.error("[LOGIN] Authorization 헤더가 없습니다.");
-        return;
-      }
-
-      await saveAccessToken(auth);
-      console.log("[LOGIN] saved token, switching to Student flow");
-
-      // ✅ Auth 스택 내부의 StudentHome로 가지 말고, Root의 Student로 전환
-      rootNav.replace("Student");
-    } catch (e) {
-      console.error("[LOGIN] kakao login error:", e);
-    }
-  };
+			rootNav.replace("Student");
+		} catch (e) {
+			console.error("Kakao login error:", e);
+		}
+	};
 
   return (
     <View style={styles.page}>
-      <Pressable style={styles.langToggle} onPress={toggleLang}>
-        <Text style={styles.langToggleText}>{isKo ? "EN" : "KO"}</Text>
-      </Pressable>
-
       <View style={styles.headerSpacer} />
 
       <View style={styles.wrap}>

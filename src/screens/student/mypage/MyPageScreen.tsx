@@ -1,241 +1,352 @@
 // src/screens/student/mypage/MyPageScreen.tsx
 import React from "react";
-import { View, Text, Pressable, Image, ScrollView, Alert } from "react-native";
+import { API_BASE_URL } from "@env";
+import { View, Text, Pressable, Image, ScrollView, Alert, Modal, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
+import { BlurView } from "@react-native-community/blur";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
-import { getUserMe, logout, ApiError } from "../../../api/client";
+import { getUserMe, logout, getEventDaysByMonth, type UserMe, type EventDay, } from "../../../api/client";
 
-import { Screen } from "../../../components/Screen";
 import { styles } from "./MyPage.style";
+import { commonStyles } from "../../../theme/common.Style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "MyPage">;
-
 type VerifyStatus = "UNVERIFIED" | "PENDING" | "APPROVED" | "REJECTED";
 
-type UserMe = {
-  name?: string | null;
-  status?: VerifyStatus | null;
-  verificationImage?: string | null;
-  profileImage?: string | null;
-};
-
 function isHttp(url: string) {
-  return /^https?:\/\//i.test(url);
+    return /^https?:\/\//i.test(url);
+}
+// 프로필 사진 관련
+function getApiOrigin(url: string) {
+    return url.replace(/\/+$/, "").replace(/\/api$/, "");
+}
+
+function resolveImageUrl(path?: string | null) {
+    const raw = String(path ?? "").trim();
+    if (!raw) return null;
+
+    if (/^https?:\/\//i.test(raw)) {
+        return raw;
+    }
+
+    const origin = getApiOrigin(API_BASE_URL);
+
+    if (raw.startsWith("/")) {
+        return `${origin}${raw}`;
+    }
+
+    return `${origin}/${raw}`;
+}
+// 최근 기록 관련 유틸
+function currentYm() {
+    const d = new Date();
+    return {
+        y: String(d.getFullYear()),
+        m: String(d.getMonth() + 1).padStart(2, "0"),
+    };
+}
+
+function prevYm(y: string, m: string) {
+    const yy = Number(y);
+    const mm = Number(m);
+
+    if (mm === 1) {
+        return { y: String(yy - 1), m: "12" };
+    }
+
+    return { y, m: String(mm - 1).padStart(2, "0") };
+}
+
+function sortKey(ed: EventDay) {
+    const dateKey = ed.date.replaceAll("-", "");
+    const timeKey = (ed.startTime ?? "00:00").slice(0, 5).replace(":", "");
+    const txCount = Array.isArray(ed.transcriptions) ? ed.transcriptions.length : 0;
+
+    return { dateKey, timeKey, txCount };
+}
+
+// HEADER
+function Header({
+	onPreviousClick,
+}: {
+	onPreviousClick: () => void,
+}) {
+	return (
+		<View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
+			<Pressable style={commonStyles.iconbtn} onPress={onPreviousClick} >
+				<Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} />
+			</Pressable>
+			<View style={styles.headerCenter}>
+				<Text style={styles.headerTitle} numberOfLines={1} />
+			</View>
+
+			<View style={styles.headerRightSpace} />
+		</View>
+	);
 }
 
 export default function MyPageScreen({ navigation }: Props) {
-  const isFocused = useIsFocused();
+    const isFocused = useIsFocused();
+	const { t, i18n } = useTranslation();
 
-  const [me, setMe] = React.useState<UserMe | null>(null);
-  const [avatarVersion, setAvatarVersion] = React.useState<number>(0);
 
-  const displayName = (me?.name ?? "").trim() || "User";
-  const status: VerifyStatus = (me?.status ?? "UNVERIFIED") as VerifyStatus;
+    const [me, setMe] = React.useState<UserMe | null>(null);
+    const [showRejectModal, setShowRejectModal] = React.useState(false);
+    const [recent, setRecent] = React.useState<EventDay[]>([]);
 
-  const isVerifiedStudent = status === "APPROVED" && Boolean(me?.verificationImage);
+    const displayName = me?.name ?? "";
+    const status = (me?.status ?? "UNVERIFIED") as VerifyStatus;
+    const schoolName = (me?.school?.name ?? "").trim();
 
-  const isDefaultProfile = !me?.profileImage || String(me.profileImage).includes("default");
-  const rawAvatarSrc = isDefaultProfile
-    ? "local_default"
-    : (me?.profileImage ?? "local_default");
+    const isVerifiedStudent = status === "APPROVED";
 
-  const avatarSrc =
-    rawAvatarSrc === "local_default"
-      ? null
-      : (isHttp(rawAvatarSrc) ? `${rawAvatarSrc}${rawAvatarSrc.includes("?") ? "&" : "?"}v=${avatarVersion || 0}` : rawAvatarSrc);
+    const isDefaultProfile = !me?.profileImage;
+    const rawAvatarSrc = isDefaultProfile ? null : (me?.profileImage ?? null);
+	const resolvedAvatarSrc = resolveImageUrl(rawAvatarSrc);
+	const avatarSrc = resolvedAvatarSrc ?? null;
 
-  const mypageSubText = status === "APPROVED" ? "재학생 인증 완료" : "재학생 인증이 필요합니다.";
+    const mypageSubText = React.useMemo(() => {
+        if (status === "APPROVED") {
+        	return schoolName || t("mypage_verifyUi.approved");
+        }
 
-  const verifyUi = React.useMemo(() => {
-    switch (status) {
-      case "PENDING":
-        return { label: "인증 요청중", disabled: true, onPress: () => {} };
-      case "REJECTED":
-        return { label: "인증이 실패했어요", disabled: false, onPress: () => navigation.navigate("SchoolVerify") };
-      case "APPROVED":
-        return {
-          label: "프로필 수정하기",
-          disabled: false,
-          onPress: () => Alert.alert("서비스 준비중입니다."),
+        return t("mypage_verifyUi.required");
+    }, [status, schoolName]);
+
+	const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
+    const handleServicePreparing = React.useCallback(() => {
+        Alert.alert(isKo ? "서비스 준비중입니다.": "Coming Soon");
+    }, []);
+
+    const verifyUi = React.useMemo(() => {
+        switch (status) {
+            case "PENDING":
+                return {
+                    label: t("mypage_verifyUi.pending"),
+                    disabled: true,
+                    onPress: () => {},
+                };
+            case "REJECTED":
+                return {
+                    label: t("mypage_verifyUi.rejected"),
+                    disabled: false,
+                    onPress: () => navigation.navigate("SchoolVerify"),
+                };
+            case "APPROVED":
+                return {
+                    label: "프로필 수정하기",
+                    disabled: false,
+                    onPress: handleServicePreparing,
+                };
+            case "UNVERIFIED":
+            default:
+                return {
+                    label: t("mypage_verifyUi.unverified"),
+                    disabled: false,
+                    onPress: () => navigation.navigate("SchoolVerify"),
+                };
+        }
+    }, [status, navigation, handleServicePreparing]);
+
+    const loadMe = React.useCallback(async () => {
+        try {
+            const res = await getUserMe();
+
+            const lastStatusKey = `mypage_last_status_${res.userId}`;
+            const lastStatus = await AsyncStorage.getItem(lastStatusKey);
+
+            if (res.status === "REJECTED" && lastStatus !== "REJECTED") {
+                setShowRejectModal(true);
+            }
+
+            await AsyncStorage.setItem(lastStatusKey, res.status ?? "");
+            setMe(res);
+
+        } catch (error) {
+            setMe(null);
+        }
+    }, []);
+
+    const handleLogout = React.useCallback(async () => {
+        try {
+            await logout();
+        } catch (error) {
+        } finally {
+            navigation.getParent()?.navigate("Auth" as never);
+        }
+    }, [navigation]);
+
+    const goReVerify = React.useCallback(() => {
+        setShowRejectModal(false);
+        navigation.navigate("SchoolVerify");
+    }, [navigation]);
+
+    const closeRejectModal = React.useCallback(() => {
+        if (!me) return;
+        setShowRejectModal(false);
+    }, [me]);
+
+    React.useEffect(() => {
+        if (!isFocused) return;
+
+        void loadMe();
+    }, [isFocused, loadMe]);
+
+    React.useEffect(() => {
+        if (!isFocused) return;
+
+        let mounted = true;
+
+        (async () => {
+            try {
+                const { y, m } = currentYm();
+                const prev = prevYm(y, m);
+
+                const [curRes, prevRes] = await Promise.all([
+                    getEventDaysByMonth(y, m),
+                    getEventDaysByMonth(prev.y, prev.m),
+                ]);
+
+                const all = [
+                    ...(curRes.eventDayList ?? []),
+                    ...(prevRes.eventDayList ?? []),
+                ];
+
+                const recorded = all.filter((ed) =>
+                    Array.isArray(ed.transcriptions) && ed.transcriptions.length > 0
+                );
+
+                recorded.sort((a, b) => {
+                    const A = sortKey(a);
+                    const B = sortKey(b);
+
+                    if (A.dateKey !== B.dateKey) return A.dateKey < B.dateKey ? 1 : -1;
+                    if (A.timeKey !== B.timeKey) return A.timeKey < B.timeKey ? 1 : -1;
+                    return A.txCount < B.txCount ? 1 : -1;
+                });
+
+                if (!mounted) return;
+                setRecent(recorded.slice(0, 2));
+            } catch (error) {
+                if (!mounted) return;
+                setRecent([]);
+            }
+        })();
+
+        return () => {
+            mounted = false;
         };
-      case "UNVERIFIED":
-      default:
-        return { label: "재학생 인증하기", disabled: false, onPress: () => navigation.navigate("SchoolVerify") };
-    }
-  }, [status, navigation]);
+    }, [isFocused]);
 
-  const handleServicePreparing = React.useCallback(() => {
-    Alert.alert("서비스 준비중입니다.");
-  }, []);
+    return (
+		<SafeAreaView style={commonStyles.appRoot}>
+			<Header onPreviousClick={() => navigation.goBack()} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" >
+                <View style={styles.top}>
+                    <View style={styles.profileWrap}>
+                        <View style={styles.profileImgWrap}>
+                            <Image
+								source={
+									avatarSrc
+										? { uri: avatarSrc }
+										: require("../../../assets/images/internie_mascot_normal.png")
+								}
+								style={styles.profileImg}
+								resizeMode="cover"
+							/>
 
-  const handleLogout = React.useCallback(async () => {
-    try {
-      await logout();
-    } catch (e) {
-      // 서버 실패해도 로컬 토큰 제거 후 로그인으로 이동
-      // 필요 시 e instanceof ApiError 처리 가능
-    } finally {
-      // tokenStorage를 쓰고 있으면 여기서 removeAccessToken() 호출로 교체하세요.
-      try {
-        // 로컬 저장소 직접 제거를 쓰는 구조면 여기에 맞춰 수정
-        // 예: await clearAccessToken();
-      } catch {}
-      navigation.getParent()?.navigate("Auth" as never);
-    }
-  }, [navigation]);
+                            {isVerifiedStudent && (
+                                <Image source={require("../../../assets/icons/school-verified-01.png")} style={styles.verifyBadge} resizeMode="contain" />
+                            )}
+                        </View>
 
-  React.useEffect(() => {
-    if (!isFocused) return;
+                        <Text style={styles.greeting}>
+                            {t("mypage.greeting")} <Text style={styles.name}>{displayName}</Text>{t("mypage.greeting2")}
+                        </Text>
 
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await getUserMe();
-        if (!mounted) return;
-        setMe(res as any);
-        setAvatarVersion(Date.now());
-      } catch (e) {
-        if (!mounted) return;
-        setMe(null);
-      }
-    })();
+                        <Text style={styles.subText}>{mypageSubText}</Text>
+                    </View>
+                </View>
 
-    return () => {
-      mounted = false;
-    };
-  }, [isFocused]);
+                <View style={styles.cards}>
+                    {status !== "APPROVED" && (
+                        <Pressable style={[ styles.verifyCard, status === "PENDING" ? styles.verifyCardPending : null, ]} onPress={verifyUi.onPress} disabled={verifyUi.disabled} >
+                            <Text style={[styles.verifyCardTitle, status === "PENDING" ? styles.verifyCardTitlePending : null,]}>{verifyUi.label}</Text>
+                        </Pressable>
+                    )}
 
-  return (
-    <Screen style={styles.screen}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Pressable
-            style={styles.previousBtn}
-            accessibilityLabel="previous"
-            onPress={() => navigation.navigate("StudentHome")}
-          >
-            <Image
-              source={require("../../../assets/icons/chevron-left.png")}
-              style={styles.headerIcon}
-            />
-          </Pressable>
+                    <View style={styles.menu}>
+                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("UserModify")} >
+                            <Text style={styles.menuTitle}>{t("mypage.editProfile")}</Text>
+                            <View style={styles.menuRight}>
+                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} />
+                            </View>
+                        </Pressable>
+                        <Pressable style={styles.menuItem} onPress={handleServicePreparing}>
+                            <Text style={styles.menuTitle}>{t("mypage.targetCompany")}</Text>
+                            <View style={styles.menuRight}>
+                                <Text style={styles.menuValue}>
+                                    {me?.interestCompany?.trim() ? me.interestCompany : t("mypage.notSet")}
+                                </Text>
+                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} />
+                            </View>
+                        </Pressable>
+                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("Certificates")} >
+                            <Text style={styles.menuTitle}>{t("mypage.certs")}</Text>
+                            <View style={styles.menuRight}>
+                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} />
+                            </View>
+                        </Pressable>
+                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("VerifyCode")} >
+                            <Text style={styles.menuTitle}>{t("mypage.verifyCode")}</Text>
+                            <View style={styles.menuRight}>
+                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} />
+                            </View>
+                        </Pressable>
+                    </View>
 
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle} numberOfLines={1} />
-          </View>
+                    <View style={{ height: 30 }} />
+                </View>
+                <View style={styles.logoutDock} pointerEvents="box-none">
+                    <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+                        <Text style={styles.logoutText}>{t("mypage.logout")}</Text>
+                    </Pressable>
+                </View>
+            </ScrollView>
 
-          <View style={styles.headerRightSpace} />
-        </View>
+            
 
-        {/* Top */}
-        <View style={styles.top}>
-          <View style={styles.profileWrap}>
-            <View style={styles.profileImgWrap}>
-              <Image
-                source={
-                  avatarSrc
-                    ? { uri: avatarSrc }
-                    : require("../../../assets/images/internie_mascot_normal.png")
-                }
-                style={styles.profileImg}
-                resizeMode="contain"
-              />
+            <Modal visible={showRejectModal} transparent animationType="fade" onRequestClose={closeRejectModal} >
+                <View style={styles.modalBackdrop}>
+					<BlurView style={StyleSheet.absoluteFill} blurType="dark" blurAmount={5} />
+                    <View style={styles.modalCard}>
+                        <Pressable style={styles.modalClose} accessibilityLabel="close" onPress={closeRejectModal} >
+                            <Image source={require("../../../assets/icons/x-01.png")} style={styles.modalCloseIcon} />
+                        </Pressable>
 
-              {isVerifiedStudent && (
-                <Image
-                  source={require("../../../assets/icons/school-verified-01.png")}
-                  style={styles.verifyBadge}
-                  resizeMode="contain"
-                />
-              )}
-            </View>
+                        <View style={styles.modalBody}>
+                            <Text style={styles.modalTitle}>{t("mypage_modal.title")}</Text>
+                            <Text style={styles.modalReason}>
+                                사유:
+                            </Text>
+                            <Text style={styles.modalReason}>
+                                정보 미제거, 학생증 판별 불가
+                            </Text>
+                        </View>
 
-            <Text style={styles.greeting}>
-              안녕하세요, <Text style={styles.name}>{displayName}</Text>님
-            </Text>
-            <Text style={styles.subText}>{mypageSubText}</Text>
-          </View>
-        </View>
-
-        {/* Cards / Menu */}
-        <View style={styles.cards}>
-          {/* 재학생 인증(웹: status !== APPROVED일 때만 노출) */}
-          {status !== "APPROVED" && (
-            <Pressable
-              style={[
-                styles.verifyCard,
-                status === "PENDING" ? styles.verifyCardPending : null,
-                status === "REJECTED" ? styles.verifyCardRejected : null,
-                verifyUi.disabled ? styles.disabled : null,
-              ]}
-              onPress={verifyUi.onPress}
-              disabled={verifyUi.disabled}
-            >
-              <View style={styles.verifyBadgeDot} />
-              <Text style={styles.verifyCardTitle}>{verifyUi.label}</Text>
-            </Pressable>
-          )}
-
-          <View style={styles.menu}>
-            <Pressable style={styles.menuItem} onPress={handleServicePreparing}>
-              <Text style={styles.menuTitle}>나의 목표 기업</Text>
-              <View style={styles.menuRight}>
-                <Text style={styles.menuValue}>미설정</Text>
-                <Image
-                  source={require("../../../assets/icons/chevron-right.png")}
-                  style={styles.menuChevron}
-                />
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("Certificates")}>
-              <Text style={styles.menuTitle}>나의 수료증</Text>
-              <View style={styles.menuRight}>
-                <Image
-                  source={require("../../../assets/icons/chevron-right.png")}
-                  style={styles.menuChevron}
-                />
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("UserModify")}>
-              <Text style={styles.menuTitle}>프로필 수정하기</Text>
-              <View style={styles.menuRight}>
-                <Image
-                  source={require("../../../assets/icons/chevron-right.png")}
-                  style={styles.menuChevron}
-                />
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("VerifyCode")}>
-              <Text style={styles.menuTitle}>인증코드 입력하기</Text>
-              <View style={styles.menuRight}>
-                <Image
-                  source={require("../../../assets/icons/chevron-right.png")}
-                  style={styles.menuChevron}
-                />
-              </View>
-            </Pressable>
-          </View>
-
-          <View style={{ height: 30 }} />
-        </View>
-      </ScrollView>
-
-      {/* 로그아웃 버튼(하단 고정) */}
-      <View style={styles.logoutDock} pointerEvents="box-none">
-        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>로그아웃</Text>
-        </Pressable>
-      </View>
-    </Screen>
-  );
+                        <Pressable style={styles.modalPrimaryButton} onPress={goReVerify} >
+                            <Text style={styles.modalPrimaryButtonText}>
+                                {t("mypage_modal.reVerify")}
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView>
+    );
 }

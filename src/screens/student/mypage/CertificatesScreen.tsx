@@ -12,6 +12,8 @@ import { ApiError, type AdminUserFile, getMyAdminFiles, getMyAdminFileDownloadUr
 
 import { Screen } from "../../../components/Screen";
 import { styles } from "./Certificates.style";
+import { commonStyles } from "../../../theme/common.Style";
+import { useTranslation } from "react-i18next";
 
 function getFileType(filename: string) {
     const ext = filename.split(".").pop()?.toLowerCase();
@@ -31,9 +33,31 @@ function getMimeByExt(ext: string) {
   return "application/octet-stream";
 }
 
+// HEADER
+function Header({
+    onCloseClick,
+}: {
+    onCloseClick: () => void,
+}) {
+    const { t } = useTranslation(); 
+
+    return (
+        <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
+            <View style={styles.headerLeftSpace} />
+            <Text style={styles.headerTitle}>{t("mypage.certs")}</Text>
+            <Pressable style={commonStyles.iconbtn} onPress={onCloseClick} >
+                <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
+            </Pressable>
+        </View>
+    );
+}
+
+
 type PreviewMap = Record<number, { kind: "image" | "pdf" | "other"; uri?: string; localPdfPath?: string }>;
 
 export default function CertificatesScreen({ navigation }: NativeStackScreenProps<StudentStackParamList, "Certificates">) {
+    const { t } = useTranslation();
+
     const [items, setItems] = React.useState<AdminUserFile[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -47,10 +71,9 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
         const cacheDir = fs.dirs.CacheDir;
 
         const ext = getExt(filename) || "bin";
-        const safeName = filename.replace(/[\\/:*?"<>|]/g, "_"); // 윈도우 금지문자 방어
+        const safeName = filename.replace(/[\\/:*?"<>|]/g, "_"); 
         const localPath = `${cacheDir}/cert_${fileId}_${safeName}`;
 
-        // 이미 있으면 재사용 (원하시면 항상 새로 받도록 exists 체크 제거)
         const exists = await fs.exists(localPath);
         if (exists) return { localPath, ext };
 
@@ -62,7 +85,6 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
         return { localPath, ext };
     }
 
-    // signedUrl Pdf 파일 로컬 다운로드 함수
     async function downloadPdfToCache(signedUrl: string, fileId: number): Promise<string> {
         const { fs } = ReactNativeBlobUtil;
         const cacheDir = fs.dirs.CacheDir;
@@ -80,7 +102,6 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
         return localPath;
     }
 
-    // pdf 썸네일 생성 함수 
     async function makePdfThumb(localPdfPath: string): Promise<string> {
         const result = await PdfThumbnail.generate(localPdfPath, 0);
 
@@ -114,7 +135,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                     setItems([]);
                     setErrorMsg(null);
                 } else {
-                    setErrorMsg("수료증 목록을 불러오지 못했습니다.");
+                    setErrorMsg(t("error.failGetMyCerts"));
                     console.error(e);
                 }
             } finally {
@@ -227,9 +248,9 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
             } catch (e) {
                 if (e instanceof ApiError) {
                     if (e.status === 404) Alert.alert("발급된 수료증이 없습니다.");
-                    else Alert.alert("다운로드 실패", e.bodyText ? e.bodyText : "다운로드에 실패했습니다.");
+                    else Alert.alert("다운로드 실패", e.bodyText ? e.bodyText : t("error.failToDownload"));
                 } else {
-                    Alert.alert("다운로드 실패", "다운로드에 실패했습니다.");
+                    Alert.alert(t("error.failToDownload"));
                 }
             } finally {
                 setDownloadingId(null);
@@ -240,15 +261,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
 
     return (
         <Screen style={styles.screen}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={{ width: 44, height: 44 }} />
-                <Text style={styles.headerTitle}>수료증</Text>
-                <Pressable style={styles.headerClose} accessibilityLabel="close" onPress={handleClose}>
-                    <Image source={require("../../../assets/icons/x-01.png")} style={styles.headerIcon} />
-                </Pressable>
-            </View>
-
+            <Header onCloseClick={handleClose} />
             {/* Body */}
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -258,7 +271,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                 {loading ? (
                     <View style={styles.emptyWrap}>
                         <ActivityIndicator />
-                        <Text style={styles.emptyText}>불러오는 중…</Text>
+                        <Text style={styles.emptyText}>{t("common.loading")}</Text>
                     </View>
                 ) : errorMsg ? (
                     <View style={styles.emptyWrap}>
@@ -266,7 +279,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                     </View>
                 ) : items.length === 0 ? (
                     <View style={styles.emptyWrap}>
-                        <Text style={styles.emptyText}>발급된 수료증이 없습니다.</Text>
+                        <Text style={styles.emptyText}>{t("mypage.noCerts")}</Text>
                     </View>
                 ) : (
                     <View style={styles.list}>
@@ -299,12 +312,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                                     </View>
 
                                     <View style={styles.actions}>
-                                        <Pressable
-                                        style={styles.iconBtn}
-                                        accessibilityLabel="다운로드"
-                                        onPress={() => void handleDownload(item)}
-                                        disabled={isDownloading}
-                                        >
+                                        <Pressable style={styles.iconBtn} onPress={() => void handleDownload(item)} disabled={isDownloading} >
                                         <Image
                                             source={
                                             isDownloading
