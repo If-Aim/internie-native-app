@@ -3,7 +3,7 @@ import { API_BASE_URL } from "@env";
 import { jwtDecode } from "jwt-decode";
 import { getAccessToken, saveAccessToken, clearAccessToken } from "../auth/tokenStorage";
 
-/** URL 합치기 */
+/** URL util */
 function buildUrl(path: string) {
     return path.startsWith("http")
         ? path
@@ -18,8 +18,6 @@ type HeaderInput =
 
 function normalizeHeaders(h?: HeaderInput): Record<string, string> {
     if (!h) return {};
-
-    // Headers 인스턴스면 object로 변환해서 반환
     if (typeof Headers !== "undefined" && h instanceof Headers) {
         const out: Record<string, string> = {};
         h.forEach((v, k) => {
@@ -28,17 +26,12 @@ function normalizeHeaders(h?: HeaderInput): Record<string, string> {
         return out;
     }
 
-    // [key, value][] 형태면 object로 변환
     if (Array.isArray(h)) {
         return Object.fromEntries(h) as Record<string, string>;
     }
 
-    // 이미 object면 그대로 반환
     return h as Record<string, string>;
 }
-
-
-/** Authorization 헤더 (Keychain 기반) */
 async function getAuthHeader(): Promise<Record<string, string>> {
     const token = await getAccessToken();
     if (!token) return {};
@@ -47,6 +40,9 @@ async function getAuthHeader(): Promise<Record<string, string>> {
     };
 }
 
+/* =========================
+            Auth 
+========================= */
 async function requestWithAutoRefresh(
     path: string,
     init: RequestInit = {},
@@ -105,7 +101,9 @@ async function requestWithAutoRefresh(
     return res;
 }
 
-/** Public API (토큰/JSON 강제 없음) */
+/**
+ * API 공용함수 
+ */
 export async function apiPublic(
     path: string,
     init: RequestInit = {}
@@ -115,8 +113,6 @@ export async function apiPublic(
         credentials: "include",
     });
 }
-
-/** JSON API */
 export async function api<T = unknown>(
     path: string,
     init: RequestInit = {}
@@ -139,9 +135,7 @@ export async function api<T = unknown>(
     return (await res.json()) as T;
 }
 
-/**
- * 업로드 API (FormData)
- */
+// 업로드 API (FormData)
 export async function apiUpload<T = unknown>(
     path: string,
     formData: FormData,
@@ -172,10 +166,6 @@ export async function apiUpload<T = unknown>(
 
     return (await res.json()) as T;
 }
-
-/* =========================
-          Auth 
-   ========================= */
 
 // android 카카오 로그인
 export async function exchangeKakaoToken(accessToken: string): Promise<Response> {
@@ -235,65 +225,11 @@ export async function logout(): Promise<void> {
 
     await clearAccessToken().catch(() => {});
 }
-
-
-export type LoginResponse = {
-    onboardingCompleted: boolean;
-};
-
-function normalizeNullableText(v: unknown): string {
-    const s = String(v ?? "").trim();
-    if (!s) return "";
-    const lower = s.toLowerCase();
-    if (lower === "null") return "";
-    if (lower === "undefined") return "";
-    return s;
-}
-
-export function getUserDisplayName(
-    me: Partial<UserBase> | null | undefined
-): string {
-    if (!me) return "";
-    return (
-        normalizeNullableText((me as any).name) ||
-        normalizeNullableText((me as any).kakaoName)
-    );
-}
-
-export function isOnboardingDone(
-    me: Partial<UserBase> | null | undefined
-): boolean {
-    if (!me) return false;
-
-    const name = normalizeNullableText((me as any).name);
-    if (name.toUpperCase() === "NULL") return false;
-
-    return name.length > 0;
-}
-
 export function routeAfterLoginFromLogin(
     login: LoginResponse
 ): "Student" | "Onboarding" {
     return login.onboardingCompleted ? "Student" : "Onboarding";
 }
-
-type JwtPayload = {
-    userId?: number | string;
-    id?: number | string;
-    sub?: number | string;
-    type?: "access" | "refresh" | string;
-};
-
-function toValidUserId(v: unknown): string | null {
-    if (v == null) return null;
-    const s = String(v).trim();
-    if (!s) return null;
-
-    if (/^\d+$/.test(s)) return s;
-
-    return null;
-}
-
 export async function getUserIdFromAccessToken(): Promise<string | null> {
     const token = await getAccessToken();
     if (!token) return null;
@@ -313,25 +249,49 @@ export async function getUserIdFromAccessToken(): Promise<string | null> {
         return null;
     }
 }
+function toValidUserId(v: unknown): string | null {
+    if (v == null) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+
+    if (/^\d+$/.test(s)) return s;
+
+    return null;
+
+}
+function normalizeNullableText(v: unknown): string {
+    const s = String(v ?? "").trim();
+    if (!s) return "";
+    const lower = s.toLowerCase();
+    if (lower === "null") return "";
+    if (lower === "undefined") return "";
+    return s;
+}
 
 /* =========================
-   Types & APIs
-   ========================= */
+            Type 
+========================= */
+export type LoginResponse = {
+    onboardingCompleted: boolean;
+};
+type JwtPayload = {
+    userId?: number | string;
+    id?: number | string;
+    sub?: number | string;
+    type?: "access" | "refresh" | string;
+};
 
 export type Transcription = {
     id: number;
     text: string;
     audioUrl?: string;
 };
-
-/* - mypage관련 - */
 export type UserSchool = {
     id: number;
     name: string;
     campus: string;
     region: string;
 };
-
 export type JumpOrganization = {
     id: number;
     name: string;
@@ -353,19 +313,115 @@ export type UserBase = {
     jumpOrganization?: JumpOrganization | null;
 };
 export type UserMe = UserBase;
-
-export async function getUserMe(): Promise<UserMe> {
-    return api<UserMe>("/users/me");
-}
-
-// 재학생 인증
 export type ApplyVerificationResponse = UserBase;
 export type UploadFileLike = {
     uri: string;  
     name: string;
     type: string; 
 };
+export type UpdateMyProfileJsonInput = {
+    name?: string | null;
+    nickname?: string | null;
+    interestJob?: string | null;
+    interestCompany?: string | null;
+};
+export type AdminUserFile = {
+    fileId: number;
+    url: string;
+    filename: string;
+};
+export type SelectMySchoolInput = {
+    schoolId: number;
+};
 
+export type SelectMySchoolResponse = UserBase & {
+    school: UserSchool | null;
+};
+
+export type SubmitOnboardingInput = {
+    name: string;
+    interestJob?: string | null;
+    interestCompany?: string | null;
+    jumpOrganizationId?: number | null;
+};
+
+export type SubmitOnboardingResponse = UserBase;
+export type CreateEventInput = {
+    title: string;
+    content: string;
+    startDate: string;
+    endDate: string;
+    startTime?: string;
+    endTime?: string;
+};
+
+export type CreateEventResponse = {
+    eventId?: number;
+    title?: string;
+    content?: string;
+    startDate?: string;
+    endDate?: string;
+    startTime?: string | null;
+    endTime?: string | null;
+};
+export type EventDayQuestionsResponse = {
+    eventDayId: number;
+    questionId: number;
+    questionList: string[];
+};
+export type EventDayDetailResponse = {
+    eventDayId: number;
+    title: string;
+    eventId: number;
+    date: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    memo?: string | null;
+    completed: boolean;
+    transcriptions: Transcription[];
+};
+export type EventDay = {
+    eventDayId: number;
+    title: string;
+    eventId: string | number;
+    date: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    memo?: string | null;
+    completed: boolean;
+    transcriptions?: Transcription[];
+};
+export type EventDayMonthResponse = {
+    totalCount: number;
+    eventDayList: EventDay[];
+};
+
+/* =========================
+        User & Mypage 
+========================= */
+export function getUserDisplayName(
+    me: Partial<UserBase> | null | undefined
+): string {
+    if (!me) return "";
+    return (
+        normalizeNullableText((me as any).name) ||
+        normalizeNullableText((me as any).kakaoName)
+    );
+}
+export function isOnboardingDone(
+    me: Partial<UserBase> | null | undefined
+): boolean {
+    if (!me) return false;
+
+    const name = normalizeNullableText((me as any).name);
+    if (name.toUpperCase() === "NULL") return false;
+
+    return name.length > 0;
+}
+export async function getUserMe(): Promise<UserMe> {
+    return api<UserMe>("/users/me");
+}
+// 재학생 인증
 export async function applyMyVerification(
     file: UploadFileLike
 ): Promise<ApplyVerificationResponse> {
@@ -391,25 +447,7 @@ export async function applyMyVerification(
         { method: "POST" }
     );
 }
-
-// JUMP 사용자 인증
-export async function verifyJumpUser (
-    code: string
-): Promise<UserMe> {
-    return api<UserMe>("/users/me/jump-verify", {
-        method: "POST",
-        body: JSON.stringify({ code } satisfies { code: string }),
-    });
-}
-
 // 프로필 수정 (텍스트)
-export type UpdateMyProfileJsonInput = {
-    name?: string | null;
-    nickname?: string | null;
-    interestJob?: string | null;
-    interestCompany?: string | null;
-};
-
 export async function updateMyProfile(
     input: UpdateMyProfileJsonInput
 ): Promise<UserMe> {
@@ -423,7 +461,6 @@ export async function updateMyProfile(
         }),
     });
 }
-
 // 프로필 수정 (이미지)
 export async function updateMyProfileImage(
     file: UploadFileLike
@@ -452,30 +489,6 @@ export async function updateMyProfileImage(
         method: "PATCH",
     });
 }
-
-// 수료증(관리자 업로드 파일) 타입
-export type AdminUserFile = {
-    fileId: number;
-    url: string;
-    filename: string;
-};
-
-// 관리자 업로드 파일 목록 조회
-export async function getMyAdminFiles(): Promise<AdminUserFile[]> {
-     return api<AdminUserFile[]>("/users/me/admin-files", { method: "GET" });
-}
-
-// 관리자 업로드 파일 다운로드
-export async function getMyAdminFileDownloadUrl(
-    fileId: number | string
-): Promise<string> {
-    const res = await api<{ url: string }>(`/users/me/admin-files/${fileId}`, {
-        method: "GET",
-    });
-    return res.url;
-}
-
-
 // 학교 검색
 export async function searchSchools(keyword: string): Promise<UserSchool[]> {
     const q = keyword.trim();
@@ -484,15 +497,6 @@ export async function searchSchools(keyword: string): Promise<UserSchool[]> {
     const qs = `keyword=${encodeURIComponent(q)}`;
     return api<UserSchool[]>(`/schools?${qs}`, { method: "GET" });
 }
-
-// 학교 선택
-export type SelectMySchoolInput = {
-    schoolId: number;
-};
-
-export type SelectMySchoolResponse = UserBase & {
-    school: UserSchool | null;
-};
 
 export async function selectMySchool(
     input: SelectMySchoolInput
@@ -508,24 +512,40 @@ export async function selectMySchool(
         } satisfies SelectMySchoolInput),
     });
 }
+// 관리자 업로드 파일 목록 조회 (수료증)
+export async function getMyAdminFiles(): Promise<AdminUserFile[]> {
+     return api<AdminUserFile[]>("/users/me/admin-files", { method: "GET" });
+}
 
-/* - jump관련 - */
+// 관리자 업로드 파일 다운로드 (수료증)
+export async function getMyAdminFileDownloadUrl(
+    fileId: number | string
+): Promise<string> {
+    const res = await api<{ url: string }>(`/users/me/admin-files/${fileId}`, {
+        method: "GET",
+    });
+    return res.url;
+}
+/* =========================
+            JUMP 
+========================= */
+export async function verifyJumpUser (
+    code: string
+): Promise<UserMe> {
+    return api<UserMe>("/users/me/jump-verify", {
+        method: "POST",
+        body: JSON.stringify({ code } satisfies { code: string }),
+    });
+}
 export async function getMyJumpOrganizations(): Promise<JumpOrganization[]> {
     return api<JumpOrganization[]>("/users/me/jump-organizations", {
         method: "GET",
     });
 }
 
-/* - onboarding관련 - */
-export type SubmitOnboardingInput = {
-    name: string;
-    interestJob?: string | null;
-    interestCompany?: string | null;
-    jumpOrganizationId?: number | null;
-};
-
-export type SubmitOnboardingResponse = UserBase;
-
+/* =========================
+        ONBOARDING  
+========================= */
 export async function submitMyOnboarding(
     input: SubmitOnboardingInput
 ): Promise<SubmitOnboardingResponse> {
@@ -552,27 +572,9 @@ export async function submitMyOnboarding(
 }
 
 
-
-/* - event관련 - */
-export type CreateEventInput = {
-    title: string;
-    content: string;
-    startDate: string;
-    endDate: string;
-    startTime?: string;
-    endTime?: string;
-};
-
-export type CreateEventResponse = {
-    eventId?: number;
-    title?: string;
-    content?: string;
-    startDate?: string;
-    endDate?: string;
-    startTime?: string | null;
-    endTime?: string | null;
-};
-
+/* =========================
+        EVENT  
+========================= */
 export async function createEvent(
     input: CreateEventInput
 ): Promise<CreateEventResponse> {
@@ -583,11 +585,6 @@ export async function createEvent(
 }
 
 /** 맞춤 질문 조회 */
-export type EventDayQuestionsResponse = {
-    eventDayId: number;
-    questionId: number;
-    questionList: string[];
-};
 export async function getEventDayQuestions(
     eventDayId: string | number
 ): Promise<EventDayQuestionsResponse> {
@@ -595,17 +592,6 @@ export async function getEventDayQuestions(
 }
 
 /** eventDay 상세 */
-export type EventDayDetailResponse = {
-    eventDayId: number;
-    title: string;
-    eventId: number;
-    date: string;
-    startTime?: string | null;
-    endTime?: string | null;
-    memo?: string | null;
-    completed: boolean;
-    transcriptions: Transcription[];
-};
 export async function getEventDayDetail(
     eventDayId: string | number
 ): Promise<EventDayDetailResponse> {
@@ -621,21 +607,6 @@ export async function deleteEventDay(eventDayId: string | number): Promise<void>
 }
 
 /** 최근 기록 월 조회 */
-export type EventDay = {
-    eventDayId: number;
-    title: string;
-    eventId: string | number;
-    date: string;
-    startTime?: string | null;
-    endTime?: string | null;
-    memo?: string | null;
-    completed: boolean;
-    transcriptions?: Transcription[];
-};
-export type EventDayMonthResponse = {
-    totalCount: number;
-    eventDayList: EventDay[];
-};
 export async function getEventDaysByMonth(
     y: string,
     m: string

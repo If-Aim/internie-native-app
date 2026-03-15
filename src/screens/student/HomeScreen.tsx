@@ -1,6 +1,6 @@
 // src/screens/student/HomeScreen.tsx
 import React from "react";
-import { StyleSheet, View, Text, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, } from "react-native";
+import { StyleSheet, View, Text, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -127,17 +127,25 @@ function ymLabel(ym: string, lang: string) {
     const d = new Date(y, m - 1, 1);
     return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(d);
 }
-function prevMonth(ym: string) {
+
+const PICKER_ROW_HEIGHT = 52;
+const PICKER_SNAP_EPSILON = 2;
+function parseYm(ym: string) {
     const [y, m] = ym.split("-").map(Number);
-    const d = new Date(y, m - 2, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-function nextMonth(ym: string) {
-    const [y, m] = ym.split("-").map(Number);
-    const d = new Date(y, m, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return { year: y, month: m };
 }
 
+function toYm(year: number, month: number) {
+    return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function pickerYearLabel(year: number, lang: string) {
+    return lang.startsWith("ko") ? `${year}년` : String(year);
+}
+
+function pickerMonthLabel(month: number, lang: string) {
+    return lang.startsWith("ko") ? `${month}월` : new Intl.DateTimeFormat("en-US", { month: "short" }).format(new Date(2000, month - 1, 1));
+}
 
 /* 시간 유틸 */
 function hhmm(t?: string | null): string {
@@ -199,6 +207,17 @@ function weekdayLabels(lang: string): string[] {
     return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 }
 
+function recordModalDateLabel(iso: string, lang: string): string {
+    const d = new Date(`${iso}T00:00:00`);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+
+    if (lang.startsWith("ko")) return `${y}년 ${m}월 ${day}일`;
+
+    return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric" }).format(d);
+}
+
 function MonthHeader({
     valueYm,
     onOpen,
@@ -228,7 +247,198 @@ function MonthHeader({
         </View>
     );
 }
+function MonthPickerModal({
+    open,
+    ym,
+    lang,
+    minYear,
+    maxYear,
+    onClose,
+    onConfirm,
+}: {
+    open: boolean;
+    ym: string;
+    lang: string;
+    minYear: number;
+    maxYear: number;
+    onClose: () => void;
+    onConfirm: (nextYm: string) => void;
+}) {
+    const { t } = useTranslation();
+    const years = React.useMemo(() => {
+        const out: number[] = [];
+        for (let y = maxYear; y >= minYear; y -= 1) out.push(y);
+        return out;
+    }, [minYear, maxYear]);
 
+    const months = React.useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+
+    const initial = React.useMemo(() => parseYm(ym), [ym]);
+    const [selectedYear, setSelectedYear] = React.useState(initial.year);
+    const [selectedMonth, setSelectedMonth] = React.useState(initial.month);
+
+    const yearListRef = React.useRef<FlatList<number>>(null);
+    const monthListRef = React.useRef<FlatList<number>>(null);
+
+    React.useEffect(() => {
+        if (!open) return;
+
+        const next = parseYm(ym);
+        setSelectedYear(next.year);
+        setSelectedMonth(next.month);
+
+        requestAnimationFrame(() => {
+            const yearIndex = years.indexOf(next.year);
+            const monthIndex = months.indexOf(next.month);
+
+            if (yearIndex >= 0) {
+                yearListRef.current?.scrollToOffset({
+                    offset: yearIndex * PICKER_ROW_HEIGHT,
+                    animated: false,
+                });
+            }
+
+            if (monthIndex >= 0) {
+                monthListRef.current?.scrollToOffset({
+                    offset: monthIndex * PICKER_ROW_HEIGHT,
+                    animated: false,
+                });
+            }
+        });
+    }, [open, ym, years, months]);
+
+    const snapYearToOffset = React.useCallback((offsetY: number) => {
+        const index = Math.round(offsetY / PICKER_ROW_HEIGHT);
+        const safeIndex = Math.max(0, Math.min(index, years.length - 1));
+        const targetOffset = safeIndex * PICKER_ROW_HEIGHT;
+
+        setSelectedYear(years[safeIndex]);
+
+        if (Math.abs(offsetY - targetOffset) < PICKER_SNAP_EPSILON) {
+            return;
+        }
+
+        yearListRef.current?.scrollToOffset({
+            offset: targetOffset,
+            animated: false,
+        });
+    }, [years]);
+
+    const snapMonthToOffset = React.useCallback((offsetY: number) => {
+        const index = Math.round(offsetY / PICKER_ROW_HEIGHT);
+        const safeIndex = Math.max(0, Math.min(index, months.length - 1));
+        const targetOffset = safeIndex * PICKER_ROW_HEIGHT;
+
+        setSelectedMonth(months[safeIndex]);
+
+        if (Math.abs(offsetY - targetOffset) < PICKER_SNAP_EPSILON) {
+            return;
+        }
+
+        monthListRef.current?.scrollToOffset({
+            offset: targetOffset,
+            animated: false,
+        });
+    }, [months]);
+
+    const onYearMomentumEnd = React.useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        snapYearToOffset(e.nativeEvent.contentOffset.y);
+    }, [snapYearToOffset]);
+
+    const onMonthMomentumEnd = React.useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        snapMonthToOffset(e.nativeEvent.contentOffset.y);
+    }, [snapMonthToOffset]);
+
+    return (
+        <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+            <View style={commonStyles.periodSheetBackdrop}>
+                <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+
+                <View style={commonStyles.periodSheet}>
+                    <View style={commonStyles.monthpickerHeader}>
+                        <Pressable style={commonStyles.monthpickerIconBtn} onPress={onClose}>
+                            <Image source={require("../../assets/icons/chevron-left.png")} style={commonStyles.icon24} />
+                        </Pressable>
+
+                        <Pressable style={commonStyles.monthpickerIconBtn} onPress={onClose}>
+                            <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
+                        </Pressable>
+                    </View>
+
+                    <View style={commonStyles.wheelWrap}>
+                        <View style={commonStyles.wheelCol}>
+                            <FlatList
+                                ref={yearListRef}
+                                data={years}
+                                keyExtractor={(item) => `year-${item}`}
+                                showsVerticalScrollIndicator={false}
+                                snapToInterval={PICKER_ROW_HEIGHT}
+                                decelerationRate="normal"
+                                bounces={false}
+                                scrollEventThrottle={16}
+                                initialNumToRender={8}
+                                maxToRenderPerBatch={8}
+                                contentContainerStyle={commonStyles.wheelContent}
+                                getItemLayout={(_, index) => ({
+                                    length: PICKER_ROW_HEIGHT,
+                                    offset: PICKER_ROW_HEIGHT * index,
+                                    index,
+                                })}
+                                onMomentumScrollEnd={onYearMomentumEnd}
+                                renderItem={({ item }) => {
+                                    const active = item === selectedYear;
+                                    return (
+                                        <View style={commonStyles.wheelItem}>
+                                            <Text style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
+                                                {pickerYearLabel(item, lang)}
+                                            </Text>
+                                        </View>
+                                    );
+                                }}
+                            />
+                        </View>
+
+                        <View style={commonStyles.wheelCol}>
+                            <FlatList
+                                ref={monthListRef}
+                                data={months}
+                                keyExtractor={(item) => `month-${item}`}
+                                showsVerticalScrollIndicator={false}
+                                snapToInterval={PICKER_ROW_HEIGHT}
+                                decelerationRate="normal"
+                                bounces={false}
+                                scrollEventThrottle={16}
+                                initialNumToRender={8}
+                                maxToRenderPerBatch={8}
+                                contentContainerStyle={commonStyles.wheelContent}
+                                getItemLayout={(_, index) => ({
+                                    length: PICKER_ROW_HEIGHT,
+                                    offset: PICKER_ROW_HEIGHT * index,
+                                    index,
+                                })}
+                                onMomentumScrollEnd={onMonthMomentumEnd}
+                                renderItem={({ item }) => {
+                                    const active = item === selectedMonth;
+                                    return (
+                                        <View style={commonStyles.wheelItem}>
+                                            <Text style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
+                                                {pickerMonthLabel(item, lang)}
+                                            </Text>
+                                        </View>
+                                    );
+                                }}
+                            />
+                        </View>
+                    </View>
+
+                    <Pressable style={commonStyles.monthpickerConfirm} onPress={() => onConfirm(toYm(selectedYear, selectedMonth))} >
+                        <Text style={commonStyles.monthpickerConfirmText}>{t("common.confirm")}</Text>
+                    </Pressable>
+                </View>
+            </View>
+        </Modal>
+    );
+}
 function MonthFilterSheet({
     open,
     valueYm,
@@ -245,71 +455,147 @@ function MonthFilterSheet({
     const { t, i18n } = useTranslation();
     const [tmpYm, setTmpYm] = React.useState(valueYm);
     const [tmpSort, setTmpSort] = React.useState(sortOrder);
+    const [pickerYm, setPickerYm] = React.useState(valueYm);
+    const [isMonthPickerOpen, setIsMonthPickerOpen] = React.useState(false);
 
     React.useEffect(() => {
         if (open) {
             setTmpYm(valueYm);
             setTmpSort(sortOrder);
+            setPickerYm(valueYm);
         }
     }, [open, valueYm, sortOrder]);
 
     if (!open) return null;
 
     return (
-        <View style={commonStyles.periodSheetBackdrop}>
-            <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-            <View style={commonStyles.periodSheet}>
-                <View style={commonStyles.periodSheetHeader}>
-                    <Text style={commonStyles.periodSheetTitle}>{t("filter.title")}</Text>
-                    <Pressable onPress={onClose}>
-                        <Text style={{ fontSize: 24 }}>×</Text>
+        <>
+            <View style={commonStyles.periodSheetBackdrop}>
+                <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+                <View style={commonStyles.periodSheet}>
+                    <View style={commonStyles.periodSheetHeader}>
+                        <Text style={commonStyles.periodSheetTitle}>{t("filter.title")}</Text>
+                        <Pressable style={commonStyles.periodSheetClose} onPress={onClose}>
+                            <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
+                        </Pressable>
+                    </View>
+
+                    <View style={commonStyles.periodSheetBody}>
+                        <View style={commonStyles.periodSheetSection}>
+                            <Text style={commonStyles.periodSheetLabel}>{t("filter.period")}</Text>
+
+                            <Pressable
+                                style={styles.monthInputRow}
+                                onPress={() => {
+                                    setPickerYm(tmpYm);
+                                    setIsMonthPickerOpen(true);
+                                }}
+                            >
+                                <Text style={styles.monthInputText}>
+                                    {ymLabel(tmpYm, i18n.language)}
+                                </Text>
+
+                                <Image source={require("../../assets/icons/calendar-07.png")} style={commonStyles.icon24} />
+                            </Pressable>
+                        </View>
+
+                        <View style={commonStyles.periodSheetSection}>
+                            <Text style={commonStyles.periodSheetLabel}>{t("filter.sort")}</Text>
+                            <View style={commonStyles.sortRow}>
+                                <Pressable
+                                    style={[commonStyles.sortBtn, tmpSort === "past" ? commonStyles.sortBtnActive : null]}
+                                    onPress={() => setTmpSort("past")}
+                                >
+                                    <Text style={[commonStyles.sortBtnText, tmpSort === "past" ? commonStyles.sortBtnActiveText : null]}>
+                                        {t("filter.sortPast")}
+                                    </Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={[commonStyles.sortBtn, tmpSort === "latest" ? commonStyles.sortBtnActive : null]}
+                                    onPress={() => setTmpSort("latest")}
+                                >
+                                    <Text style={[commonStyles.sortBtnText, tmpSort === "latest" ? commonStyles.sortBtnActiveText : null]}>
+                                        {t("filter.sortLatest")}
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+
+                    <Pressable style={commonStyles.monthpickerConfirmGet} onPress={() => onApply(tmpYm, tmpSort)}>
+                        <Text style={commonStyles.monthpickerConfirmText}>{t("filter.apply")}</Text>
                     </Pressable>
                 </View>
-
-                <View style={commonStyles.periodSheetBody}>
-                    <View style={commonStyles.periodSheetSection}>
-                        <Text style={commonStyles.periodSheetLabel}>{t("filter.period")}</Text>
-
-                        <View style={styles.monthInputRow}>
-                            <Pressable style={styles.monthNavBtn} onPress={() => setTmpYm(prevMonth(tmpYm))}>
-                                <Text style={styles.monthNavText}>‹</Text>
-                            </Pressable>
-
-                            <Text style={styles.monthInputText}>{ymLabel(tmpYm, i18n.language)}</Text>
-
-                            <Pressable style={styles.monthNavBtn} onPress={() => setTmpYm(nextMonth(tmpYm))}>
-                                <Text style={styles.monthNavText}>›</Text>
-                            </Pressable>
-                        </View>
-                    </View>
-
-                    <View style={commonStyles.periodSheetSection}>
-                        <Text style={commonStyles.periodSheetLabel}>{t("filter.sort")}</Text>
-                        <View style={commonStyles.sortRow}>
-                            <Pressable style={[commonStyles.sortBtn, tmpSort === "past" ? commonStyles.sortBtnActive : null]} onPress={() => setTmpSort("past")} >
-                                <Text style={[commonStyles.sortBtnText, tmpSort === "past" ? commonStyles.sortBtnActiveText : null]}>
-                                    {t("filter.sortPast")}
-                                </Text>
-                            </Pressable>
-
-                            <Pressable style={[commonStyles.sortBtn, tmpSort === "latest" ? commonStyles.sortBtnActive : null]} onPress={() => setTmpSort("latest")} >
-                                <Text style={[commonStyles.sortBtnText, tmpSort === "latest" ? commonStyles.sortBtnActiveText : null]}>
-                                    {t("filter.sortLatest")}
-                                </Text>
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
-
-                <Pressable style={commonStyles.monthpickerConfirm} onPress={() => onApply(tmpYm, tmpSort)}>
-                    <Text style={commonStyles.monthpickerConfirmText}>{t("filter.apply")}</Text>
-                </Pressable>
             </View>
-        </View>
+
+            <MonthPickerModal
+                open={isMonthPickerOpen}
+                ym={pickerYm}
+                lang={i18n.language}
+                minYear={2020}
+                maxYear={2030}
+                onClose={() => setIsMonthPickerOpen(false)}
+                onConfirm={(nextYm) => {
+                    setPickerYm(nextYm);
+                    setTmpYm(nextYm);
+                    setIsMonthPickerOpen(false);
+                }}
+            />
+        </>
     );
 }
 
+function PreparingDots() {
+    const a1 = React.useRef(new Animated.Value(0)).current;
+    const a2 = React.useRef(new Animated.Value(0)).current;
+    const a3 = React.useRef(new Animated.Value(0)).current;
 
+    React.useEffect(() => {
+        const makeLoop = (v: Animated.Value, delayMs: number) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.delay(delayMs),
+                    Animated.timing(v, { toValue: 1, duration: 220, useNativeDriver: true }),
+                    Animated.timing(v, { toValue: 0, duration: 380, useNativeDriver: true }),
+                    Animated.delay(180),
+                ])
+            );
+
+        const l1 = makeLoop(a1, 0);
+        const l2 = makeLoop(a2, 120);
+        const l3 = makeLoop(a3, 240);
+
+        l1.start();
+        l2.start();
+        l3.start();
+
+        return () => {
+            l1.stop();
+            l2.stop();
+            l3.stop();
+        };
+    }, [a1, a2, a3]);
+
+    const dotStyle = (v: Animated.Value) => ({
+        transform: [
+            {
+                translateY: v.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -10],
+                }),
+            },
+        ],
+    });
+
+    return (
+        <View style={styles.preparingDotsRow}>
+            <Animated.View style={[styles.preparingDot, dotStyle(a1)]} />
+            <Animated.View style={[styles.preparingDot, dotStyle(a2)]} />
+            <Animated.View style={[styles.preparingDot, dotStyle(a3)]} />
+        </View>
+    );
+}
 // HEADER
 function Header({
     onMenuClick,
@@ -403,9 +689,6 @@ function SideMenu({
         </View>
     );
 }
-
-
-
 
 export default function HomeScreen({ navigation }: Props) {
 	const { t, i18n } = useTranslation();
@@ -655,27 +938,8 @@ export default function HomeScreen({ navigation }: Props) {
                 style={{ flex: 1 }}
                 contentContainerStyle={commonStyles.wrap}
                 ListHeaderComponent={
-                    <>
-                        <MonthHeader
-                            valueYm={month}
-                            lang={i18n.language}
-                            onOpen={() => setFilterOpen(true)}
-                        />
-                        {recordStage === "preparing" && (
-                            <View style={styles.preparingPage}>
-                                <View style={styles.preparingContent}>
-                                    <ActivityIndicator size="small" color={tokens.colors.primary} />
-                                    <Text style={styles.preparingTitle}>
-                                        {t("modal.questionsPreparingTitle", "질문을 준비하고 있어요")}
-                                    </Text>
-                                    <Text style={styles.preparingDesc}>
-                                        {t("modal.questionsPreparingDesc1", "잠시만 기다려 주세요")}
-                                        {"\n"}
-                                        {t("modal.questionsPreparingDesc2", "곧 시작됩니다")}
-                                    </Text>
-                                </View>
-                            </View>
-                        )}
+                    <> 
+                        <MonthHeader valueYm={month} lang={i18n.language} onOpen={() => setFilterOpen(true)} />  
                     </>
                 }
                 ListEmptyComponent={
@@ -787,7 +1051,6 @@ export default function HomeScreen({ navigation }: Props) {
                 onMyPage={() => navigation.navigate("MyPage")}
             />
 
-            {/* MonthFilterSheet - Filter Modal 블록 삭제하고 컴포넌트만 */}
             <MonthFilterSheet
                 open={filterOpen}
                 valueYm={month}
@@ -803,13 +1066,17 @@ export default function HomeScreen({ navigation }: Props) {
             <Modal visible={recordModalOpen && !!selectedItem} transparent animationType="fade" onRequestClose={() => setRecordModalOpen(false)} >
                 <Pressable style={styles.backdrop} onPress={() => setRecordModalOpen(false)}>
                     <Pressable style={styles.sheet} onPress={() => {}}>
-                        <View style={styles.sheetHeader}>
+                        <View style={[commonStyles.topbarMain, styles.topbarRow]}>
                             <Text style={styles.sheetTitle}>{selectedItem?.title ?? ""}</Text>
                             <Pressable onPress={() => setRecordModalOpen(false)}>
-                                <Text style={styles.sheetClose}>×</Text>
+                                <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                             </Pressable>
                         </View>
-
+                        {!!selectedItem && (
+                            <Text style={styles.sheetDate}>
+                                {recordModalDateLabel(selectedItem.date, i18n.language)}
+                            </Text>
+                        )}
                         {selectedItem && (
                             <View style={styles.weekRow}>
                                 {weekdayLabels(i18n.language).map((w, idx) => {
@@ -820,22 +1087,43 @@ export default function HomeScreen({ navigation }: Props) {
 
                                     return (
                                         <View key={w} style={[styles.weekChip, active ? styles.weekChipActive : null]}>
-                                            <Text style={styles.weekChipText}>{w}</Text>
+                                            <Text style={[styles.weekChipText, active ? styles.weekChipTextActive : null]}>{w}</Text>
                                         </View>
                                     );
                                 })}
                             </View>
                         )}
+                        <View style={styles.recordIntroWrap}>
+                            <View style={styles.speechBubble}>
+                                <View style={styles.speechDesc}>
+                                    <Text style={styles.speechBubbleText}>
+                                        {t("modal.desc1")}{"\n"}
+                                        {t("modal.desc2")}
+                                    </Text>
+                                </View>
+                                <View style={styles.speechBubbleTail} />
+                            </View>
 
-                        <Text style={styles.sheetDesc}>{t("modal.desc1")}{"\n"}{t("modal.desc2")}</Text>
-
+                            <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.recordMascot} resizeMode="contain" />
+                        </View>
                         <Pressable style={styles.sheetPrimary} onPress={handleRecord}>
                             <Text style={styles.sheetPrimaryText}>{t("common.record")}</Text>
                         </Pressable>
                     </Pressable>
                 </Pressable>
             </Modal>
-
+            {recordStage === "preparing" && (
+                <View style={styles.preparingOverlay} pointerEvents="auto">
+                    <View style={styles.preparingContent}>
+                        <PreparingDots />
+                        <Text style={styles.preparingTitle}>{t("modal.questionsPreparingTitle")}</Text>
+                        <Text style={styles.preparingDesc}>
+                            {t("modal.questionsPreparingDesc1")}{"\n"}
+                            {t("modal.questionsPreparingDesc2")}
+                        </Text>
+                    </View>
+                </View>
+            )}
             {/* 로그인 유도 팝업 */}			
             <Modal visible={loginGateOpen} transparent animationType="fade" onRequestClose={() => setLoginGateOpen(false)} >
                 <Pressable style={styles.backdrop} onPress={() => setLoginGateOpen(false)} >
