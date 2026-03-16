@@ -42,6 +42,10 @@ export const styles = StyleSheet.create({
 	logoutBtn: { width: 200, height: 60, borderRadius: tokens.radius.r10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", },
 	logoutText: { fontSize: 18, fontWeight: "700", fontFamily: tokens.typography.fontFamily, color: "#fff", },
 	
+	// 회원탈퇴
+	withdrawBtn: { marginTop: 16, alignItems: "center", justifyContent: "center", }, 
+	withdrawText: { fontSize: 18, fontWeight: "500", color: "#A2A2A2", textDecorationLine: "underline", },
+
 	modalBackdrop: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 46, },
 	modalCard: { width: "100%", maxWidth: 340, backgroundColor: "#fff", borderRadius: 20, paddingTop: 12, paddingHorizontal: 10, paddingBottom: 36, position: "relative", alignItems: "center", },
 	modalClose: { position: "absolute", top: 16, right: 16, zIndex: 2, width: 40, height: 40, alignItems: "center", justifyContent: "center", },

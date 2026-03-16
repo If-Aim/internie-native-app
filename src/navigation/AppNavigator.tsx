@@ -7,7 +7,7 @@ import AuthNavigator from "./AuthNavigator";
 import StudentNavigator from "./StudentNavigator";
 import OnboardingScreen from "../screens/login/OnBoardingScreen";
 
-import { getAccessToken, clearAccessToken } from "../auth/tokenStorage";
+import { getAccessToken, clearAccessToken, getOnboardingCompleted } from "../auth/tokenStorage";
 import { getUserMe, isOnboardingDone } from "../api/client";
 
 export type RootStackParamList = {
@@ -28,6 +28,18 @@ export default function AppNavigator() {
 
                 if (!token) {
                     setInitialRouteName("Auth");
+                    return;
+                }
+
+                const onboardingCompleted = await getOnboardingCompleted();
+
+                if (onboardingCompleted === true) {
+                    setInitialRouteName("Student");
+                    return;
+                }
+
+                if (onboardingCompleted === false) {
+                    setInitialRouteName("Onboarding");
                     return;
                 }
 

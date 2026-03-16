@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, Pressable, Image, Modal, ActivityIndicator, Fla
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BlurView } from "@react-native-community/blur";
 
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -439,6 +440,7 @@ function MonthPickerModal({
         </Modal>
     );
 }
+
 function MonthFilterSheet({
     open,
     valueYm,
@@ -471,6 +473,12 @@ function MonthFilterSheet({
     return (
         <>
             <View style={commonStyles.periodSheetBackdrop}>
+                <BlurView
+                    style={StyleSheet.absoluteFillObject}
+                    blurType="dark"
+                    blurAmount={5}
+                    reducedTransparencyFallbackColor="rgba(0,0,0,0.5)"
+                /> 
                 <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
                 <View style={commonStyles.periodSheet}>
                     <View style={commonStyles.periodSheetHeader}>

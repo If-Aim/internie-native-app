@@ -225,6 +225,31 @@ export async function logout(): Promise<void> {
 
     await clearAccessToken().catch(() => {});
 }
+
+/** 회원 탈퇴(삭제) */
+export async function deleteMyAccount(): Promise<void> {
+    const token = await getAccessToken();
+    if (!token) {
+        throw new ApiError(401, "액세스 토큰 없음");
+    }
+
+    const authToken = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+    const res = await fetch(buildUrl("/auth/me"), {
+        method: "DELETE",
+        headers: {
+            Authorization: authToken,
+        },
+        credentials: "include",
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
+    }
+
+    await clearAccessToken().catch(() => {});
+}
+
 export function routeAfterLoginFromLogin(
     login: LoginResponse
 ): "Student" | "Onboarding" {

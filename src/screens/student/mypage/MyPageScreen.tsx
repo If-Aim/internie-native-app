@@ -10,7 +10,7 @@ import { BlurView } from "@react-native-community/blur";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
-import { getUserMe, logout, getEventDaysByMonth, type UserMe, type EventDay, } from "../../../api/client";
+import { getUserMe, logout, getEventDaysByMonth, type UserMe, type EventDay, deleteMyAccount } from "../../../api/client";
 
 import { styles } from "./MyPage.style";
 import { commonStyles } from "../../../theme/common.Style";
@@ -172,7 +172,7 @@ export default function MyPageScreen({ navigation }: Props) {
         }
     }, []);
 
-    const handleLogout = React.useCallback(async () => {
+    const handleLogout = React.useCallback(async () => { // 로그아웃 
         try {
             await logout();
         } catch (error) {
@@ -181,6 +181,40 @@ export default function MyPageScreen({ navigation }: Props) {
         }
     }, [navigation]);
 
+    const handleDeleteAccount = React.useCallback(async () => { // 회원탈퇴
+        try {
+            await deleteMyAccount();
+            Alert.alert(
+                isKo ? "회원 탈퇴 완료" : "Account deleted",
+                isKo ? "회원 탈퇴가 완료되었습니다." : "Your account has been deleted."
+            );
+            navigation.getParent()?.navigate("Auth" as never);
+        } catch (error: any) {
+            Alert.alert(
+                isKo ? "회원 탈퇴 실패" : "Delete failed",
+                isKo ? "회원 탈퇴 중 문제가 발생했습니다." : "There was a problem deleting your account."
+            );
+        }
+    }, [navigation, isKo]);
+
+    const confirmDeleteAccount = React.useCallback(() => {
+        Alert.alert(
+            isKo ? "회원 탈퇴" : "Delete account",
+            isKo ? "정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다." : "Are you sure you want to delete your account?\nThis action cannot be undone.",
+            [
+                {
+                    text: isKo ? "취소" : "Cancel",
+                    style: "cancel",
+                },
+                {
+                    text: isKo ? "회원탈퇴" : "Delete",
+                    style: "destructive",
+                    onPress: handleDeleteAccount,
+                },
+            ]
+        );
+    }, [handleDeleteAccount, isKo]);
+    
     const goReVerify = React.useCallback(() => {
         setShowRejectModal(false);
         navigation.navigate("SchoolVerify");
@@ -315,6 +349,11 @@ export default function MyPageScreen({ navigation }: Props) {
                 <View style={styles.logoutDock} pointerEvents="box-none">
                     <Pressable style={styles.logoutBtn} onPress={handleLogout}>
                         <Text style={styles.logoutText}>{t("mypage.logout")}</Text>
+                    </Pressable>
+                    <Pressable style={styles.withdrawBtn} onPress={confirmDeleteAccount}>
+                        <Text style={styles.withdrawText}>
+                            {isKo ? "회원탈퇴" : "Delete account"}
+                        </Text>
                     </Pressable>
                 </View>
             </ScrollView>

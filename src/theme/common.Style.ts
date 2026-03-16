@@ -107,7 +107,7 @@ export const commonStyles = StyleSheet.create({
 	recordBtnEnabledText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: tokens.typography.fontFamily, },
 
 	// ====== 기간 선택 ======
-	periodSheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: tokens.colors.overlay50, zIndex: 99999, justifyContent: "flex-end", },
+	periodSheetBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 99999, justifyContent: "flex-end", },
 	periodSheet: { width: "100%", maxWidth: 520, alignSelf: "center", backgroundColor: "#fff", borderTopLeftRadius: 10, borderTopRightRadius: 10, paddingTop: 23, paddingHorizontal: 12, paddingBottom: 53, ...(tokens.shadow.sheet as any), },
 	periodSheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 5, paddingLeft: 20, },
 	periodSheetTitle: { fontSize: 24, fontWeight: "700", letterSpacing: -0.02 as any, fontFamily: tokens.typography.fontFamily, }, 
