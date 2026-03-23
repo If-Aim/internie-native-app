@@ -422,7 +422,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 setIsMicOn(true);
 
                 autoStopTimerRef.current = setTimeout(() => {
-                    void stopRecordingAndUpload();
+                    stopRecordingAndUpload().catch(console.error);
                 }, AUTO_STOP_MS);
             } catch (err) {
                 console.error("마이크 접근 실패", err);
@@ -611,7 +611,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                             micLocked
                                         }
                                         onPress={() => {
-                                            void stopRecordingAndUpload();
+                                            stopRecordingAndUpload().catch(console.error);
                                         }}
                                         accessibilityLabel={t("questions.micStop", {
                                             defaultValue: "녹음 종료",
@@ -656,7 +656,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                             인터니가 답변을 분석 중이에요!{"\n"}
                             완료까지 약 5분 정도 소요될 수 있어요
                         </Text>
-                        <View style={{ height: 18 }} />
+                        <View style={styles.completionMargin} />
                         <ActivityIndicator />
                     </View>
                 </View>

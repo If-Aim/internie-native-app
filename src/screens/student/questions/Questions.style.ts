@@ -58,6 +58,7 @@ export const styles = StyleSheet.create({
     completionContent: { width: "100%", alignItems: "center", justifyContent: "center", marginTop: 220 },
     completionTitle: { fontSize: 24, fontWeight: "700", color: tokens.colors.ink, lineHeight: 30, marginBottom: 21, fontFamily: tokens.typography.fontFamily },
     completionDesc: { marginTop: 0, fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 28, textAlign: "center", fontFamily: tokens.typography.fontFamily },
+    completionMargin: { height: 18 },
 
     loadingDots: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 20 },
     loadingDot: { width: 12, height: 12, borderRadius: 999, backgroundColor: tokens.colors.primary, marginHorizontal: 5.5 },

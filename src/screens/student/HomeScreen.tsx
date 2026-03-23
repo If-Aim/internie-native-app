@@ -739,12 +739,12 @@ export default function HomeScreen({ navigation }: Props) {
 		return entries as Array<[string, ScheduleItem[]]>;
 	}, [items, sortOrder]);
 
-	const hasItems = byDate.length > 0;
+	// const hasItems = byDate.length > 0;
 	const isSelectedLocked = !!selectedItem?.isLocked;
 	const canRecord = !!selectedItem && !isSelectedLocked;
 
 	const [loginGateOpen, setLoginGateOpen] = React.useState(false);
-	const [pendingRouteName, setPendingRouteName] = React.useState<string | null>(null);
+	const [/*pendingRouteName*/, setPendingRouteName] = React.useState<string | null>(null);
 	const [recordStage, setRecordStage] = React.useState<"idle" | "preparing">("idle");
     
     const loadMonthData = React.useCallback(async () => {

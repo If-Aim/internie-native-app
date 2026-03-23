@@ -102,7 +102,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
     }, [loadJumpOrganizations]);
 
     React.useEffect(() => {
-        void loadMe();
+        loadMe().catch(console.error);
     }, [loadMe]);
 
     const submit = React.useCallback(async () => {
@@ -189,7 +189,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
         (isJumpVerified ? !jumpOrganizationId : !code.trim());
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+        <SafeAreaView style={userModifyStyles.vcsSafeAreaView}>
             <Header onPreviousClick={() => navigation.goBack()}/>
             <Screen style={[userModifyStyles.verifyScreen,]}>
                 <View style={userModifyStyles.verifyField}>
@@ -286,7 +286,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                             userModifyStyles.saveBtn,
                             doneDisabled && userModifyStyles.profileEditSaveDisabled,
                         ]}
-                        onPress={() => void handlePressDone()}
+                        onPress={() => {handlePressDone().catch(console.error)}}
                         disabled={doneDisabled}
                     >
                         <Text style={[ userModifyStyles.verifySaveBtnText, doneDisabled && userModifyStyles.verifySaveBtnTextDisabled, ]} >

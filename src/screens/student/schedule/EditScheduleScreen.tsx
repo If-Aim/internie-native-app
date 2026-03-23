@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import { View, Text, Pressable, Image, TextInput, ScrollView, Modal, Alert, } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api, ApiError, deleteEvent, deleteEventDay } from "../../../api/client";
 import { styles } from "./Schedule.style";
@@ -90,7 +91,7 @@ function TimeSheet({
                         <Text style={styles.sheetTitle}>{t("common.time")}</Text>
 
                         <Pressable style={styles.sheetCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
-                            <Image source={require("../../../assets/icons/x-01.png")} style={{ width: 24, height: 24 }} />
+                            <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                         </Pressable>
                     </View>
 
@@ -236,7 +237,7 @@ function CalendarRange({
 
     React.useEffect(() => {
         setCursor(new Date(s.getFullYear(), s.getMonth(), 1));
-    }, [s.getFullYear(), s.getMonth()]);
+    }, [s]);
 
     React.useEffect(() => {
         if (mode === "range") setFocus("start");
@@ -304,7 +305,7 @@ function CalendarRange({
             <View style={styles.calHeader}>
                 <View style={styles.calHeaderTop}>
                     <Pressable style={styles.calCloseBtn} onPress={onClose} accessibilityLabel={t("common.close", "닫기")} >
-                        <Image source={require("../../../assets/icons/x-01.png")} style={{ width: 24, height: 24 }} />
+                        <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                     </Pressable>
                 </View>
 
@@ -313,11 +314,11 @@ function CalendarRange({
 
                     <View style={styles.calNav}>
                         <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, -1))} accessibilityLabel="prev month" >
-                            <Image source={require("../../../assets/icons/Previous (Stroke).png")} style={{ width: 8, height: 14 }} resizeMode="contain" />
+                            <Image source={require("../../../assets/icons/Previous (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
 
                         <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, 1))} accessibilityLabel="next month" > 
-                            <Image source={require("../../../assets/icons/Next (Stroke).png")} style={{ width: 8, height: 14 }} resizeMode="contain" />
+                            <Image source={require("../../../assets/icons/Next (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
                     </View>
                 </View>
@@ -504,6 +505,7 @@ export default function EditScheduleScreen(): React.ReactElement {
                 setIsAllDay(false);
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isSingleDay]);
 
     const hasTime = startTime !== null && endTime !== null;
@@ -905,14 +907,14 @@ export default function EditScheduleScreen(): React.ReactElement {
     }
 
     return (
-        <View style={styles.screen}>
+        <SafeAreaView style={styles.screen}>
             <View style={styles.topbarMain}>
                 <View style={commonStyles.icon24} />
 
                 <Text style={styles.topbarTitle}>{t("schedule_edit.title")}</Text>
 
                 <Pressable style={styles.iconBtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
-                    <Image source={require("../../../assets/icons/x-01.png")} style={{ width: 24, height: 24 }} />
+                    <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                 </Pressable>
             </View>
 
@@ -1063,6 +1065,6 @@ export default function EditScheduleScreen(): React.ReactElement {
                     onClose={() => setShowDateRangeSheet(false)}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
 }

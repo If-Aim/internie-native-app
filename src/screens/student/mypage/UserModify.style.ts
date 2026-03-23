@@ -6,6 +6,7 @@ export const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: "#F0F6FF", }, 
     scroll:{ flex: 1, },
     headerLeftSpace: { width: 24, height: 24, }, 
+    vcsSafeAreaView:{ flex: 1, backgroundColor: "#FFFFFF" },
 
     loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", },
     headerTitle: { fontSize: 18, fontWeight: "700",  fontFamily: tokens.typography.fontFamily, color: tokens.colors.ink, },
@@ -28,6 +29,7 @@ export const styles = StyleSheet.create({
     inputReadonly: { backgroundColor: "rgba(255,255,255,0.7)", color: "#9AA3AF", }, 
 
     bottom: { paddingBottom: 53, },
+    bottomMargin: { height: 30, },
     saveBtn: { height: 60, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#0166FF", },
     saveBtnDisabled: { backgroundColor: "#F1F1F1", }, 
     saveBtnText: { fontSize: 18, fontWeight: "700", fontFamily: tokens.typography.fontFamily, color: "#fff", },

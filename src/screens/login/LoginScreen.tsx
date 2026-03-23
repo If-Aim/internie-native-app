@@ -74,7 +74,7 @@ export default function LoginScreen(_props: Props) {
 				<Image source={require("../../assets/logo/internie_Logo.png")} style={styles.logo} resizeMode="contain" />
 				<Pressable style={styles.kakaoBtn} onPress={onPressKakao}>
 					<View style={styles.kakaoIco}>
-						<Image source={require("../../assets/logo/kakao_Logo.png")} style={{ width: 20, height: 20 }} resizeMode="contain" />
+						<Image source={require("../../assets/logo/kakao_Logo.png")} style={styles.kakaoIcoImg} resizeMode="contain" />
 					</View>
 					<Text style={styles.kakaoText}>{t("login.startWithKakao")}</Text>
 				</Pressable>

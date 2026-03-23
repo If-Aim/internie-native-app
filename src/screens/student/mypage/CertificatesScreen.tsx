@@ -146,7 +146,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
         return () => {
             mounted = false;
         };
-    }, []);
+    }, );
 
     React.useEffect(() => {
         if (items.length === 0) return;
@@ -222,7 +222,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                             onPress: async () => {
                                 try {
                                     await FileViewer.open(openPath, { showOpenWithDialog: true });
-                                } catch (e) {
+                                } catch {
                                     Alert.alert("미리보기 실패", "파일을 열 수 없습니다.");
                                 }
                             },
@@ -255,7 +255,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
             } finally {
                 setDownloadingId(null);
             }
-        }, [downloadingId]
+        }, [downloadingId, t]
     );
 
 
@@ -312,7 +312,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                                     </View>
 
                                     <View style={styles.actions}>
-                                        <Pressable style={styles.iconBtn} onPress={() => void handleDownload(item)} disabled={isDownloading} >
+                                        <Pressable style={styles.iconBtn} onPress={() => {handleDownload(item).catch(console.error);}} disabled={isDownloading} >
                                         <Image
                                             source={
                                             isDownloading

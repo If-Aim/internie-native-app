@@ -73,7 +73,7 @@ export default function UserModifyScreen({ navigation }: Props) {
     const [previewUri, setPreviewUri] = React.useState<string | null>(null);
 
     const [saving, setSaving] = React.useState(false);
-    const [avatarVersion, setAvatarVersion] = React.useState<number>(0);
+    const [/*avatarVersion*/, setAvatarVersion] = React.useState<number>(0);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -291,7 +291,7 @@ export default function UserModifyScreen({ navigation }: Props) {
                     </View>
                 </View>
 
-                <View style={{ height: 30 }} />
+                <View style={styles.bottomMargin} />
                 <View style={styles.bottom}>
                     <Pressable style={[ styles.saveBtn, (!isDirty || saving) ? styles.saveBtnDisabled : null, ]} onPress={onSave} disabled={!isDirty || saving} >
                         <Text style={[ styles.saveBtnText, (!isDirty || saving) ? styles.saveBtnTextDisabled : null, ]} >

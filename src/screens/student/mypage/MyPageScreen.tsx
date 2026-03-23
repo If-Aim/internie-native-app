@@ -18,9 +18,6 @@ import { commonStyles } from "../../../theme/common.Style";
 type Props = NativeStackScreenProps<StudentStackParamList, "MyPage">;
 type VerifyStatus = "UNVERIFIED" | "PENDING" | "APPROVED" | "REJECTED";
 
-function isHttp(url: string) {
-    return /^https?:\/\//i.test(url);
-}
 // 프로필 사진 관련
 function getApiOrigin(url: string) {
     return url.replace(/\/+$/, "").replace(/\/api$/, "");
@@ -97,7 +94,7 @@ export default function MyPageScreen({ navigation }: Props) {
 
     const [me, setMe] = React.useState<UserMe | null>(null);
     const [showRejectModal, setShowRejectModal] = React.useState(false);
-    const [recent, setRecent] = React.useState<EventDay[]>([]);
+    const [/*recent*/, setRecent] = React.useState<EventDay[]>([]);
 
     const displayName = me?.name ?? "";
     const status = (me?.status ?? "UNVERIFIED") as VerifyStatus;
@@ -116,12 +113,12 @@ export default function MyPageScreen({ navigation }: Props) {
         }
 
         return t("mypage_verifyUi.required");
-    }, [status, schoolName]);
+    }, [status, schoolName, t]);
 
 	const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
     const handleServicePreparing = React.useCallback(() => {
         Alert.alert(isKo ? "서비스 준비중입니다.": "Coming Soon");
-    }, []);
+    }, [isKo]);
 
     const verifyUi = React.useMemo(() => {
         switch (status) {
@@ -151,7 +148,7 @@ export default function MyPageScreen({ navigation }: Props) {
                     onPress: () => navigation.navigate("SchoolVerify"),
                 };
         }
-    }, [status, navigation, handleServicePreparing]);
+    }, [status, navigation, handleServicePreparing, t]);
 
     const loadMe = React.useCallback(async () => {
         try {
@@ -167,7 +164,7 @@ export default function MyPageScreen({ navigation }: Props) {
             await AsyncStorage.setItem(lastStatusKey, res.status ?? "");
             setMe(res);
 
-        } catch (error) {
+        } catch {
             setMe(null);
         }
     }, []);
@@ -175,7 +172,7 @@ export default function MyPageScreen({ navigation }: Props) {
     const handleLogout = React.useCallback(async () => { // 로그아웃 
         try {
             await logout();
-        } catch (error) {
+        } catch {
         } finally {
             navigation.getParent()?.navigate("Auth" as never);
         }
@@ -189,7 +186,7 @@ export default function MyPageScreen({ navigation }: Props) {
                 isKo ? "회원 탈퇴가 완료되었습니다." : "Your account has been deleted."
             );
             navigation.getParent()?.navigate("Auth" as never);
-        } catch (error: any) {
+        } catch {
             Alert.alert(
                 isKo ? "회원 탈퇴 실패" : "Delete failed",
                 isKo ? "회원 탈퇴 중 문제가 발생했습니다." : "There was a problem deleting your account."
@@ -228,7 +225,7 @@ export default function MyPageScreen({ navigation }: Props) {
     React.useEffect(() => {
         if (!isFocused) return;
 
-        void loadMe();
+        loadMe().catch(console.error);
     }, [isFocused, loadMe]);
 
     React.useEffect(() => {
@@ -266,7 +263,7 @@ export default function MyPageScreen({ navigation }: Props) {
 
                 if (!mounted) return;
                 setRecent(recorded.slice(0, 2));
-            } catch (error) {
+            } catch {
                 if (!mounted) return;
                 setRecent([]);
             }
@@ -344,7 +341,7 @@ export default function MyPageScreen({ navigation }: Props) {
                         </Pressable>
                     </View>
 
-                    <View style={{ height: 30 }} />
+                    <View style={styles.menuBotMargin} />
                 </View>
                 <View style={styles.logoutDock} pointerEvents="box-none">
                     <Pressable style={styles.logoutBtn} onPress={handleLogout}>

@@ -37,15 +37,15 @@ export const styles = StyleSheet.create({
 	/* Card */
 	cardOuter: { marginBottom: 11, },
 	cardShadowWrap: { borderRadius: tokens.radius.r10, backgroundColor: "#fff", /*...(tokens.shadow.card as any)*/ },
-	card: { borderRadius: tokens.radius.r10, paddingTop: 19, paddingBottom: 16, paddingLeft: 24, paddingRight: 44, backgroundColor: "#fff", position: "relative", },
+	card: { borderRadius: tokens.radius.r10, height: 80, paddingTop: 19, paddingBottom: 16, paddingLeft: 24, paddingRight: 44, backgroundColor: "#fff", position: "relative", },
 	cardSelectedOutline: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderWidth: 2, borderColor: tokens.colors.primary ?? tokens.colors.ink, borderRadius: tokens.radius.r10, pointerEvents: "none", },
 	cardLocked: { borderRadius: tokens.radius.r10, },
-	cardRow: { flexDirection: "row", alignItems: "center", },
+	cardRow: { flexDirection: "row", alignItems: "center", justifyContent: "center",},
 	thumb: { width: 28, height: 28, borderRadius: 5, backgroundColor: "#E3E3E3", marginRight: 25, },
 	thumbSelected: { backgroundColor: tokens.colors.primary, },
-	cardTextWrap: { flex: 1, flexDirection: "column", },
-	cardTitle: { fontSize: 18, fontWeight: "800", color: tokens.colors.ink, }, 
-	cardSub: { marginTop: 5, fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", },
+	cardTextWrap: { flex: 1, flexDirection: "column", justifyContent: "center",},
+	cardTitle: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, lineHeight: 20, }, 
+	cardSub: { marginTop: 5, fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 20, },
 	
 	/* 카드 우측 chevron(편집/이동) */
 	editBtn: { position: "absolute", right: 0, top: 0, bottom: 0, width: 44, alignItems: "center", justifyContent: "center", },
@@ -68,8 +68,8 @@ export const styles = StyleSheet.create({
 	sheetClose: { fontSize: 24, lineHeight: 24, color: tokens.colors.ink, },
 	sheetDesc: { marginTop: 16, marginBottom: 18, fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", textAlign: "center", lineHeight: 24,  },
 	sheetPrimary: { height: 60, borderRadius: 10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", marginHorizontal: 10, },
-	sheetPrimaryText: { fontSize: 18, fontWeight: "700", color: "#fff",  },
-	sheetDate: { fontSize: 18, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 20, textAlign: "center", marginBottom: 16 },
+	sheetPrimaryText: { fontSize: 16, fontWeight: "700", color: "#fff",  },
+	sheetDate: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 20, textAlign: "center", marginBottom: 16 },
 	
 	/* Record Modal - weekday chips */
     weekRow: { flexDirection: "row", justifyContent: "center", paddingTop: 1, paddingBottom: 14 },

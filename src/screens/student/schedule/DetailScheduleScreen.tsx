@@ -34,7 +34,28 @@ function applyExperienceName(q: string, title: string) {
     if (!q.includes("(@experience_name)")) return q;
     return q.replaceAll("(@experience_name)", title);
 }
+function Header({
+    title,
+    onCloseClick,
+}: {
+    title: string;
+    onCloseClick: () => void;
+}) {
+    return (
+        <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
+            <View style={commonStyles.iconbtn} />
 
+            <Text numberOfLines={1} style={styles.detailTopbarTitle}>{title}</Text>
+
+            <Pressable style={commonStyles.iconbtn} onPress={onCloseClick}>
+                <Image
+                    source={require("../../../assets/icons/x-01.png")}
+                    style={commonStyles.icon24}
+                />
+            </Pressable>
+        </View>
+    );
+}
 export default function DetailScheduleScreen(): React.ReactElement {
     const { t, i18n } = useTranslation();
     const navigation = useNavigation();
@@ -55,26 +76,7 @@ export default function DetailScheduleScreen(): React.ReactElement {
     const [slides, setSlides] = React.useState<SlideItem[]>([]);
     const [page, setPage] = React.useState(0);
 
-    function Header({
-        onCloseClick,
-    }: {
-        onCloseClick: () => void;
-    }) {
-        return (
-            <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
-                <View style={commonStyles.icon24} />
 
-                <Text numberOfLines={1} style={styles.detailTopbarTitle}>{title}</Text>
-
-                <Pressable style={commonStyles.iconbtn} onPress={onCloseClick}>
-                    <Image
-                        source={require("../../../assets/icons/x-01.png")}
-                        style={commonStyles.icon24}
-                    />
-                </Pressable>
-            </View>
-        );
-    }
     
     React.useEffect(() => {
         (async () => {
@@ -124,8 +126,6 @@ export default function DetailScheduleScreen(): React.ReactElement {
         [slides]
     );
 
-    const close = () => navigation.goBack();
-
     const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const x = e.nativeEvent.contentOffset.x;
         const step = Math.max(1, width - 40);
@@ -136,7 +136,7 @@ export default function DetailScheduleScreen(): React.ReactElement {
 
     return (
         <SafeAreaView style={commonStyles.appRoot}>
-            <Header onCloseClick={() => navigation.goBack()} />
+            <Header title={title} onCloseClick={() => navigation.goBack()} />
                 <View style={styles.detailBody}>
                 <View
                     style={[
@@ -195,7 +195,7 @@ export default function DetailScheduleScreen(): React.ReactElement {
 
                 {!loading && !error && hasAnyAnswer && (
                     <ScrollView
-                        style={{paddingBottom: 10,}}
+                        style={styles.detailScrollView}
                         horizontal
                         pagingEnabled={false}
                         decelerationRate={0.999}

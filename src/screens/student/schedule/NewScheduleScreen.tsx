@@ -9,6 +9,7 @@ import { commonStyles } from "../../../theme/common.Style";
 
 import { TIME_OPTIONS, WEEK_LABELS, toApiHHmmss, displayTimeLabel, toYmd, stripTime, getTimeIndex, displayTimePillLabel, isSameDay, addMonths, getMonthGrid, } from "./scheduleUtils";
 import type { RangeSheetMode, TimeSheetProps, DateRangeSheetProps, } from "./scheduleTypes";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 function TimeSheet({
@@ -36,15 +37,8 @@ function TimeSheet({
                     <View style={styles.sheetHeader}>
                         <Text style={styles.sheetTitle}>{t("common.time")}</Text>
 
-                        <Pressable
-                            style={styles.sheetCloseBtn}
-                            accessibilityLabel={t("common.close")}
-                            onPress={onClose}
-                        >
-                            <Image
-                                source={require("../../../assets/icons/x-01.png")}
-                                style={{ width: 24, height: 24 }}
-                            />
+                        <Pressable style={styles.sheetCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
+                            <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                         </Pressable>
                     </View>
 
@@ -257,7 +251,7 @@ function CalendarRange({
 
     React.useEffect(() => {
         setCursor(new Date(s.getFullYear(), s.getMonth(), 1));
-    }, [s.getFullYear(), s.getMonth()]);
+    }, [s]);
 
     React.useEffect(() => {
         if (mode === "range") setFocus("start");
@@ -325,7 +319,7 @@ function CalendarRange({
             <View style={styles.calHeader}>
                 <View style={styles.calHeaderTop}>
                     <Pressable style={styles.calCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
-                        <Image source={require("../../../assets/icons/x-01.png")} style={{ width: 24, height: 24 }} />
+                        <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                     </Pressable>
                 </View>
 
@@ -336,13 +330,13 @@ function CalendarRange({
                         <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, -1))} accessibilityLabel="prev month" > 
                             <Image
                                 source={require("../../../assets/icons/Previous (Stroke).png")}
-                                style={{ width: 8, height: 14 }}
+                                style={commonStyles.iconArrow}
                                 resizeMode="contain"
                             />
                         </Pressable>
 
                         <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, 1))} accessibilityLabel="next month" >
-                            <Image source={require("../../../assets/icons/Next (Stroke).png")} style={{ width: 8, height: 14 }} resizeMode="contain" />
+                            <Image source={require("../../../assets/icons/Next (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
                     </View>
                 </View>
@@ -626,14 +620,14 @@ export default function NewScheduleScreen(): React.ReactElement {
     };
 
     return (
-        <View style={styles.screen}>
+        <SafeAreaView style={styles.screen}>
             <View style={styles.topbarMain}>
                 <View style={commonStyles.icon24} />
 
                 <Text style={styles.appTitle}>{t("schedule_new.title")}</Text>
 
                 <Pressable style={styles.iconBtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
-                    <Image source={require("../../../assets/icons/x-01.png")} style={{ width: 24, height: 24 }} />
+                    <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                 </Pressable>
             </View>
 
@@ -760,7 +754,7 @@ export default function NewScheduleScreen(): React.ReactElement {
                     />
                 </View>
 
-                <View style={{ height: 140 }} />
+                <View style={commonStyles.bottomSpacer} />
             </ScrollView>
 
             <View style={styles.footerFixed}>
@@ -806,6 +800,6 @@ export default function NewScheduleScreen(): React.ReactElement {
                     onClose={() => setShowDateRangeSheet(false)}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
 }

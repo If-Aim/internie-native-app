@@ -1,6 +1,6 @@
 // src/screens/student/mypage/MyPage.style.ts
 import { StyleSheet } from "react-native";
-import { commonStyles, tokens } from "../../../theme/common.Style";
+import { tokens } from "../../../theme/common.Style";
 
 export const styles = StyleSheet.create({
 	container: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 160, flexGrow: 1, },
@@ -30,7 +30,8 @@ export const styles = StyleSheet.create({
 	menu: { marginTop: 25, paddingHorizontal: 17, width: "100%", gap: 10, },
 	menuItem: { height: 60, paddingHorizontal: 18, backgroundColor: "#fff", borderRadius: tokens.radius.r10, flexDirection: "row", alignItems: "center", justifyContent: "space-between",},
 	menuTitle: { fontSize: 18, fontWeight: "bold", fontFamily: tokens.typography.fontFamily, color: tokens.colors.ink, },
-	menuRight: { flexDirection: "row", alignItems: "center", gap: 5, },
+	menuRight: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "flex-end",},
+	menuBotMargin: { height:30, flexDirection: "row", alignItems: "center", gap: 5, },
 	menuValue: { fontSize: 14, fontWeight: "600",fontFamily: tokens.typography.fontFamily, color: "#A2A2A2", },
 	menuChevron: { width: 24, height: 24, transform: [{ rotate: "-90deg" }], },
 

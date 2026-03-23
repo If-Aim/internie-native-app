@@ -30,7 +30,7 @@ export const styles = StyleSheet.create({
     subtitle: { minHeight: 16, fontSize: 14, color: "#888", fontWeight: "500", fontFamily: tokens.typography.fontFamily, },
 
     newEvent: { flexGrow: 1, minHeight: 0, paddingRight: 36, paddingBottom: 240, paddingLeft: 36, }, 
-    titleInput: { width: "100%", borderWidth: 0, backgroundColor: "#fff", borderRadius: 10, paddingTop: 16, paddingBottom: 14, paddingHorizontal: 21, fontSize: 22, lineHeight: 23, color: tokens.colors.ink, marginTop: 19, marginBottom: 21, fontWeight: "600", fontFamily: tokens.typography.fontFamily, },
+    titleInput: { width: "100%", height: 48, borderWidth: 0, backgroundColor: "#fff", borderRadius: 10, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 21, fontSize: 20, lineHeight: 24, color: tokens.colors.ink, marginTop: 19, marginBottom: 21, fontWeight: "600", fontFamily: tokens.typography.fontFamily, },
     row: { height: 44, flexDirection: "row", alignItems: "center", gap: 16 as any, padding: 0, }, 
     rowCol: { flex: 1, alignSelf: "stretch", flexDirection: "column", justifyContent: "flex-end", },
     rowHead: { flexDirection: "row", alignItems: "center", gap: 15 as any, },
@@ -145,7 +145,8 @@ export const styles = StyleSheet.create({
 
     detailBody: { paddingTop: 17, paddingBottom: 24, },
     detailSingleWrap: { paddingHorizontal: 20, }, 
-    detailPage: { justifyContent: "center", alignItems: "center", },
+    detailPage: { justifyContent: "center", alignItems: "center", paddingTop: 4,},
+    detailScrollView: { paddingBottom: 10,},
 
     detailCard: { width: "100%", minHeight: 450, backgroundColor: "#fff", borderRadius: 10, ...(tokens.shadow.card as any), }, 
     qaWrap: { minHeight: 450, flexDirection: "column", gap: 21 as any,  paddingTop: 30,paddingRight: 18, paddingBottom: 17, paddingLeft: 22, }, 
@@ -156,7 +157,7 @@ export const styles = StyleSheet.create({
     detailEmpty: { fontSize: 12, fontWeight: "500", color: "#979797", fontFamily: tokens.typography.fontFamily, },
     muted: { color: "#7a7a7a", fontFamily: tokens.typography.fontFamily, },
 
-    detailDots: { flexDirection: "row", justifyContent: "center", minHeight: 10, marginBottom: 34, gap: 12 as any, },
+    detailDots: { flexDirection: "row", justifyContent: "center", minHeight: 10, marginBottom: 30, gap: 12 as any, },
     detailDotsPlaceholder: { opacity: 0, },
     dot: { width: 10, height: 10, borderRadius: 9999, backgroundColor: "#D9D9D9", },
     dotActive: { backgroundColor: tokens.colors.primary, }, 

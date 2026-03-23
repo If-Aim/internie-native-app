@@ -318,7 +318,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                     : null,
                             ]}
                             disabled={!selectedSchool || submitting}
-                            onPress={() => void onNextFromSchool()}
+                            onPress={() => {onNextFromSchool().catch(console.error);}}
                         >
                             <Text style={styles.primaryBtnText}>
                                 {submitting ? "저장 중..." : "다음"}
@@ -348,11 +348,11 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                     </View>
 
                     <View style={[styles.footer, styles.footerUpload]}>
-                        <Pressable style={[styles.secondaryBtn, styles.footerBtn]} onPress={() => void pickFromLibrary()} >
+                        <Pressable style={[styles.secondaryBtn, styles.footerBtn]} onPress={() => {pickFromLibrary().catch(console.error);}} >
                             <Text style={styles.secondaryBtnText}>사진 선택하기</Text>
                         </Pressable>
 
-                        <Pressable style={[styles.primaryAltBtn, styles.footerBtn]} onPress={() => void takePhoto()} >
+                        <Pressable style={[styles.primaryAltBtn, styles.footerBtn]} onPress={() => {takePhoto().catch(console.error);}} >
                             <Text style={styles.primaryBtnText}>학생증 촬영하기</Text>
                         </Pressable>
                     </View>
@@ -397,7 +397,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                 !picked || submitting ? styles.primaryBtnDisabled : null,
                             ]}
                             disabled={!picked || submitting}
-                            onPress={() => void onSubmit()}
+                            onPress={() => {onSubmit().catch(console.error);}}
                         >
                             {submitting ? (
                                 <View style={styles.submittingRow}>

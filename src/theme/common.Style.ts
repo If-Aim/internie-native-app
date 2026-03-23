@@ -35,7 +35,7 @@ export const tokens = {
     card: Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 0 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
       },
@@ -78,6 +78,7 @@ export const commonStyles = StyleSheet.create({
 	// ====== 아이콘/버튼 공통 ======
 	iconbtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center",backgroundColor: "transparent", borderWidth: 0, padding: 0, },
 	icon24: { width: 24, height: 24, },
+	iconArrow: { width: 8, height: 14, },
 
 	// ====== topbar-main ======
 	topbarMain: { paddingTop: 11, paddingHorizontal: 12, paddingBottom: 15,  width: "100%",  }, 

@@ -8,5 +8,6 @@ export const styles = StyleSheet.create({
 	logo: { width: 183, height: 35, marginBottom: 67, },
 	kakaoBtn: { width: "100%", minWidth: 300, maxWidth: 300, flexDirection: "row", alignItems: "center", paddingVertical: 15, paddingHorizontal: 20, borderRadius: 10, backgroundColor: "#FEE500", shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, shadowOffset: { width: 0, height: 4 }, elevation: 4, },
 	kakaoIco: { width: 24, height: 24, justifyContent: "center", alignItems: "center", },
+	kakaoIcoImg: { width: 20, height: 20, },
 	kakaoText: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#111", }, 
 });

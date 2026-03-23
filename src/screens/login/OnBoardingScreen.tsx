@@ -368,7 +368,9 @@ export default function OnboardingScreen({ navigation }: Props) {
                             <>
                                 <Pressable
                                     style={styles.ghostButton}
-                                    onPress={() => void skipVerifyAndFinish()}
+                                    onPress={() => {
+                                        skipVerifyAndFinish().catch(console.error);
+                                    }}
                                     disabled={submitting}
                                 >
                                     <Text style={styles.ghostButtonText}>{t("onboarding.skip")}</Text>
@@ -379,7 +381,9 @@ export default function OnboardingScreen({ navigation }: Props) {
                                         styles.primaryButton,
                                         (submitting || !canGoStep3) && styles.primaryButtonDisabled,
                                     ]}
-                                    onPress={() => void submitAll()}
+                                    onPress={() => {
+                                        submitAll().catch(console.error);
+                                    }}
                                     disabled={submitting || !canGoStep3}
                                 >
                                     <Text
@@ -400,7 +404,9 @@ export default function OnboardingScreen({ navigation }: Props) {
                                     styles.primaryButton,
                                     (!canFinishStep4 || submitting) && styles.primaryButtonDisabled,
                                 ]}
-                                onPress={() => void finishInstitution()}
+                                onPress={() => {
+                                    finishInstitution().catch(console.error);
+                                }}
                                 disabled={!canFinishStep4 || submitting}
                             >
                                 <Text
