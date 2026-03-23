@@ -37,10 +37,10 @@ export const styles = StyleSheet.create({
 	/* Card */
 	cardOuter: { marginBottom: 11, },
 	cardShadowWrap: { borderRadius: tokens.radius.r10, backgroundColor: "#fff", /*...(tokens.shadow.card as any)*/ },
-	card: { borderRadius: tokens.radius.r10, height: 80, paddingTop: 19, paddingBottom: 16, paddingLeft: 24, paddingRight: 44, backgroundColor: "#fff", position: "relative", },
+	card: { borderRadius: tokens.radius.r10, height: 80, paddingTop: 19, paddingBottom: 16, paddingLeft: 24, paddingRight: 44, backgroundColor: "#fff", position: "relative", justifyContent: "center"},
 	cardSelectedOutline: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderWidth: 2, borderColor: tokens.colors.primary ?? tokens.colors.ink, borderRadius: tokens.radius.r10, pointerEvents: "none", },
 	cardLocked: { borderRadius: tokens.radius.r10, },
-	cardRow: { flexDirection: "row", alignItems: "center", justifyContent: "center",},
+	cardRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-start", },
 	thumb: { width: 28, height: 28, borderRadius: 5, backgroundColor: "#E3E3E3", marginRight: 25, },
 	thumbSelected: { backgroundColor: tokens.colors.primary, },
 	cardTextWrap: { flex: 1, flexDirection: "column", justifyContent: "center",},
