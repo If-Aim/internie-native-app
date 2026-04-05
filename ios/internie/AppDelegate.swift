@@ -17,7 +17,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     
-    KakaoSDK.initSDK(appKey: "b4e3bfedda9f16b18eab43d14cd00dce")
+    if let kakaoAppKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String {
+        KakaoSDK.initSDK(appKey: kakaoAppKey)
+    }
     
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)

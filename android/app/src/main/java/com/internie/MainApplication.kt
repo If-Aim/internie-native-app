@@ -6,6 +6,8 @@ import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.kakao.sdk.common.KakaoSdk
+import com.internie.kakao.KakaoLoginPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -14,8 +16,7 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
-          // Packages that cannot be autolinked yet can be added manually here, for example:
-          // add(MyReactNativePackage())
+          add(com.internie.kakao.KakaoLoginPackage())
         },
     )
   }
@@ -23,5 +24,8 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)
+    val kakaoAppKey = getString(R.string.kakao_app_key)
+    KakaoSdk.init(this, kakaoAppKey)
   }
+
 }

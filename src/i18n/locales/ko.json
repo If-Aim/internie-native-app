@@ -4,7 +4,12 @@
         "startWithKakao": "카카오로 시작하기",
         "startWithKakaoAria": "카카오로 시작하기",
         "getLoginTitle": "로그인이 필요한 서비스입니다",
-        "getLoginSub": "로그인 하시겠습니까?"
+        "getLoginSub": "로그인 하시겠습니까?",
+
+        "selectMethodTitle": "로그인 방식 선택",
+        "selectMethodDesc": "원하시는 카카오 로그인 방식을 선택해주세요.",
+        "withKakaoTalk": "카카오톡으로 로그인",
+        "withKakaoAccount": "카카오계정으로 로그인"
     },
   
     "comment_main": "기본 컴포넌트 관련",
@@ -19,7 +24,8 @@
         "save": "저장하기",
         "dateRange": "기간",
         "loading": "불러오는 중…",
-        "done": "완료"
+        "done": "완료",
+        "cancel": "취소"
     },
     "menu": {
         "mypage": "마이페이지",
