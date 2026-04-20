@@ -1,4 +1,3 @@
-// src/screens/login/Onboarding.style.ts
 import { StyleSheet } from "react-native";
 import { tokens } from "../../theme/common.Style";
 

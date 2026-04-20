@@ -1,4 +1,3 @@
-// src/screens/login/OnboardingScreen.tsx
 import React from "react";
 import { View, Text, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, FlatList, } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { Screen } from "../../components/Screen";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
-import { ApiError, getUserMe, verifyJumpUser, getMyJumpOrganizations, submitMyOnboarding, type JumpOrganization, } from "../../api/client";
+import { ApiError, getUserMe, verifyClientUser, getMyJumpOrganizations, submitMyOnboarding, type JumpOrganization, } from "../../api/client";
 import { saveOnboardingCompleted } from "../../auth/tokenStorage";
 
 import { styles } from "./OnBoarding.style";
@@ -125,7 +124,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         setCodeError(null);
 
         try {
-            await verifyJumpUser(code);
+            await verifyClientUser(code);
             setIsVerified(true);
 
             const orgs = await getMyJumpOrganizations();

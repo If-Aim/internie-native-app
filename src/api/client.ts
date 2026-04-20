@@ -46,9 +46,10 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 async function requestWithAutoRefresh(
     path: string,
     init: RequestInit = {},
-    opts?: { expectJson?: boolean }
+    opts?: { expectJson?: boolean; skipAuthRefresh?: boolean }
 ): Promise<Response> {
     const expectJson = opts?.expectJson ?? false;
+    const skipAuthRefresh = opts?.skipAuthRefresh ?? false;
 
     const makeHeaders = async (): Promise<Record<string, string>> => {
         const base = normalizeHeaders(init.headers);
@@ -80,7 +81,7 @@ async function requestWithAutoRefresh(
 
     let res = await doFetch();
 
-    if (res.status === 401 || res.status === 403) {
+    if (!skipAuthRefresh && (res.status === 401 || res.status === 403)) {
         try {
             await refreshAccessToken();
             res = await doFetch();
@@ -115,15 +116,57 @@ export async function apiPublic(
 }
 export async function api<T = unknown>(
     path: string,
-    init: RequestInit = {}
+    init: RequestInit = {},
+    opts?: { skipAuthRefresh?: boolean }
 ): Promise<T> {
-    const res = await requestWithAutoRefresh(path, init, { expectJson: true });
+    const res = await requestWithAutoRefresh(path, init, {
+        expectJson: true,
+        skipAuthRefresh: opts?.skipAuthRefresh ?? false,
+    });
 
     if (res.status === 204) return undefined as T;
 
     if (!res.ok) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("application/json")) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, `Expected JSON, got ${ct}`, bodyText);
+    }
+
+    return (await res.json()) as T;
+}
+export async function apiPublicJson<T = unknown>(
+    path: string,
+    init: RequestInit = {}
+): Promise<T> {
+    const res = await fetch(buildUrl(path), {
+        ...init,
+        credentials: "include",
+    });
+
+    if (res.status === 204) return undefined as T;
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
     }
 
     const ct = res.headers.get("content-type") ?? "";
@@ -155,16 +198,23 @@ export async function apiUpload<T = unknown>(
 
     if (!res.ok) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
     }
 
     const ct = res.headers.get("content-type") ?? "";
-    if (!ct.includes("application/json")) {
-        const bodyText = await res.text().catch(() => "");
-        return bodyText as unknown as T;
+
+    if (ct.includes("application/json")) {
+        return (await res.json()) as T;
     }
 
-    return (await res.json()) as T;
+    return (await res.text()) as unknown as T;
 }
 
 // android 카카오 로그인
@@ -186,6 +236,112 @@ export async function exchangeKakaoToken(accessToken: string): Promise<Response>
     return res;
 }
 
+// 구글 로그인
+export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
+    const res = await fetch(buildUrl("/auth/google"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    if (!auth) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No Authorization header in /auth/google response", bodyText);
+    }
+
+    await saveAccessToken(auth);
+
+    return (await res.json()) as LoginResponse;
+}
+
+// 회원가입
+export async function signup(input: SignupRequest): Promise<void> {
+    const res = await fetch(buildUrl("/auth/signup"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            loginId: input.loginId,
+            password: input.password,
+            email: input.email ?? "",
+        }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+}
+
+// 아이디 중복 확인
+export async function checkLoginIdAvailability(
+    loginId: string
+): Promise<LoginIdAvailabilityResponse> {
+    const qs = new URLSearchParams({
+        loginId: loginId.trim(),
+    }).toString();
+
+    return apiPublicJson<LoginIdAvailabilityResponse>(`/auth/login-id/check?${qs}`, {
+        method: "GET",
+    });
+}
+
+// 로컬 로그인
+export async function loginWithLocal(input: LoginRequest): Promise<LoginResponse> {
+    const res = await fetch(buildUrl("/auth/login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            loginId: input.loginId,
+            password: input.password,
+        }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    if (!auth) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No Authorization header in /auth/login response", bodyText);
+    }
+
+    await saveAccessToken(auth);
+
+    return (await res.json()) as LoginResponse;
+}
+
 // 리프레시
 export async function refreshAccessToken(): Promise<string> {
     const res = await fetch(buildUrl("/auth/refresh"), {
@@ -195,7 +351,14 @@ export async function refreshAccessToken(): Promise<string> {
 
     if (!res.ok) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
     }
 
     const newAuth =
@@ -210,6 +373,179 @@ export async function refreshAccessToken(): Promise<string> {
     await saveAccessToken(newAuth);
     return newAuth;
 }
+
+// 아이디 찾기용 이메일 전송
+export async function sendFindLoginIdCode(
+    email: string,
+    language?: string
+): Promise<FindLoginIdResponse> {
+    const res = await apiPublic("/auth/login-id/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, language }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("application/json")) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, `Expected JSON, got ${ct}`, bodyText);
+    }
+
+    return (await res.json()) as FindLoginIdResponse;
+}
+
+// 아이디 찾기 이메일 인증
+export async function verifyFindLoginIdCode(
+    email: string,
+    code: string,
+    language?: string
+): Promise<FindLoginIdResponse> {
+    const res = await apiPublic("/auth/login-id/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, language }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("application/json")) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, `Expected JSON, got ${ct}`, bodyText);
+    }
+
+    return (await res.json()) as FindLoginIdResponse;
+}
+
+// 비밀번호 재설정 인증코드 전송
+export async function sendResetPasswordCode(
+    input: SendResetPasswordCodeRequest
+): Promise<PasswordRecoveryResponse> {
+    return apiPublicJson<PasswordRecoveryResponse>("/auth/password/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            loginId: input.loginId.trim(),
+            email: input.email.trim(),
+            language: input.language,
+        }),
+    });
+}
+
+// 비밀번호 재설정 전 인증
+export async function verifyResetPasswordCode(
+    input: VerifyResetPasswordCodeRequest
+): Promise<PasswordResetVerifyResponse> {
+    return apiPublicJson<PasswordResetVerifyResponse>("/auth/password/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            loginId: input.loginId.trim(),
+            email: input.email.trim(),
+            code: input.code.trim(),
+            language: input.language,
+        }),
+    });
+}
+
+// 비밀번호 재설정
+export async function resetPasswordWithToken(
+    input: ResetPasswordRequest
+): Promise<void> {
+    await apiPublicJson<void>("/auth/password/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            loginId: input.loginId.trim(),
+            email: input.email.trim(),
+            resetToken: input.resetToken.trim(),
+            newPassword: input.newPassword,
+        }),
+    });
+}
+
+/* =========================
+            Email 
+========================= */
+// 신규 가입자 이메일 send
+export async function sendEmailCode(
+    email: string,
+    language?: string
+): Promise<SendEmailCodeResponse> {
+    return apiPublicJson<SendEmailCodeResponse>("/auth/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: email.trim(),
+            language,
+        }),
+    });
+}
+// 신규 가입자 이메일 verify
+export async function verifyEmailCode(
+    email: string,
+    code: string
+): Promise<VerifyEmailCodeResponse> {
+    return apiPublicJson<VerifyEmailCodeResponse>("/auth/email/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: email.trim(),
+            code: code.trim(),
+        }),
+    });
+}
+
+// 기존 가입자 이메일 send
+export async function sendMyEmailCode(
+    email: string,
+    language?: string
+): Promise<SendEmailCodeResponse> {
+    return api<SendEmailCodeResponse>("/users/me/email/send", {
+        method: "POST",
+        body: JSON.stringify({
+            email: email.trim(),
+            language,
+        }),
+    });
+}
+
+// 기존 가입자 이메일 verify
+export async function verifyMyEmailCode(
+    email: string,
+    code: string
+): Promise<VerifyEmailCodeResponse> {
+    return api<VerifyEmailCodeResponse>("/users/me/email/verify", {
+        method: "POST",
+        body: JSON.stringify({
+            email: email.trim(),
+            code: code.trim(),
+        }),
+    });
+}
+
 
 /** 로그아웃 */
 export async function logout(): Promise<void> {
@@ -227,26 +563,14 @@ export async function logout(): Promise<void> {
 }
 
 /** 회원 탈퇴(삭제) */
-export async function deleteMyAccount(): Promise<void> {
-    const token = await getAccessToken();
-    if (!token) {
-        throw new ApiError(401, "액세스 토큰 없음");
-    }
-
-    const authToken = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
-    const res = await fetch(buildUrl("/auth/me"), {
+export async function withdraw(input: WithdrawRequest): Promise<void> {
+    await api<void>("/auth/me", {
         method: "DELETE",
-        headers: {
-            Authorization: authToken,
-        },
-        credentials: "include",
+        body: JSON.stringify({
+            reason: input.reason,
+            detail: input.detail ?? "",
+        }),
     });
-
-    if (!res.ok) {
-        const bodyText = await res.text().catch(() => "");
-        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
-    }
-
     await clearAccessToken().catch(() => {});
 }
 
@@ -298,6 +622,89 @@ function normalizeNullableText(v: unknown): string {
 ========================= */
 export type LoginResponse = {
     onboardingCompleted: boolean;
+    linkedToExistingAccount: boolean;
+    message: string | null;
+};
+export type WithdrawRequest = {
+    reason: string;
+    detail?: string;
+};
+export type SignupRequest = {
+    loginId: string;
+    password: string;
+    email?: string;
+};
+
+export type LoginRequest = {
+    loginId: string;
+    password: string;
+};
+
+export type LoginIdAvailabilityResponse = {
+    available: boolean;
+    message: string;
+};
+
+export type EmailSendStatus = "CODE_SENT" | "EXISTING_ACCOUNT_FOUND";
+export type ExistingAccountType = "LOCAL" | "GOOGLE" | "KAKAO" | "UNKNOWN";
+
+export type SendEmailCodeResponse = {
+    status: EmailSendStatus;
+    maskedEmail: string;
+    existingAccountType: ExistingAccountType | null;
+};
+
+export type VerifyEmailCodeResponse = {
+    verified: boolean;
+    existingAccountFound: boolean;
+    maskedEmail: string;
+};
+
+export type FindLoginIdCodeRequest = {
+    email: string;
+    language?: string;
+};
+
+export type FindLoginIdVerifyRequest = {
+    email: string;
+    code: string;
+    language?: string;
+};
+
+export type FindLoginIdResponse = {
+    maskedEmail: string;
+    message: string;
+};
+
+export type SendResetPasswordCodeRequest = {
+    loginId: string;
+    email: string;
+    language?: string;
+};
+
+export type VerifyResetPasswordCodeRequest = {
+    loginId: string;
+    email: string;
+    code: string;
+    language?: string;
+};
+
+export type ResetPasswordRequest = {
+    loginId: string;
+    email: string;
+    resetToken: string;
+    newPassword: string;
+};
+
+export type PasswordRecoveryResponse = {
+    maskedEmail: string;
+    message: string;
+};
+
+export type PasswordResetVerifyResponse = {
+    maskedEmail: string;
+    message: string;
+    resetToken: string;
 };
 type JwtPayload = {
     userId?: number | string;
@@ -323,16 +730,18 @@ export type JumpOrganization = {
 };
 export type UserBase = {
     userId: number;
+    email: string | null;
+    emailVerified: boolean | null;
     name?: string | null;
     kakaoName?: string | null;
-
     nickname: string | null;
     profileImage: string | null;
     verificationImage: string | null;
-    role: string;
+    roleSet: string[];
     status: string;
+    rejectionReason?: string | null;
     school: UserSchool | null;
-
+    studentNumber?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
     jumpOrganization?: JumpOrganization | null;
@@ -364,7 +773,8 @@ export type SelectMySchoolResponse = UserBase & {
 };
 
 export type SubmitOnboardingInput = {
-    name: string;
+    name?: string | null;
+    studentNumber?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
     jumpOrganizationId?: number | null;
@@ -493,15 +903,6 @@ export async function updateMyProfileImage(
     const formData = new FormData();
 
     formData.append(
-        "imagefile",
-        {
-            uri: file.uri,
-            name: file.name,
-            type: file.type,
-        } as any
-    );
-
-    formData.append(
         "imageFile",
         {
             uri: file.uri,
@@ -512,6 +913,12 @@ export async function updateMyProfileImage(
 
     return apiUpload<UserMe>("/users/me/profile-image", formData, {
         method: "PATCH",
+    });
+}
+// 프로필 사진 삭제
+export async function deleteMyProfileImage(): Promise<UserMe> {
+    return api<UserMe>("/users/me/profile-image", {
+        method: "DELETE",
     });
 }
 // 학교 검색
@@ -552,15 +959,21 @@ export async function getMyAdminFileDownloadUrl(
     return res.url;
 }
 /* =========================
-            JUMP 
+            CLIENT(거래처)
 ========================= */
-export async function verifyJumpUser (
+export async function verifyClientUser(
     code: string
 ): Promise<UserMe> {
-    return api<UserMe>("/users/me/jump-verify", {
-        method: "POST",
-        body: JSON.stringify({ code } satisfies { code: string }),
-    });
+    return api<UserMe>(
+        "/users/me/code-verify",
+        {
+            method: "POST",
+            body: JSON.stringify({ code } satisfies { code: string }),
+        },
+        {
+            skipAuthRefresh: true,
+        }
+    );
 }
 export async function getMyJumpOrganizations(): Promise<JumpOrganization[]> {
     return api<JumpOrganization[]>("/users/me/jump-organizations", {
@@ -575,19 +988,18 @@ export async function submitMyOnboarding(
     input: SubmitOnboardingInput
 ): Promise<SubmitOnboardingResponse> {
     const name = (input.name ?? "").trim();
-    if (!name) {
-        throw new ApiError(400, "name은 필수값입니다.");
-    }
+    const studentNumber = (input.studentNumber ?? "").trim();
+    const interestJob = (input.interestJob ?? "").trim();
+    const interestCompany = (input.interestCompany ?? "").trim();
 
     const payload: SubmitOnboardingInput = {
-        name,
-        interestJob: (input.interestJob ?? "").trim() || null,
-        interestCompany: (input.interestCompany ?? "").trim() || null,
-        jumpOrganizationId:
-            input.jumpOrganizationId != null &&
-            !Number.isNaN(Number(input.jumpOrganizationId))
-                ? Number(input.jumpOrganizationId)
-                : null,
+        ...(input.name != null ? { name } : {}),
+        ...(input.studentNumber != null ? { studentNumber } : {}),
+        ...(input.interestJob != null ? { interestJob } : {}),
+        ...(input.interestCompany != null ? { interestCompany } : {}),
+        ...(input.jumpOrganizationId != null && !Number.isNaN(Number(input.jumpOrganizationId))
+            ? { jumpOrganizationId: Number(input.jumpOrganizationId) }
+            : {}),
     };
 
     return api<SubmitOnboardingResponse>("/users/me/onboarding", {
@@ -598,7 +1010,7 @@ export async function submitMyOnboarding(
 
 
 /* =========================
-        EVENT  
+            EVENT  
 ========================= */
 export async function createEvent(
     input: CreateEventInput
@@ -641,14 +1053,32 @@ export async function getEventDaysByMonth(
 
 
 /** 에러 */
+function parseErrorBody(bodyText: string): { message?: string; code?: string; path?: string; status?: number } {
+    if (!bodyText) return {};
+    try {
+        const parsed = JSON.parse(bodyText);
+        return {
+            message: parsed?.message,
+            code: parsed?.clientExceptionCode ?? parsed?.code ?? parsed?.error,
+            path: parsed?.path,
+            status: typeof parsed?.status === "number" ? parsed.status : undefined,
+        };
+    } catch {
+        return {};
+    }
+}
 export class ApiError extends Error {
     status: number;
     bodyText?: string;
+    code?: string;
+    path?: string;
 
-    constructor(status: number, message: string, bodyText?: string) {
+    constructor(status: number, message: string, bodyText?: string, code?: string, path?: string) {
         super(message);
         this.name = "ApiError";
         this.status = status;
         this.bodyText = bodyText;
+        this.code = code;
+        this.path = path;
     }
 }

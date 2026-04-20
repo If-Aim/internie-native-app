@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import AuthNavigator from "./AuthNavigator";
 import StudentNavigator from "./StudentNavigator";
-import OnboardingScreen from "../screens/login/OnBoardingScreen";
+import OnboardingScreen from "../screens/auth/OnBoardingScreen";
 
 import { getAccessToken, clearAccessToken, getOnboardingCompleted } from "../auth/tokenStorage";
 import { getUserMe, isOnboardingDone } from "../api/client";

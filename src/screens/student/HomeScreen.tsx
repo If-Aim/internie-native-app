@@ -1,5 +1,6 @@
 // src/screens/student/HomeScreen.tsx
 import React from "react";
+import { API_BASE_URL } from "@env";
 import { StyleSheet, View, Text, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -631,39 +632,55 @@ function Header({
 
 // SIDE MENU
 function SideMenu({
-    open,
+    isOpen,
     onClose,
     userName,
+    userEmail,
     userProfileImg,
-    userRole,
     onMyPage,
 }: {
-    open: boolean;
+    isOpen: boolean;
     onClose: () => void;
     userName: string;
+    userEmail: string;
     userProfileImg: string | null;
-    userRole: string | null;
     onMyPage: () => void;
 }) {
     const { t, i18n } = useTranslation();
     const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
-    const toggleLang = async () => {
-            await i18n.changeLanguage(isKo ? "en" : "ko");
-    };
-    function handleServicePreparing() {
-        Alert.alert(isKo ? "서비스 준비중입니다.": "Coming Soon");
+
+    async function toggleLang() {
+        await i18n.changeLanguage(isKo ? "en" : "ko");
     }
-    if (!open) return null;
+
+    function handleServicePreparing() {
+        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
+    }
+
+    if (!isOpen) return null;
 
     return (
         <View style={commonStyles.drawerBackdrop}>
-            <Pressable style={[StyleSheet.absoluteFillObject, { backgroundColor: tokens.colors.overlay45 }]} onPress={onClose} />
+            <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+
             <View style={commonStyles.drawerPanel}>
                 <View style={commonStyles.drawerHeader}>
                     <View style={commonStyles.profileWrap}>
-                        <View style={commonStyles.profileImgRadius}><Image source={userProfileImg ? { uri: userProfileImg } : require("../../assets/images/internie_mascot_normal.png")} style={commonStyles.profileImg} /></View>
                         <View>
                             <Text style={commonStyles.profileName}>{userName}</Text>
+                            <Text style={commonStyles.profileEmail}>{userEmail}</Text>
+                        </View>
+
+                        <View style={commonStyles.profileImgRadius}>
+                            <Image
+                                source={
+                                    userProfileImg
+                                        ? { uri: userProfileImg }
+                                        : require("../../assets/images/internie_mascot_normal.png")
+                                }
+                                style={commonStyles.profileImg}
+                                resizeMode="cover"
+                            />
                         </View>
                     </View>
                 </View>
@@ -673,25 +690,16 @@ function SideMenu({
                         <Image source={require("../../assets/icons/user-profile-02.png")} style={commonStyles.icon24} />
                         <Text style={commonStyles.drawerMenuItemText}>{t("menu.mypage")}</Text>
                     </Pressable>
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { handleServicePreparing() }}>
-                        <Image source={require("../../assets/icons/arrow-refresh-01.png")} style={commonStyles.icon24} />
-                        <Text style={commonStyles.drawerMenuItemText}>{t("menu.recent")}</Text>
-                    </Pressable>
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { handleServicePreparing() }}>
+
+                    <Pressable style={commonStyles.drawerMenuItem} onPress={handleServicePreparing}>
                         <Image source={require("../../assets/icons/settings.png")} style={commonStyles.icon24} />
                         <Text style={commonStyles.drawerMenuItemText}>{t("menu.settings")}</Text>
                     </Pressable>
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { toggleLang() }}>
+
+                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { void toggleLang(); }}>
                         <Image source={require("../../assets/icons/globe-01.png")} style={commonStyles.icon24} />
                         <Text style={commonStyles.drawerMenuItemText}>{t("menu.language")}</Text>
                     </Pressable>
-
-                    {userRole === "ROLE_ADMIN" ? (
-                        <Pressable style={commonStyles.drawerMenuItem} onPress={() => { /* admin navigate */ }}>
-                            <Image source={require("../../assets/icons/chevron-right.png")} style={commonStyles.icon24} />
-                            <Text style={commonStyles.drawerMenuItemText}>사용자조회</Text>
-                        </Pressable>
-                    ) : null}
                 </View>
             </View>
         </View>
@@ -724,8 +732,9 @@ export default function HomeScreen({ navigation }: Props) {
 
 	// 유저 정보 (간단히)
 	const [userName, setUserName] = React.useState("User");
-	const [userProfileImg, setUserProfileImg] = React.useState<string | null>(null);
-	const [userRole, setUserRole] = React.useState<string | null>(null);
+    const [userEmail, setUserEmail] = React.useState("");
+    const [userProfileImg, setUserProfileImg] = React.useState<string | null>(null);
+    const [userRoleSet, setUserRoleSet] = React.useState<string[]>([]);
 
 	const byDate = React.useMemo(() => {
 		const g: Record<string, ScheduleItem[]> = {};
@@ -826,26 +835,36 @@ export default function HomeScreen({ navigation }: Props) {
 		})();
 	}, []);
 
-    React.useEffect(() => {
-        (async () => {
-            if (!isAuthed) {
-                setUserName("User");
+    async function loadMeForHome() {
+        try {
+            const me = await getUserMe();
+
+            setUserName((me.name ?? "").trim() || "User");
+            setUserEmail((me.email ?? "").trim());
+            setUserRoleSet(Array.isArray(me.roleSet) ? me.roleSet : []);
+
+            const raw = String(me.profileImage ?? "").trim();
+            if (!raw || raw.includes("default")) {
                 setUserProfileImg(null);
-                setUserRole(null);
-                return;
+            } else if (/^https?:\/\//i.test(raw)) {
+                setUserProfileImg(raw);
+            } else {
+                const origin = API_BASE_URL.replace(/\/+$/, "").replace(/\/api$/, "");
+                setUserProfileImg(raw.startsWith("/") ? `${origin}${raw}` : `${origin}/${raw}`);
             }
-            try {
-                const me = await getUserMe();
-                setUserName((me.name ?? "User").trim() || "User");
-                setUserRole(me.role ?? null);
-                setUserProfileImg(me.profileImage ?? null);
-            } catch {
-                setUserName("User");
-                setUserProfileImg(null);
-                setUserRole(null);
-            }
-        })();
-    }, [isAuthed]);
+        } catch {
+            setUserName("User");
+            setUserEmail("");
+            setUserRoleSet([]);
+            setUserProfileImg(null);
+        }
+    }
+
+    useFocusEffect(
+        React.useCallback(() => {
+            void loadMeForHome();
+        }, [])
+    );
 
     useFocusEffect(
         React.useCallback(() => {
@@ -1051,11 +1070,11 @@ export default function HomeScreen({ navigation }: Props) {
             )}
 
             <SideMenu
-                open={menuOpen}
+                isOpen={menuOpen}
                 onClose={() => setMenuOpen(false)}
                 userName={userName}
+                userEmail={userEmail}
                 userProfileImg={userProfileImg}
-                userRole={userRole}
                 onMyPage={() => navigation.navigate("MyPage")}
             />
 
