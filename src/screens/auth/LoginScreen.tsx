@@ -8,12 +8,8 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-
-GoogleSignin.configure({
-    webClientId: "GOOGLE_WEB_CLIENT_ID",
-    offlineAccess: false,
-});
+import AppText from "../../../AppText";
+import AppTextInput from "../../../AppTextInput";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
@@ -28,6 +24,14 @@ const { KakaoLogin } = NativeModules as {
     KakaoLogin?: {
         loginWithTalk(): Promise<KakaoLoginResult>;
         loginWithAccount(): Promise<KakaoLoginResult>;
+    };
+};
+
+const { GoogleLogin } = NativeModules as {
+    GoogleLogin?: {
+        signIn(): Promise<{ idToken: string }>;
+        restorePreviousSignIn?(): Promise<{ idToken: string } | null>;
+        signOut?(): Promise<void>;
     };
 };
 
@@ -63,7 +67,7 @@ export default function LoginScreen(_props: Props) {
         const body = await res.json().catch(() => null);
 
         if (!auth) {
-            Alert.alert(t("login.loginFailed"), "Authorization header가 없습니다.");
+            Alert.alert(t("login.loginFailed"), t("login.authorizationHeaderMissing"));
             return;
         }
 
@@ -143,15 +147,15 @@ export default function LoginScreen(_props: Props) {
 
     const handleGooglePress = async () => {
         try {
-            await GoogleSignin.hasPlayServices();
-            const result = await GoogleSignin.signIn();
+            const result = await GoogleLogin!.signIn();
+            const idToken = result?.idToken ?? "";
 
-            if (!result.data?.idToken) {
+            if (!idToken) {
                 Alert.alert(t("login.loginFailed"), t("login.googleTokenMissing"));
                 return;
             }
 
-            const data = await loginWithGoogle(result.data.idToken);
+            const data = await loginWithGoogle(idToken);
             await moveAfterLogin(data.onboardingCompleted);
         } catch (e) {
             if (e instanceof ApiError) {
@@ -166,28 +170,28 @@ export default function LoginScreen(_props: Props) {
         <View style={styles.page}>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.logoSection}>
-                    <Text style={styles.logoText}>internie</Text>
+                    <AppText style={styles.logoText}>internie</AppText>
                 </View>
 
                 <View style={styles.formSection}>
-                    <View style={styles.inputWrap}>
-                        <TextInput
-                            style={styles.input}
+                    <View style={styles.loginFieldGroup}>
+                        <AppTextInput
+                            style={[styles.input, loginError ? styles.inputError : null]}
                             value={loginId}
                             onChangeText={setLoginId}
                             placeholder={t("login.idPlaceholder")}
+                            placeholderTextColor={"#DDD"}
                             autoCapitalize="none"
                             autoCorrect={false}
                         />
-                    </View>
 
-                    <View style={styles.inputWrap}>
                         <View style={styles.passwordWrap}>
-                            <TextInput
+                            <AppTextInput
                                 style={[styles.input, styles.passwordInput, loginError ? styles.inputError : null]}
                                 value={password}
                                 onChangeText={setPassword}
                                 placeholder={t("login.passwordPlaceholder")}
+                                placeholderTextColor={"#DDD"}
                                 secureTextEntry={!showPassword}
                                 autoCapitalize="none"
                                 autoCorrect={false}
@@ -205,23 +209,23 @@ export default function LoginScreen(_props: Props) {
                             </Pressable>
                         </View>
                     </View>
-
-                    {loginError ? <Text style={styles.errorText}>{loginError}</Text> : null}
-
+                    <AppText style={[styles.errorText, loginError ? styles.errorTextVisible : styles.errorTextHidden]}>
+                        {loginError || " "}
+                    </AppText>
                     <View style={styles.findAuthRow}>
                         <Pressable onPress={() => authNav.navigate("FindId")}>
-                            <Text style={styles.findAuthBtn}>{t("login.findId")}</Text>
+                            <AppText style={styles.findAuthBtn}>{t("login.findId")}</AppText>
                         </Pressable>
                         <View style={styles.findAuthDivider} />
                         <Pressable onPress={() => authNav.navigate("ResetPassword")}>
-                            <Text style={styles.findAuthBtn}>{t("login.findPassword")}</Text>
+                            <AppText style={styles.findAuthBtn}>{t("login.findPassword")}</AppText>
                         </Pressable>
                     </View>
 
                     <Pressable style={styles.submitBtn} onPress={handleLocalLogin} disabled={submitting}>
-                        <Text style={styles.submitBtnText}>
+                        <AppText style={styles.submitBtnText}>
                             {submitting ? t("login.loginLoading") : t("login.loginButton")}
-                        </Text>
+                        </AppText>
                     </Pressable>
                 </View>
 
@@ -230,25 +234,23 @@ export default function LoginScreen(_props: Props) {
                         <View style={styles.socialIconWrap}>
                             <Image source={require("../../assets/logo/kakao_Logo.png")} style={styles.socialIcon} resizeMode="contain" />
                         </View>
-                        <Text style={styles.socialText}>{t("login.startWithKakao")}</Text>
+                        <AppText style={styles.socialText}>{t("login.startWithKakao")}</AppText>
                     </Pressable>
 
                     <Pressable style={[styles.socialBtn, styles.googleBtn]} onPress={handleGooglePress}>
                         <View style={styles.socialIconWrap}>
                             <Image source={require("../../assets/logo/google_Logo.png")} style={styles.socialIcon} resizeMode="contain" />
                         </View>
-                        <Text style={styles.socialText}>{t("login.startWithGoogle")}</Text>
+                        <AppText style={styles.socialText}>{t("login.startWithGoogle")}</AppText>
                     </Pressable>
                 </View>
 
                 <View style={styles.signupSection}>
-                    <Text style={styles.signupText}>{t("login.signupPrompt")}</Text>
+                    <AppText style={styles.signupText}>{t("login.signupPrompt")}</AppText>
                     <Pressable onPress={() => authNav.navigate("Signup")}>
-                        <Text style={styles.signupLink}>{t("login.signupLink")}</Text>
+                        <AppText style={styles.signupLink}>{t("login.signupLink")}</AppText>
                     </Pressable>
                 </View>
-
-                <View style={styles.bottomSpacer} />
             </ScrollView>
         </View>
     );

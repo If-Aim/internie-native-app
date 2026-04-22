@@ -8,24 +8,25 @@ import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.kakao.sdk.common.KakaoSdk
 import com.internie.kakao.KakaoLoginPackage
+import com.internie.google.GoogleLoginPackage
 
 class MainApplication : Application(), ReactApplication {
 
-  override val reactHost: ReactHost by lazy {
-    getDefaultReactHost(
-      context = applicationContext,
-      packageList =
-        PackageList(this).packages.apply {
-          add(com.internie.kakao.KakaoLoginPackage())
-        },
-    )
-  }
+    override val reactHost: ReactHost by lazy {
+        getDefaultReactHost(
+            context = applicationContext,
+            packageList =
+                PackageList(this).packages.apply {
+                    add(KakaoLoginPackage())
+                    add(GoogleLoginPackage())
+                },
+        )
+    }
 
-  override fun onCreate() {
-    super.onCreate()
-    loadReactNative(this)
-    val kakaoAppKey = getString(R.string.kakao_app_key)
-    KakaoSdk.init(this, kakaoAppKey)
-  }
-
+    override fun onCreate() {
+        super.onCreate()
+        loadReactNative(this)
+        val kakaoAppKey = getString(R.string.kakao_app_key)
+        KakaoSdk.init(this, kakaoAppKey)
+    }
 }

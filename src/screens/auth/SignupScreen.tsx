@@ -6,6 +6,9 @@ import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { ApiError, checkLoginIdAvailability, sendEmailCode, signup, verifyEmailCode } from "../../api/client";
 import { styles } from "./Signup.style";
 import { commonStyles } from "../../theme/common.Style";
+import AppText from "../../../AppText";
+import AppTextInput from "../../../AppTextInput";
+import Info016b from "../../assets/icons/info-01-6b.svg";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Signup">;
 type FormState = { loginId: string; password: string; passwordConfirm: string; email: string };
@@ -400,9 +403,9 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                 resizeMode="contain"
                             />
                         </View>
-                        <Text style={styles.modalMessage}>{accountExistsMessage || t("signup.emailAlreadyUsed")}</Text>
+                        <AppText style={styles.modalMessage}>{accountExistsMessage || t("signup.emailAlreadyUsed")}</AppText>
                         <Pressable style={styles.modalConfirmBtn} onPress={() => { setAccountExistsModalOpen(false); navigation.replace("Login"); }}>
-                            <Text style={styles.modalConfirmBtnText}>{t("signup.goToLogin", "로그인 화면으로")}</Text>
+                            <AppText style={styles.modalConfirmBtnText}>{t("signup.goToLogin", "로그인 화면으로")}</AppText>
                         </Pressable>
                     </View>
                 </View>
@@ -413,33 +416,34 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                     <Pressable style={[styles.backBtn, commonStyles.iconbtn]} onPress={handleBack}>
                         <Image source={require("../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
                     </Pressable>
-                    <Text style={styles.headerTitle}>{t("signup.title", "회원가입")}</Text>
+                    <AppText style={styles.headerTitle}>{t("signup.title", "회원가입")}</AppText>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.main}>
                         <View style={styles.section}>
-                            <Text style={styles.stepTitle}>{stepTitle}</Text>
+                            <AppText style={styles.stepTitle}>{stepTitle}</AppText>
 
                             {step === 1 && (
                                 <>
                                     <View style={styles.field}>
-                                        <TextInput
+                                        <AppTextInput
                                             style={styles.input}
                                             value={form.email}
                                             onChangeText={(value) => { setForm((prev) => ({ ...prev, email: value })); setEmailError(null); }}
-                                            placeholder={t("signup.emailPlaceholder", "이메일 입력하기")}
+                                            placeholder={t("signup.emailPlaceholder")}
+                                            placeholderTextColor={"#5F5F5F"}
                                             keyboardType="email-address"
                                             autoCapitalize="none"
                                             autoCorrect={false}
                                         />
                                     </View>
 
-                                    {emailInfo ? <Text style={styles.infoText}>{emailInfo}</Text> : null}
-                                    {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+                                    {emailInfo ? <AppText style={styles.infoText}>{emailInfo}</AppText> : null}
+                                    {emailError ? <AppText style={styles.errorText}>{emailError}</AppText> : null}
 
                                     <Pressable style={[styles.submitBtn, !canSendEmailCode ? styles.submitBtnDisabled : null]} onPress={handleSendEmailCode} disabled={!canSendEmailCode}>
-                                        <Text style={[styles.submitBtnText, !canSendEmailCode ? styles.submitBtnTextDisabled : null]}>{sendingCode ? t("signup.sending", "전송 중") : t("signup.getEmailVC", "인증코드 보내기")}</Text>
+                                        <AppText style={[styles.submitBtnText, !canSendEmailCode ? styles.submitBtnTextDisabled : null]}>{sendingCode ? t("signup.sending", "전송 중") : t("signup.sendVerifyCode", "인증코드 보내기")}</AppText>
                                     </Pressable>
                                 </>
                             )}
@@ -448,7 +452,7 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                 <>
                                     <View style={styles.field}>
                                         <View style={styles.inputWrap}>
-                                            <TextInput
+                                            <AppTextInput
                                                 style={[styles.input, styles.inputTimer]}
                                                 value={code}
                                                 onChangeText={(value) => { void handleCodeChange(value); }}
@@ -456,16 +460,16 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                                 keyboardType="number-pad"
                                                 editable={!emailVerified && emailCodeTimeLeft > 0}
                                             />
-                                            {!emailVerified && emailCodeTimeLeft > 0 ? <Text style={styles.timer}>{formatRemainingTime(emailCodeTimeLeft)}</Text> : null}
+                                            {!emailVerified && emailCodeTimeLeft > 0 ? <AppText style={styles.timer}>{formatRemainingTime(emailCodeTimeLeft)}</AppText> : null}
                                         </View>
                                     </View>
 
-                                    {emailInfo ? <Text style={styles.infoText}>{emailInfo}</Text> : null}
-                                    {codeError ? <Text style={styles.errorText}>{codeError}</Text> : null}
-                                    {emailCodeTimeLeft <= 0 && !emailVerified ? <Text style={styles.errorText}>{t("signup.emailCodeExpired", "인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.")}</Text> : null}
+                                    {emailInfo ? <AppText style={styles.infoText}>{emailInfo}</AppText> : null}
+                                    {codeError ? <AppText style={styles.errorText}>{codeError}</AppText> : null}
+                                    {emailCodeTimeLeft <= 0 && !emailVerified ? <AppText style={styles.errorText}>{t("signup.emailCodeExpired", "인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.")}</AppText> : null}
 
                                     <Pressable style={[styles.submitBtn, !canGoLoginIdStep && (code.trim().length !== 6 || verifyingCode) ? styles.submitBtnDisabled : null]} onPress={() => handleVerifyEmailCode()} disabled={!canGoLoginIdStep && (code.trim().length !== 6 || verifyingCode)}>
-                                        <Text style={[styles.submitBtnText, !canGoLoginIdStep && (code.trim().length !== 6 || verifyingCode) ? styles.submitBtnTextDisabled : null]}>{verifyingCode ? t("signup.verifying", "확인 중") : t("signup.next", "다음")}</Text>
+                                        <AppText style={[styles.submitBtnText, !canGoLoginIdStep && (code.trim().length !== 6 || verifyingCode) ? styles.submitBtnTextDisabled : null]}>{verifyingCode ? t("signup.verifying", "확인 중") : t("signup.next", "다음")}</AppText>
                                     </Pressable>
                                 </>
                             )}
@@ -473,15 +477,15 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                             {step === 3 && (
                                 <>
                                     <View style={styles.labelRow}>
-                                        <Text style={styles.label}>{t("login.id", "아이디")}</Text>
+                                        <AppText style={styles.label}>{t("login.id", "아이디")}</AppText>
                                         <Pressable style={styles.guideBtn} onPress={() => setOpenGuide((prev) => prev === "loginId" ? null : "loginId")}>
-                                            <Image source={require("../../assets/icons/info-01-6b.png")} style={commonStyles.icon24} resizeMode="contain" />
+                                            <Info016b style={commonStyles.icon24}/>
                                         </Pressable>
-                                        {openGuide === "loginId" ? <View style={styles.guideBubble}><Text style={styles.guideBubbleText}>{t("signup.loginIdGuide", "영문 소문자 or 숫자를 활용해 4-20자로 만들어주세요")}</Text></View> : null}
+                                        {openGuide === "loginId" ? <View style={styles.guideBubble}><AppText style={styles.guideBubbleText}>{t("signup.loginIdGuide", "영문 소문자 or 숫자를 활용해 4-20자로 만들어주세요")}</AppText></View> : null}
                                     </View>
 
                                     <View style={styles.inlineField}>
-                                        <TextInput
+                                        <AppTextInput
                                             style={[styles.input, styles.inputInline, loginIdError ? styles.inputError : null]}
                                             value={form.loginId}
                                             onChangeText={(value) => { setForm((prev) => ({ ...prev, loginId: value })); setLoginIdError(null); }}
@@ -498,21 +502,21 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                             onPress={handleCheckLoginId}
                                             disabled={checkingLoginId || (loginIdChecked && loginIdAvailable === true) || !form.loginId.trim()}
                                         >
-                                            <Text style={[
+                                            <AppText style={[
                                                 styles.sideBtnText,
                                                 loginIdChecked && loginIdAvailable ? styles.sideBtnTextConfirmed : null,
                                                 checkingLoginId || (loginIdChecked && loginIdAvailable === true) || !form.loginId.trim() ? styles.sideBtnTextDisabled : null,
                                             ]}>
                                                 {checkingLoginId ? t("signup.checking", "확인 중") : loginIdChecked && loginIdAvailable === true ? t("signup.checked", "확인됨") : t("signup.checkLoginId", "중복확인")}
-                                            </Text>
+                                            </AppText>
                                         </Pressable>
                                     </View>
 
-                                    {loginIdInfo && loginIdAvailable === true ? <Text style={styles.infoText}>{loginIdInfo}</Text> : null}
-                                    {loginIdError ? <Text style={styles.errorText}>{loginIdError}</Text> : null}
+                                    {loginIdInfo && loginIdAvailable === true ? <AppText style={styles.infoText}>{loginIdInfo}</AppText> : null}
+                                    {loginIdError ? <AppText style={styles.errorText}>{loginIdError}</AppText> : null}
 
                                     <Pressable style={[styles.submitBtn, !canGoPasswordStep ? styles.submitBtnDisabled : null]} onPress={() => setStep(4)} disabled={!canGoPasswordStep}>
-                                        <Text style={[styles.submitBtnText, !canGoPasswordStep ? styles.submitBtnTextDisabled : null]}>{t("signup.next", "다음")}</Text>
+                                        <AppText style={[styles.submitBtnText, !canGoPasswordStep ? styles.submitBtnTextDisabled : null]}>{t("signup.next", "다음")}</AppText>
                                     </Pressable>
                                 </>
                             )}
@@ -520,15 +524,15 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                             {step === 4 && (
                                 <>
                                     <View style={styles.labelRow}>
-                                        <Text style={styles.label}>{t("login.pw", "비밀번호")}</Text>
+                                        <AppText style={styles.label}>{t("login.pw", "비밀번호")}</AppText>
                                         <Pressable style={styles.guideBtn} onPress={() => setOpenGuide((prev) => prev === "password" ? null : "password")}>
                                             <Image source={require("../../assets/icons/info-01-6b.png")} style={commonStyles.icon24} resizeMode="contain" />
                                         </Pressable>
-                                        {openGuide === "password" ? <View style={styles.guideBubble}><Text style={styles.guideBubbleText}>{t("signup.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다")}</Text></View> : null}
+                                        {openGuide === "password" ? <View style={styles.guideBubble}><AppText style={styles.guideBubbleText}>{t("signup.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다")}</AppText></View> : null}
                                     </View>
 
                                     <View style={[styles.field, styles.passwordWrap]}>
-                                        <TextInput
+                                        <AppTextInput
                                             style={[styles.input, styles.passwordInput, passwordInvalid || passwordError ? styles.inputError : null]}
                                             value={form.password}
                                             onChangeText={(value) => { setForm((prev) => ({ ...prev, password: value })); setPasswordError(null); setSignupError(null); }}
@@ -550,10 +554,10 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                         </Pressable>
                                     </View>
 
-                                    {passwordInvalid || passwordError ? <Text style={styles.errorText}>{passwordError || t("signup.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다")}</Text> : null}
+                                    {passwordInvalid || passwordError ? <AppText style={styles.errorText}>{passwordError || t("signup.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다")}</AppText> : null}
 
                                     <View style={[styles.field, styles.fieldSecond, styles.passwordWrap]}>
-                                        <TextInput
+                                        <AppTextInput
                                             style={[styles.input, styles.passwordInput, passwordConfirmInvalid ? styles.inputError : null]}
                                             value={form.passwordConfirm}
                                             onChangeText={(value) => { setForm((prev) => ({ ...prev, passwordConfirm: value })); setPasswordError(null); setSignupError(null); }}
@@ -575,11 +579,11 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
                                         </Pressable>
                                     </View>
 
-                                    {passwordConfirmInvalid ? <Text style={styles.errorText}>{t("signup.passwordMismatch", "비밀번호가 일치하지 않습니다")}</Text> : null}
-                                    {signupError ? <Text style={styles.errorText}>{signupError}</Text> : null}
+                                    {passwordConfirmInvalid ? <AppText style={styles.errorText}>{t("signup.passwordMismatch", "비밀번호가 일치하지 않습니다")}</AppText> : null}
+                                    {signupError ? <AppText style={styles.errorText}>{signupError}</AppText> : null}
 
                                     <Pressable style={[styles.submitBtn, !canSubmit ? styles.submitBtnDisabled : null]} onPress={handleSignup} disabled={!canSubmit}>
-                                        <Text style={[styles.submitBtnText, !canSubmit ? styles.submitBtnTextDisabled : null]}>{submitting ? t("signup.submitting", "가입 중") : t("signup.submit", "회원가입")}</Text>
+                                        <AppText style={[styles.submitBtnText, !canSubmit ? styles.submitBtnTextDisabled : null]}>{submitting ? t("signup.submitting", "가입 중") : t("signup.submit", "회원가입")}</AppText>
                                     </Pressable>
                                 </>
                             )}

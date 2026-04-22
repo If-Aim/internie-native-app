@@ -87,6 +87,10 @@ android {
         manifestPlaceholders = [
             KAKAO_APP_KEY: "kakao${project.env.get("KAKAO_NATIVE_APP_KEY")}"
         ]
+        resValue "string", "google_android_client_id", project.env.get("GOOGLE_ANDROID_CLIENT_ID")
+        resValue "string", "google_web_client_id", project.env.get("GOOGLE_WEB_CLIENT_ID")
+        resValue "string", "kakao_scheme", project.env.get("KAKAO_SCHEME")
+        resValue "string", "kakao_app_key", project.env.get("KAKAO_NATIVE_APP_KEY")
     }
     signingConfigs {
         debug {
@@ -111,11 +115,14 @@ android {
 }
 
 dependencies {
-    // The version of react-native is set by the React Native Gradle Plugin
-    implementation("com.facebook.react:react-android")
-    implementation "com.kakao.sdk:v2-user:${KAKAO_SDK_VERSION}"
+    implementation "com.facebook.react:react-android"
+    implementation "com.kakao.sdk:v2-user:2.23.2"
+    implementation "androidx.credentials:credentials:1.6.0"
+    implementation "androidx.credentials:credentials-play-services-auth:1.6.0"
+    implementation "com.google.android.libraries.identity.googleid:googleid:1.2.0"
+
     if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
+        implementation "com.facebook.react:hermes-android"
     } else {
         implementation jscFlavor
     }

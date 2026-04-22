@@ -14,6 +14,7 @@
         "socialLogin": "Or sign in with",
         "loginButton": "Log in",
         "loginLoading": "Logging in...",
+        "loginFailed": "Login Failed",
         "signupPrompt": "New to Internie?",
         "signupLink": "Sign up",
         "startWithKakao": "Continue with Kakao",
@@ -25,7 +26,18 @@
         "getLoginTitle": "Login Required",
         "getLoginSub": "Would you like to log in?",
 		"googleNotReady": "Google login is being prepared. Please try again shortly.",
-		"googleLoginFailed": "Google login failed."
+		"googleLoginFailed": "Google login failed.",
+		"localLoginRequired": "Please enter both your ID and password.",
+		"localLoginFailed": "ID or password is incorrect.",
+		"kakaoLoginFailed": "Kakao login failed.",
+		"kakaoTokenMissing": "Kakao access token is missing.",
+		"kakaoAccountLoginFailed": "Kakao account login failed.",
+		"selectMethodTitle": "Choose a login method",
+		"selectMethodDesc": "Select how you would like to continue with Kakao.",
+		"withKakaoTalk": "Continue with KakaoTalk",
+		"withKakaoAccount": "Continue with Kakao Account",
+		"googleTokenMissing": "Google ID token is missing.",
+		"authorizationHeaderMissing": "Authorization header is missing."
     },
     "signup": {
         "title": "Sign Up",
