@@ -2,8 +2,9 @@ import { StyleSheet } from "react-native";
 import { tokens } from "../../../theme/common.Style";
 
 export const styles = StyleSheet.create({
-    container: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 160, flexGrow: 1 },
-    header: { position: "relative", height: 56, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, marginTop: 20 },
+    container: { paddingHorizontal: 8, paddingTop: 20, paddingBottom: 160, flexGrow: 1 },
+    page: { flex: 1, backgroundColor: "#F0F6FF", paddingTop: 18, paddingHorizontal: 12, paddingBottom: 32 },
+    header: {flexDirection: "row", alignItems: "center", justifyContent: "space-between", },
     headerBackBtn: { position: "absolute", left: 0, top: 8 },
 	headerCenter: { flex: 1 },
 	headerRightSpace: { width: 40, height: 40 },
@@ -24,7 +25,6 @@ export const styles = StyleSheet.create({
     menuItem: { width: "100%", height: 60, paddingHorizontal: 18, backgroundColor: "#FFFFFF", borderRadius: tokens.radius.r10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     menuTitle: { fontSize: 16, fontWeight: "600", fontFamily: tokens.typography.fontFamily, color: "#000000" },
     menuRight: { flexDirection: "row", alignItems: "center", gap: 5 },
-    menuBotMargin: { height: 30, width: "100%", flexShrink: 0 },
     menuValue: { fontSize: 12, fontWeight: "600", fontFamily: tokens.typography.fontFamily, color: "#A2A2A2" },
     menuChevron: { width: 18, height: 18, transform: [{ rotate: "-90deg" }] },
     logoutDock: { position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: 53, alignItems: "center" },

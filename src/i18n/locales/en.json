@@ -74,6 +74,7 @@
         "submit": "Sign up",
         "submitting": "Signing up...",
         "goToLogin": "Back to login",
+		"loginNow": "Login",
 
 		"mobileStepEmailTitle": "Verify your email",
 		"mobileStepCodeTitle": "Enter verification code",
@@ -95,16 +96,15 @@
 		"emailVerifiedDone": "Email verification completed for {{email}}.",
 		"emailCodeResent": "A new verification code has been sent to {{email}}.",
 		"emailCooldownActive": "Please wait before requesting another verification code.",
-		"alreadyLocal": "An account with this email already exists. Please log in with your ID and password.",
-		"alreadyGoogle": "This account is already registered with Google. Please sign in with Google.",
-		"alreadyKakao": "This account is already registered with Kakao. Please sign in with Kakao.",
+		"alreadyLocal": "An account with this email already exists.",
+		"alreadyGoogle": "This account is already registered with Google.",
+		"alreadyKakao": "This account is already registered with Kakao.",
 		"loginIdAlreadyExists": "This ID is already in use.",
 		"invalidLoginIdFormat": "The ID format is invalid.",
 		"invalidPasswordFormat": "The password format is invalid."
     },
 	"findId": {
-		"title": "Find ID",
-		"subtitle": "Verify your email and receive your ID at the email address you used when signing up.",
+		"title": "Email Verifying",
 		"emailLabel": "Email",
 		"emailPlaceholder": "Enter your email.",
 		"codeLabel": "Code",
@@ -182,7 +182,8 @@
 		"save": "Save",
 		"dateRange": "Period",
         "loading": "Loading…",
-		"done": "Done"
+		"done": "Done",
+		"cancel": "Cancel"
 	},
 	"menu": {
 		"mypage": "Profile",

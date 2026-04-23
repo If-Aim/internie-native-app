@@ -75,9 +75,16 @@ export const commonStyles = StyleSheet.create({
 	// spacer-50 
 	spacer50: { height: 30, width: "100%", flexShrink: 0, },
 
+	// modal 
+	modalDimLight: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(209, 209, 209, 0.20)",
+    },
+
 	// ====== 아이콘/버튼 공통 ======
 	iconbtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center",backgroundColor: "transparent", borderWidth: 0, padding: 0, },
 	icon24: { width: 24, height: 24, },
+	icon40: { width: 40, height: 40, },
 	iconArrow: { width: 8, height: 14, },
 
 	// ====== topbar-main ======
@@ -87,15 +94,15 @@ export const commonStyles = StyleSheet.create({
 	drawerBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 2100, },
 
 	drawerPanel: { position: "absolute", top: 0, left: 0, bottom: 0, width: "85%", backgroundColor: "#fff", zIndex: 2101, flexDirection: "column", ...(tokens.shadow.card as any), },
-	drawerHeader: { paddingTop: 79, paddingHorizontal: 36, paddingBottom: 18, backgroundColor: "#EAF1FA", }, 
-	profileWrap: { flexDirection: "row", gap: 20 as any, },
+	drawerHeader: { paddingTop: 68, paddingLeft: 31, paddingRight: 19, backgroundColor: "#fff", }, 
+	profileWrap: { flexDirection: "row", justifyContent: "space-between",},
 	profileImgRadius: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", flexDirection: "row", justifyContent: "center", alignItems: "center",},
 	profileImg: { width: 50, height: 50, borderRadius: 25,},
 	profileName: { fontSize: 24, lineHeight: 26, fontWeight: "700", color: "#111", marginBottom: 5, fontFamily: tokens.typography.fontFamily, },
 	profileEmail: { fontSize: 13, color: "rgba(0,0,0,0.50)", fontWeight: "500", lineHeight: 20, fontFamily: tokens.typography.fontFamily, },
 
-	drawerBody: { flex: 1, paddingTop: 46, paddingHorizontal: 32, flexDirection: "column", },
-	drawerMenuItem: { flexDirection: "row", alignItems: "center", gap: 14 as any, paddingVertical: 10, },
+	drawerBody: { flex: 1, paddingTop: 30, paddingHorizontal: 31, flexDirection: "column", },
+	drawerMenuItem: { flexDirection: "row", alignItems: "center", gap: 14 as any, paddingVertical: 12, },
 	drawerMenuItemText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, fontFamily: tokens.typography.fontFamily, },
 
 	bottomSpacer: { height: 250,},

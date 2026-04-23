@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { StyleSheet, Image, Modal, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { BlurView } from "@react-native-community/blur";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import { ApiError, resetPasswordWithToken, sendResetPasswordCode, verifyResetPasswordCode } from "../../api/client";
 import { commonStyles } from "../../theme/common.Style";
 import { styles } from "./ResetPassword.style";
+import AppText from "../../../AppText";
+import AppTextInput from "../../../AppTextInput";
+import Info016b from "../../assets/icons/info-01-6b.svg";
+import CheckCircleRoundedBlue from "../../assets/icons/checkcircle-rounded-blue.svg";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type Step = 1 | 2;
@@ -207,22 +213,27 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
     };
 
     return (
-        <>
+        <SafeAreaView style={commonStyles.appRoot}>
             <Modal visible={successModalOpen} transparent animationType="fade" onRequestClose={() => setSuccessModalOpen(false)}>
+                <View style={StyleSheet.absoluteFill}>
+                    <BlurView
+                        style={StyleSheet.absoluteFillObject}
+                        blurType="xlight"
+                        blurAmount={1}
+                        reducedTransparencyFallbackColor="rgba(209, 209, 209, 0.20)"
+                    />
+                    <View style={commonStyles.modalDimLight} />
+                </View>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
                         <Pressable style={[styles.modalCloseBtn, commonStyles.iconbtn]} onPress={() => setSuccessModalOpen(false)}>
                             <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                         </Pressable>
-
-                        <View style={styles.modalIconWrap}>
-                            <Image source={require("../../assets/icons/checkcircle-rounded-blue.png")} style={styles.modalIconImage} resizeMode="contain" />
-                        </View>
-
-                        <Text style={styles.modalText}>{t("resetPassword.resetDone", "비밀번호가 재설정 되었습니다")}</Text>
+                        <CheckCircleRoundedBlue style={styles.modalIconImage}/>
+                        <AppText style={styles.modalText}>{t("resetPassword.resetDone", "비밀번호가 재설정 되었습니다")}</AppText>
 
                         <Pressable style={styles.modalConfirmBtn} onPress={() => navigation.replace("Login")}>
-                            <Text style={styles.modalConfirmBtnText}>{t("resetPassword.goLogin", "로그인 화면으로")}</Text>
+                            <AppText style={styles.modalConfirmBtnText}>{t("resetPassword.goLogin", "로그인 화면으로")}</AppText>
                         </Pressable>
                     </View>
                 </View>
@@ -231,19 +242,20 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
             <View style={styles.page}>
                 <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.header}>
-                        <Pressable style={[styles.backBtn, commonStyles.iconbtn]} onPress={handleBack}>
+                        <Pressable style={commonStyles.iconbtn} onPress={handleBack}>
                             <Image source={require("../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
                         </Pressable>
-                        <Text style={styles.headerTitle}>{t("resetPassword.title", "비밀번호 재설정")}</Text>
+                        <AppText style={styles.headerTitle}>{t("resetPassword.title", "비밀번호 재설정")}</AppText>
+                        <View style={commonStyles.icon40} />
                     </View>
 
                     <View style={styles.content}>
                         {step === 1 ? (
                             <>
-                                <Text style={styles.title}>{t("resetPassword.emailVerifyTitle", "이메일 인증하기")}</Text>
+                                <AppText style={styles.title}>{t("resetPassword.emailVerifyTitle", "이메일 인증하기")}</AppText>
 
                                 <View style={styles.field}>
-                                    <TextInput
+                                    <AppTextInput
                                         style={styles.input}
                                         value={form.loginId}
                                         onChangeText={(value) => {
@@ -257,7 +269,7 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
                                 </View>
 
                                 <View style={styles.field}>
-                                    <TextInput
+                                    <AppTextInput
                                         style={[styles.input, error && !codeSent ? styles.inputError : null]}
                                         value={form.email}
                                         onChangeText={(value) => {
@@ -274,7 +286,7 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
 
                                 {codeSent ? (
                                     <View style={[styles.field, styles.fieldSecond, styles.codeField]}>
-                                        <TextInput
+                                        <AppTextInput
                                             style={[styles.input, styles.codeInput, error ? styles.inputError : null]}
                                             value={form.code}
                                             onChangeText={(value) => {
@@ -286,71 +298,104 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
                                             autoCapitalize="none"
                                             autoCorrect={false}
                                         />
-                                        {remainingSeconds > 0 ? <Text style={styles.codeTimer}>{formatTime(remainingSeconds)}</Text> : null}
+                                        {remainingSeconds > 0 ? <AppText style={styles.codeTimer}>{formatTime(remainingSeconds)}</AppText> : null}
                                     </View>
                                 ) : null}
 
-                                {info ? <Text style={styles.infoText}>{info}</Text> : null}
-                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                                <View style={styles.messageWrap}>
+                                    <AppText
+                                        style={[
+                                            error || (codeSent && remainingSeconds <= 0) ? styles.errorText : styles.infoText,
+                                            !error && !(codeSent && remainingSeconds <= 0) && !info ? styles.messageHidden : null,
+                                        ]}
+                                    >
+                                        {(
+                                            error ||
+                                            (codeSent && remainingSeconds <= 0 ? t("findId.codeExpired", "인증코드가 만료되었습니다. 다시 요청해주세요.") : info) ||
+                                            " "
+                                        ).replace(/\\n/g, "\n")}
+                                    </AppText>
+                                </View>
                             </>
                         ) : (
                             <>
-                                <Text style={styles.title}>{t("resetPassword.resetTitle", "비밀번호 재설정")}</Text>
+                                <AppText style={styles.title}>{t("resetPassword.resetTitle", "비밀번호 재설정")}</AppText>
 
                                 <View style={styles.labelRow}>
-                                    <Text style={styles.label}>{t("login.pw", "비밀번호")}</Text>
+                                    <AppText style={styles.label}>{t("login.pw", "비밀번호")}</AppText>
                                     <Pressable style={styles.guideBtn} onPress={() => setOpenGuide((prev) => prev === "password" ? null : "password")}>
-                                        <Image source={require("../../assets/icons/info-01-6b.png")} style={commonStyles.icon24} resizeMode="contain" />
+                                        <Info016b style={commonStyles.icon24}/>
                                     </Pressable>
                                     {openGuide === "password" ? (
                                         <View style={styles.guideBubble}>
-                                            <Text style={styles.guideBubbleText}>{t("resetPassword.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다.")}</Text>
+                                            <AppText style={styles.guideBubbleText}>{t("resetPassword.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다.")}</AppText>
                                         </View>
                                     ) : null}
                                 </View>
-
-                                <View style={[styles.field, styles.passwordWrap]}>
-                                    <TextInput
-                                        style={[styles.input, styles.passwordInput, passwordInvalid || passwordError ? styles.inputError : null]}
-                                        value={form.newPassword}
-                                        onChangeText={(value) => {
-                                            setForm((prev) => ({ ...prev, newPassword: value }));
-                                            setPasswordError(null);
-                                            setError(null);
-                                        }}
-                                        placeholder={t("resetPassword.newPasswordPlaceholder", "비밀번호를 입력해주세요")}
-                                        secureTextEntry={!showPassword}
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                    />
-                                    <Pressable style={styles.passwordToggle} onPress={() => setShowPassword((prev) => !prev)}>
-                                        <Image source={showPassword ? require("../../assets/icons/carbon_view-6b.png") : require("../../assets/icons/carbon_view-6b-blind.png")} style={commonStyles.icon24} resizeMode="contain" />
-                                    </Pressable>
+                                
+                                <View style={styles.passwordGroup}>
+                                    <View style={styles.passwordWrap}>
+                                        <AppTextInput
+                                            style={[styles.input, styles.passwordInput, passwordInvalid || passwordError ? styles.inputError : null]}
+                                            value={form.newPassword}
+                                            onChangeText={(value) => {
+                                                setForm((prev) => ({ ...prev, newPassword: value }));
+                                                setPasswordError(null);
+                                                setError(null);
+                                            }}
+                                            placeholder={t("resetPassword.newPasswordPlaceholder", "비밀번호를 입력해주세요")}
+                                            secureTextEntry={!showPassword}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                        />
+                                        <Pressable style={styles.passwordToggle} onPress={() => setShowPassword((prev) => !prev)}>
+                                            <Image source={showPassword ? require("../../assets/icons/carbon_view-6b.png") : require("../../assets/icons/carbon_view-6b-blind.png")} style={commonStyles.icon24} resizeMode="contain" />
+                                        </Pressable>
+                                    
+                                        <View style={styles.messageWrap}>
+                                            <AppText
+                                                style={[
+                                                    styles.errorText,
+                                                    !(passwordInvalid || passwordError) ? styles.messageHidden : null,
+                                                ]}
+                                            >
+                                                {passwordError || t("signup.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다") || " "}
+                                            </AppText>
+                                        </View>
+                                    </View>
+                                    <View style={styles.passwordWrap}>
+                                        <AppTextInput
+                                            style={[styles.input, styles.passwordInput, passwordMismatch || confirmError ? styles.inputError : null]}
+                                            value={form.newPasswordConfirm}
+                                            onChangeText={(value) => {
+                                                setForm((prev) => ({ ...prev, newPasswordConfirm: value }));
+                                                setConfirmError(null);
+                                                setError(null);
+                                            }}
+                                            placeholder={t("resetPassword.newPasswordConfirmPlaceholder", "비밀번호를 다시 입력해주세요")}
+                                            secureTextEntry={!showPasswordConfirm}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                        />
+                                        <Pressable style={styles.passwordToggle} onPress={() => setShowPasswordConfirm((prev) => !prev)}>
+                                            <Image source={showPasswordConfirm ? require("../../assets/icons/carbon_view-6b.png") : require("../../assets/icons/carbon_view-6b-blind.png")} style={commonStyles.icon24} resizeMode="contain" />
+                                        </Pressable>
+                                        <View style={styles.messageWrap}>
+                                            <AppText
+                                                style={[
+                                                    passwordMismatch || confirmError ? styles.errorTextStrong : styles.errorText,
+                                                    !(passwordMismatch || confirmError) && !error ? styles.messageHidden : null,
+                                                ]}
+                                            >
+                                                {(
+                                                    (passwordMismatch || confirmError
+                                                        ? confirmError || t("resetPassword.passwordMismatch", "비밀번호가 일치하지 않습니다.")
+                                                        : error) || " "
+                                                ).replace(/\\n/g, "\n")}
+                                            </AppText>
+                                        </View>
+                                    </View>
                                 </View>
-
-                                {passwordInvalid || passwordError ? <Text style={styles.errorTextStrong}>{passwordError || t("resetPassword.passwordGuide", "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다.")}</Text> : null}
-
-                                <View style={[styles.field, styles.fieldSecond, styles.passwordWrap]}>
-                                    <TextInput
-                                        style={[styles.input, styles.passwordInput, passwordMismatch || confirmError ? styles.inputError : null]}
-                                        value={form.newPasswordConfirm}
-                                        onChangeText={(value) => {
-                                            setForm((prev) => ({ ...prev, newPasswordConfirm: value }));
-                                            setConfirmError(null);
-                                            setError(null);
-                                        }}
-                                        placeholder={t("resetPassword.newPasswordConfirmPlaceholder", "비밀번호를 다시 입력해주세요")}
-                                        secureTextEntry={!showPasswordConfirm}
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                    />
-                                    <Pressable style={styles.passwordToggle} onPress={() => setShowPasswordConfirm((prev) => !prev)}>
-                                        <Image source={showPasswordConfirm ? require("../../assets/icons/carbon_view-6b.png") : require("../../assets/icons/carbon_view-6b-blind.png")} style={commonStyles.icon24} resizeMode="contain" />
-                                    </Pressable>
-                                </View>
-
-                                {passwordMismatch || confirmError ? <Text style={styles.errorTextStrong}>{confirmError || t("resetPassword.passwordMismatch", "비밀번호가 일치하지 않습니다.")}</Text> : null}
-                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
                             </>
                         )}
                     </View>
@@ -358,18 +403,18 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
                     <View style={styles.footer}>
                         {step === 1 ? (
                             <Pressable style={[styles.primaryBtn, codeSent ? (!canVerifyCode ? styles.primaryBtnDisabled : null) : (!canSendCode ? styles.primaryBtnDisabled : null)]} onPress={codeSent ? handleVerifyCode : handleSendCode} disabled={codeSent ? !canVerifyCode : !canSendCode}>
-                                <Text style={[styles.primaryBtnText, codeSent ? (!canVerifyCode ? styles.primaryBtnTextDisabled : null) : (!canSendCode ? styles.primaryBtnTextDisabled : null)]}>
+                                <AppText style={[styles.primaryBtnText, codeSent ? (!canVerifyCode ? styles.primaryBtnTextDisabled : null) : (!canSendCode ? styles.primaryBtnTextDisabled : null)]}>
                                     {codeSent ? (verifying ? t("resetPassword.verifying", "확인 중") : t("resetPassword.next", "다음")) : (sending ? t("resetPassword.sending", "전송 중") : t("resetPassword.next", "다음"))}
-                                </Text>
+                                </AppText>
                             </Pressable>
                         ) : (
                             <Pressable style={[styles.primaryBtn, !canSubmit ? styles.primaryBtnDisabled : null]} onPress={handleResetPassword} disabled={!canSubmit}>
-                                <Text style={[styles.primaryBtnText, !canSubmit ? styles.primaryBtnTextDisabled : null]}>{submitting ? t("resetPassword.submitting", "처리 중") : t("resetPassword.changePassword", "비밀번호 변경")}</Text>
+                                <AppText style={[styles.primaryBtnText, !canSubmit ? styles.primaryBtnTextDisabled : null]}>{submitting ? t("resetPassword.submitting", "처리 중") : t("resetPassword.changePassword", "비밀번호 변경")}</AppText>
                             </Pressable>
                         )}
                     </View>
                 </ScrollView>
             </View>
-        </>
+        </SafeAreaView>
     );
 }

@@ -53,10 +53,11 @@ function sortKey(ed: EventDay) {
 function Header({ onPreviousClick }: { onPreviousClick: () => void }) {
     return (
         <View style={styles.header}>
-            <Pressable style={[styles.headerBackBtn, commonStyles.iconbtn]} onPress={onPreviousClick}>
+            <Pressable style={commonStyles.iconbtn} onPress={onPreviousClick}>
                 <Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
             </Pressable>
             <Text style={styles.headerTitle} />
+            <View style={commonStyles.icon40} />
         </View>
     );
 }
@@ -206,104 +207,102 @@ export default function MyPageScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={commonStyles.appRoot}>
-            <Header onPreviousClick={() => navigation.goBack()} />
+            <View style={styles.page}>
+                <Header onPreviousClick={() => navigation.goBack()} />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-                <View style={styles.top}>
-                    <View style={styles.profileImgWrap}>
-                        <Image
-                            source={
-                                avatarSrc
-                                    ? { uri: avatarSrc }
-                                    : require("../../../assets/images/internie_mascot_normal.png")
-                            }
-                            style={styles.profileImg}
-                            resizeMode="cover"
-                        />
-                        {isVerifiedStudent ? (
-                            <Image source={require("../../../assets/icons/school-verified-01.png")} style={styles.verifyBadge} resizeMode="contain" />
-                        ) : null}
-                    </View>
-
-                    <Text style={styles.greeting}>
-                        {t("mypage.greeting")} <Text style={styles.name}>{displayName}</Text>{t("mypage.greeting2")}
-                    </Text>
-
-                    <Text style={styles.subText}>{mypageSubText}</Text>
-                </View>
-
-                <View style={styles.cards}>
-                    {status !== "APPROVED" ? (
-                        <Pressable style={[styles.verifyCard, status === "PENDING" ? styles.verifyCardPending : null]} onPress={verifyUi.onPress} disabled={verifyUi.disabled}>
-                            <Text style={[styles.verifyCardTitle, status === "PENDING" ? styles.verifyCardTitlePending : null]}>{verifyUi.label}</Text>
-                        </Pressable>
-                    ) : null}
-
-                    <View style={styles.menu}>
-                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("UserModify")}>
-                            <Text style={styles.menuTitle}>{t("mypage.editProfile")}</Text>
-                            <View style={styles.menuRight}>
-                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
-                            </View>
-                        </Pressable>
-
-                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("TargetCom")}>
-                            <Text style={styles.menuTitle}>{t("mypage.targetCompany")}</Text>
-                            <View style={styles.menuRight}>
-                                <Text style={styles.menuValue}>{me?.interestCompany?.trim() ? me.interestCompany : t("mypage.notSet")}</Text>
-                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
-                            </View>
-                        </Pressable>
-
-                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("Certificates")}>
-                            <Text style={styles.menuTitle}>{t("mypage.certs")}</Text>
-                            <View style={styles.menuRight}>
-                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
-                            </View>
-                        </Pressable>
-
-                        <Pressable style={styles.menuItem} onPress={() => navigation.navigate("VerifyCode")}>
-                            <Text style={styles.menuTitle}>{t("mypage.verifyCode")}</Text>
-                            <View style={styles.menuRight}>
-                                <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
-                            </View>
-                        </Pressable>
-                    </View>
-
-                    <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate("Withdraw")}>
-                        <Text style={styles.withdrawText}>{isKo ? "회원탈퇴" : "Delete account"}</Text>
-                    </Pressable>
-
-                    <View style={styles.menuBotMargin} />
-                </View>
-            </ScrollView>
-
-            <View style={styles.logoutDock} pointerEvents="box-none">
-                <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                    <Text style={styles.logoutText}>{t("mypage.logout")}</Text>
-                </Pressable>
-            </View>
-
-            <Modal visible={showRejectModal} transparent animationType="fade" onRequestClose={closeRejectModal}>
-                <View style={styles.modalBackdrop}>
-                    <BlurView style={StyleSheet.absoluteFill} blurType="dark" blurAmount={5} />
-                    <View style={styles.modalCard}>
-                        <Pressable style={[styles.modalClose, commonStyles.iconbtn]} accessibilityLabel="close" onPress={closeRejectModal}>
-                            <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
-                        </Pressable>
-
-                        <View style={styles.modalBody}>
-                            <Text style={styles.modalTitle}>{t("mypage_modal.title")}</Text>
-                            <Text style={styles.modalReason}>사유:</Text>
-                            <Text style={styles.modalReason}>{rejectReasonText || "-"}</Text>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                    <View style={styles.top}>
+                        <View style={styles.profileImgWrap}>
+                            <Image
+                                source={
+                                    avatarSrc
+                                        ? { uri: avatarSrc }
+                                        : require("../../../assets/images/internie_mascot_normal.png")
+                                }
+                                style={styles.profileImg}
+                                resizeMode="cover"
+                            />
+                            {isVerifiedStudent ? (
+                                <Image source={require("../../../assets/icons/school-verified-01.png")} style={styles.verifyBadge} resizeMode="contain" />
+                            ) : null}
                         </View>
 
-                        <Pressable style={styles.modalPrimaryButton} onPress={goReVerify}>
-                            <Text style={styles.modalPrimaryButtonText}>{t("mypage_modal.reVerify")}</Text>
+                        <Text style={styles.greeting}>
+                            {t("mypage.greeting")} <Text style={styles.name}>{displayName}</Text>{t("mypage.greeting2")}
+                        </Text>
+
+                        <Text style={styles.subText}>{mypageSubText}</Text>
+                    </View>
+
+                    <View style={styles.cards}>
+                        {status !== "APPROVED" ? (
+                            <Pressable style={[styles.verifyCard, status === "PENDING" ? styles.verifyCardPending : null]} onPress={verifyUi.onPress} disabled={verifyUi.disabled}>
+                                <Text style={[styles.verifyCardTitle, status === "PENDING" ? styles.verifyCardTitlePending : null]}>{verifyUi.label}</Text>
+                            </Pressable>
+                        ) : null}
+
+                        <View style={styles.menu}>
+                            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("UserModify")}>
+                                <Text style={styles.menuTitle}>{t("mypage.editProfile")}</Text>
+                                <View style={styles.menuRight}>
+                                    <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
+                                </View>
+                            </Pressable>
+
+                            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("TargetCom")}>
+                                <Text style={styles.menuTitle}>{t("mypage.targetCompany")}</Text>
+                                <View style={styles.menuRight}>
+                                    <Text style={styles.menuValue}>{me?.interestCompany?.trim() ? me.interestCompany : t("mypage.notSet")}</Text>
+                                    <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
+                                </View>
+                            </Pressable>
+
+                            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("Certificates")}>
+                                <Text style={styles.menuTitle}>{t("mypage.certs")}</Text>
+                                <View style={styles.menuRight}>
+                                    <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
+                                </View>
+                            </Pressable>
+
+                            <Pressable style={styles.menuItem} onPress={() => navigation.navigate("VerifyCode")}>
+                                <Text style={styles.menuTitle}>{t("mypage.verifyCode")}</Text>
+                                <View style={styles.menuRight}>
+                                    <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
+                                </View>
+                            </Pressable>
+                        </View>
+
+                        <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate("Withdraw")}>
+                            <Text style={styles.withdrawText}>{isKo ? "회원탈퇴" : "Delete account"}</Text>
                         </Pressable>
                     </View>
-                </View>
-            </Modal>
+                    <View style={styles.logoutDock} pointerEvents="box-none">
+                        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+                            <Text style={styles.logoutText}>{t("mypage.logout")}</Text>
+                        </Pressable>
+                    </View>
+                </ScrollView>
+                <Modal visible={showRejectModal} transparent animationType="fade" onRequestClose={closeRejectModal}>
+                    <View style={styles.modalBackdrop}>
+                        <BlurView style={StyleSheet.absoluteFill} blurType="dark" blurAmount={5} />
+                        <View style={styles.modalCard}>
+                            <Pressable style={[styles.modalClose, commonStyles.iconbtn]} accessibilityLabel="close" onPress={closeRejectModal}>
+                                <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
+                            </Pressable>
+
+                            <View style={styles.modalBody}>
+                                <Text style={styles.modalTitle}>{t("mypage_modal.title")}</Text>
+                                <Text style={styles.modalReason}>사유:</Text>
+                                <Text style={styles.modalReason}>{rejectReasonText || "-"}</Text>
+                            </View>
+
+                            <Pressable style={styles.modalPrimaryButton} onPress={goReVerify}>
+                                <Text style={styles.modalPrimaryButtonText}>{t("mypage_modal.reVerify")}</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </Modal>
+            </View>
         </SafeAreaView>
     );
 }

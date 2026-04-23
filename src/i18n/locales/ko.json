@@ -75,7 +75,8 @@
         "enterEmailVC": "인증코드를 입력해주세요",
         "submit": "회원가입",
         "submitting": "가입 중...",
-        "goToLogin": "로그인으로 돌아가기", 
+        "goToLogin": "로그인 화면으로", 
+        "loginNow": "로그인하기",
 
         "mobileStepEmailTitle": "이메일 인증하기",
         "mobileStepCodeTitle": "인증코드 입력",
@@ -97,16 +98,15 @@
         "emailVerifiedDone": "{{email}} 이메일 인증이 완료되었습니다.",
         "emailCodeResent": "{{email}}로 인증번호를 다시 보냈습니다.",
         "emailCooldownActive": "인증코드를 다시 요청하기 전에 잠시만 기다려주세요.",
-        "alreadyLocal": "이미 아이디와 비밀번호로 가입된 계정입니다. 로그인해주세요.",
-        "alreadyGoogle": "이미 구글로 가입된 계정입니다. 구글로 로그인해주세요.",
-        "alreadyKakao": "이미 카카오로 가입된 계정입니다. 카카오로 로그인해주세요.",
+        "alreadyLocal": "이미 아이디와 비밀번호로 가입된 계정입니다.",
+        "alreadyGoogle": "이미 구글로 \n가입된 계정입니다.",
+        "alreadyKakao": "이미 카카오로 \n가입된 계정입니다.",
         "loginIdAlreadyExists": "이미 사용 중인 아이디입니다.",
         "invalidLoginIdFormat": "아이디 형식이 올바르지 않습니다.",
         "invalidPasswordFormat": "비밀번호 형식이 올바르지 않습니다."
     },
     "findId": {
-        "title": "아이디 찾기",
-        "subtitle": "가입할 때 사용한 이메일로 인증 후 아이디를 전송합니다.",
+        "title": "이메일 인증하기",
         "emailLabel": "Email",
         "emailPlaceholder": "이메일을 입력해주세요.",
         "codeLabel": "인증코드",
@@ -136,7 +136,7 @@
         "title": "비밀번호 재설정",
         "subtitle": "가입한 이메일로 인증 후 새 비밀번호를 설정해주세요",
         "emailVerifyTitle": "이메일 인증하기",
-        "resetTitle": "새 비밀번호 설정",
+        "resetTitle": "비밀번호 재설정",
 
         "loginIdPlaceholder": "아이디를 입력해주세요",
         "emailPlaceholder": "이메일을 입력해주세요",
@@ -183,7 +183,8 @@
         "save": "저장하기",
         "dateRange": "기간",
         "loading": "불러오는 중…",
-        "done": "완료"
+        "done": "완료",
+        "cancel": "취소"
     },
     "menu": {
         "mypage": "마이페이지",
