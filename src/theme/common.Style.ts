@@ -77,8 +77,9 @@ export const commonStyles = StyleSheet.create({
 
 	// modal 
 	modalDimLight: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: "rgba(209, 209, 209, 0.20)",
+		opacity: 0.8,
     },
 
 	// ====== 아이콘/버튼 공통 ======
@@ -91,7 +92,7 @@ export const commonStyles = StyleSheet.create({
 	topbarMain: { paddingTop: 11, paddingHorizontal: 12, paddingBottom: 15,  width: "100%",  }, 
 	
 	// ====== Drawer ======
-	drawerBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 2100, },
+	drawerBackdrop: { ...StyleSheet.absoluteFill, zIndex: 2100, },
 
 	drawerPanel: { position: "absolute", top: 0, left: 0, bottom: 0, width: "85%", backgroundColor: "#fff", zIndex: 2101, flexDirection: "column", ...(tokens.shadow.card as any), },
 	drawerHeader: { paddingTop: 68, paddingLeft: 31, paddingRight: 19, backgroundColor: "#fff", }, 
@@ -115,7 +116,7 @@ export const commonStyles = StyleSheet.create({
 	recordBtnEnabledText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: tokens.typography.fontFamily, },
 
 	// ====== 기간 선택 ======
-	periodSheetBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 99999, justifyContent: "flex-end", },
+	periodSheetBackdrop: { ...StyleSheet.absoluteFill, zIndex: 99999, justifyContent: "flex-end", },
 	periodSheet: { width: "100%", maxWidth: 520, alignSelf: "center", backgroundColor: "#fff", borderTopLeftRadius: 10, borderTopRightRadius: 10, paddingTop: 23, paddingHorizontal: 12, paddingBottom: 53, ...(tokens.shadow.sheet as any), },
 	periodSheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 5, paddingLeft: 20, },
 	periodSheetTitle: { fontSize: 24, fontWeight: "700", letterSpacing: -0.02 as any, fontFamily: tokens.typography.fontFamily, }, 
@@ -138,7 +139,7 @@ export const commonStyles = StyleSheet.create({
 	wheelItemTextActive: { color: "#000", fontWeight: "700", },  
 
 	// ====== 월(month) 선택 ======
-	monthpickerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.25)", zIndex: 10000, justifyContent: "flex-end", },
+	monthpickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.25)", zIndex: 10000, justifyContent: "flex-end", },
 	monthpickerSheet: { width: "100%", backgroundColor: "#fff", borderTopLeftRadius: tokens.radius.r20, borderTopRightRadius: tokens.radius.r20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 53, },
 	monthpickerTitle: { fontSize: 22, fontWeight: "800", fontFamily: tokens.typography.fontFamily, },
 	monthpickerConfirm: { height: 60, borderRadius: tokens.radius.r10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", marginTop: 55, marginHorizontal: 8,},

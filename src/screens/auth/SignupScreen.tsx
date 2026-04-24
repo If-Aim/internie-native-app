@@ -398,12 +398,7 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
         <SafeAreaView style={commonStyles.appRoot}>
             <Modal visible={accountExistsModalOpen} transparent animationType="fade" onRequestClose={() => setAccountExistsModalOpen(false)}>
                 <View style={StyleSheet.absoluteFill}>
-                    <BlurView
-                        style={StyleSheet.absoluteFillObject}
-                        blurType="xlight"
-                        blurAmount={1}
-                        reducedTransparencyFallbackColor="rgba(209, 209, 209, 0.20)"
-                    />
+                    <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
                     <View style={commonStyles.modalDimLight} />
                 </View>
                 <View style={styles.modalOverlay}>
@@ -423,12 +418,7 @@ export default function SignupScreen({ navigation }: Props): React.ReactElement 
             </Modal>
             <Modal visible={signupSuccessModalOpen} transparent animationType="fade" onRequestClose={() => setSignupSuccessModalOpen(false)}>
                 <View style={StyleSheet.absoluteFill}>
-                    <BlurView
-                        style={StyleSheet.absoluteFillObject}
-                        blurType="xlight"
-                        blurAmount={1}
-                        reducedTransparencyFallbackColor="rgba(209, 209, 209, 0.20)"
-                    />
+                    <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
                     <View style={commonStyles.modalDimLight} />
                 </View>
                 <View style={styles.modalOverlay}>

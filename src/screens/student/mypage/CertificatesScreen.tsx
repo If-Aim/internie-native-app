@@ -3,17 +3,19 @@ import React from "react";
 import PdfThumbnail from "react-native-pdf-thumbnail";
 import ReactNativeBlobUtil from "react-native-blob-util";
 import FileViewer from "react-native-file-viewer"
+import { SafeAreaView } from "react-native-safe-area-context";
 import Share from "react-native-share"
-import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Platform } from "react-native";
+import { View, Pressable, Image, ScrollView, ActivityIndicator, Alert, Platform } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
 import { ApiError, type AdminUserFile, getMyAdminFiles, getMyAdminFileDownloadUrl } from "../../../api/client";
 
-import { Screen } from "../../../components/Screen";
 import { styles } from "./Certificates.style";
 import { commonStyles } from "../../../theme/common.Style";
 import { useTranslation } from "react-i18next";
+
+import AppText from "../../../../AppText";
 
 function getFileType(filename: string) {
     const ext = filename.split(".").pop()?.toLowerCase();
@@ -42,9 +44,9 @@ function Header({
     const { t } = useTranslation(); 
 
     return (
-        <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
-            <View style={styles.headerLeftSpace} />
-            <Text style={styles.headerTitle}>{t("mypage.certs")}</Text>
+        <View style={[commonStyles.topbarRow, styles.header]}>
+            <View style={commonStyles.icon40} />
+            <AppText style={styles.headerTitle}>{t("mypage.certs")}</AppText>
             <Pressable style={commonStyles.iconbtn} onPress={onCloseClick} >
                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
             </Pressable>
@@ -146,7 +148,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
         return () => {
             mounted = false;
         };
-    }, );
+    }, []);
 
     React.useEffect(() => {
         if (items.length === 0) return;
@@ -260,7 +262,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
 
 
     return (
-        <Screen style={styles.screen}>
+        <SafeAreaView style={commonStyles.appRoot}>
             <Header onCloseClick={handleClose} />
             {/* Body */}
             <ScrollView
@@ -271,15 +273,15 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                 {loading ? (
                     <View style={styles.emptyWrap}>
                         <ActivityIndicator />
-                        <Text style={styles.emptyText}>{t("common.loading")}</Text>
+                        <AppText style={styles.emptyText}>{t("common.loading")}</AppText>
                     </View>
                 ) : errorMsg ? (
                     <View style={styles.emptyWrap}>
-                        <Text style={styles.emptyText}>{errorMsg}</Text>
+                        <AppText style={styles.emptyText}>{errorMsg}</AppText>
                     </View>
                 ) : items.length === 0 ? (
                     <View style={styles.emptyWrap}>
-                        <Text style={styles.emptyText}>{t("mypage.noCerts")}</Text>
+                        <AppText style={styles.emptyText}>{t("mypage.noCerts")}</AppText>
                     </View>
                 ) : (
                     <View style={styles.list}>
@@ -294,7 +296,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                                             <Image source={{ uri: pv.uri }} style={styles.thumbImg} resizeMode="cover" />
                                         ) : pv?.kind === "pdf" ? (
                                             <View style={styles.thumbPdf}>
-                                                <Text style={styles.thumbPdfText}>PDF</Text>
+                                                <AppText style={styles.thumbPdfText}>PDF</AppText>
                                             </View>
                                         ) : (
                                             <View style={styles.thumbPlaceholder} />
@@ -303,12 +305,12 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                                     </View>
 
                                     <View style={styles.info}>
-                                        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                                        <AppText style={styles.name} numberOfLines={1} ellipsizeMode="tail">
                                             {item.filename}
-                                        </Text>
-                                        <Text style={styles.date} numberOfLines={1}>
+                                        </AppText>
+                                        <AppText style={styles.date} numberOfLines={1}>
                                             {/* TODO: 날짜 표시 */}
-                                        </Text>
+                                        </AppText>
                                     </View>
 
                                     <View style={styles.actions}>
@@ -329,6 +331,6 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                     </View>
                 )}
             </ScrollView>
-        </Screen>
+        </SafeAreaView>
     );
 }

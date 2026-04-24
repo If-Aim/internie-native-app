@@ -1,9 +1,10 @@
 // src/screens/student/schedule/EditScheduleScreen.tsx
 import { useTranslation } from "react-i18next";
 import React from "react";
-import { View, Text, Pressable, Image, TextInput, ScrollView, Modal, Alert, } from "react-native";
+import { StyleSheet, View, Text, Pressable, Image, TextInput, ScrollView, Modal, Alert, } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BlurView } from "@react-native-community/blur";
 
 import { api, ApiError, deleteEvent, deleteEventDay } from "../../../api/client";
 import { styles } from "./Schedule.style";
@@ -11,6 +12,9 @@ import { commonStyles } from "../../../theme/common.Style";
 
 import { TIME_OPTIONS, WEEK_LABELS, toApiHHmmss, displayTimeLabel, toYmd, stripTime, getTimeIndex, displayTimePillLabel, isSameDay, addMonths, getMonthGrid, } from "./scheduleUtils";
 import type { RangeSheetMode, TimeSheetProps, DateRangeSheetProps, } from "./scheduleTypes";
+
+import AppText from "../../../../AppText";
+import AppTextInput from "../../../../AppTextInput";
 
 type Stage = "form" | "outro";
 
@@ -88,7 +92,7 @@ function TimeSheet({
 
                 <View style={styles.sheetCard}>
                     <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle}>{t("common.time")}</Text>
+                        <AppText style={styles.sheetTitle}>{t("common.time")}</AppText>
 
                         <Pressable style={styles.sheetCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
                             <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
@@ -117,7 +121,7 @@ function TimeSheet({
                                             onClose();
                                         }}
                                     >
-                                        <Text
+                                        <AppText
                                             style={[
                                                 styles.timeItemText,
                                                 isAllDay
@@ -126,7 +130,7 @@ function TimeSheet({
                                             ]}
                                         >
                                             {t("common.allDay")}
-                                        </Text>
+                                        </AppText>
                                     </Pressable>
 
                                     {TIME_OPTIONS.map((opt) => {
@@ -147,9 +151,9 @@ function TimeSheet({
                                                     setStep("end");
                                                 }}
                                             >
-                                                <Text style={[ styles.timeItemText, selected ? styles.timeItemSelectedText : null, ]} >
+                                                <AppText style={[ styles.timeItemText, selected ? styles.timeItemSelectedText : null, ]} >
                                                     {displayTimeLabel(opt, locale)} -
-                                                </Text>
+                                                </AppText>
                                             </Pressable>
                                         );
                                     })}
@@ -185,9 +189,9 @@ function TimeSheet({
                                                     onClose();
                                                 }}
                                             >
-                                                <Text style={[ styles.timeItemText, selected ? styles.timeItemSelectedText : null, ]} >
+                                                <AppText style={[ styles.timeItemText, selected ? styles.timeItemSelectedText : null, ]} >
                                                     - {displayTimeLabel(opt, locale)}
-                                                </Text>
+                                                </AppText>
                                             </Pressable>
                                         );
                                     })}
@@ -222,8 +226,8 @@ function CalendarRange({
     resetKey: number;
 }) {
     const { t } = useTranslation();
-    const s = stripTime(startDate);
-    const e = stripTime(endDate);
+    const s = React.useMemo(() => stripTime(startDate), [startDate]);
+    const e = React.useMemo(() => stripTime(endDate), [endDate]);
     const sameDay = isSameDay(s, e);
 
     const [cursor, setCursor] = React.useState(
@@ -237,7 +241,7 @@ function CalendarRange({
 
     React.useEffect(() => {
         setCursor(new Date(s.getFullYear(), s.getMonth(), 1));
-    }, [s]);
+    }, [s.getFullYear(), s.getMonth()]);
 
     React.useEffect(() => {
         if (mode === "range") setFocus("start");
@@ -304,20 +308,21 @@ function CalendarRange({
         <View style={styles.cal}>
             <View style={styles.calHeader}>
                 <View style={styles.calHeaderTop}>
-                    <Pressable style={styles.calCloseBtn} onPress={onClose} accessibilityLabel={t("common.close", "닫기")} >
+                    <View style={commonStyles.icon40}></View>
+                    <Pressable style={commonStyles.iconbtn} onPress={onClose} accessibilityLabel={t("common.close", "닫기")} >
                         <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                     </Pressable>
                 </View>
 
                 <View style={styles.calHeaderBottom}>
-                    <Text style={styles.calTitle}>{title}</Text>
+                    <AppText style={styles.calTitle}>{title}</AppText>
 
                     <View style={styles.calNav}>
-                        <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, -1))} accessibilityLabel="prev month" >
+                        <Pressable style={styles.calNavBtn} onPress={() => setCursor((prev) => addMonths(prev, -1))} accessibilityLabel="prev month">
                             <Image source={require("../../../assets/icons/Previous (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
 
-                        <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, 1))} accessibilityLabel="next month" > 
+                        <Pressable style={styles.calNavBtn} onPress={() => setCursor((prev) => addMonths(prev, 1))} accessibilityLabel="next month"> 
                             <Image source={require("../../../assets/icons/Next (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
                     </View>
@@ -327,9 +332,9 @@ function CalendarRange({
             <View style={styles.calBody}>
                 <View style={styles.calWeek}>
                     {WEEK_LABELS.map((w) => (
-                        <Text key={w} style={styles.calWeekday}>
+                        <AppText key={w} style={styles.calWeekday}>
                             {w}
-                        </Text>
+                        </AppText>
                     ))}
                 </View>
 
@@ -356,9 +361,9 @@ function CalendarRange({
                             <View key={key} style={[ styles.calCell, between ? styles.calCellInRange : null, isStart ? styles.calCellStart : null, isEnd ? styles.calCellEnd : null, ]} >
                                 {showRange && <View style={[ styles.calRange, isStart && !isEnd ? styles.calRangeStart : null, isEnd && !isStart ? styles.calRangeEnd : null, ]} pointerEvents="none" />}
                                 <Pressable style={[ styles.calDay, isSelected ? styles.calDaySelected : null, styles.calDayFront, ]} onPress={() => handlePick(day)} >
-                                    <Text style={[ styles.calDayText, isSelected ? styles.calDaySelectedText : null, ]} >
+                                    <AppText style={[ styles.calDayText, isSelected ? styles.calDaySelectedText : null, ]} >
                                         {day.getDate()}
-                                    </Text>
+                                    </AppText>
                                 </Pressable>
                             </View>
                         );
@@ -386,31 +391,37 @@ function DateRangeSheet({
     }, [mode]);
 
     return (
-        <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-            <View style={styles.sheetOverlay}>
-                <Pressable style={[styles.sheetBackdrop, styles.sheetBackdropCal]} onPress={onClose} />
-                <View style={[ styles.sheetCardDate, weeks === 6 ? styles.sheetCardDate6w : styles.sheetCardDate5w, ]} >
-                    <View style={styles.dateRangeBody}>
-                        <CalendarRange
-                            mode={mode}
-                            startDate={startDate}
-                            endDate={endDate}
-                            onChangeStart={onChangeStart}
-                            onChangeEnd={onChangeEnd}
-                            onClose={onClose}
-                            onWeeksChange={setWeeks}
-                            resetKey={resetKey}
-                        />
-                    </View>
-
-                    <Pressable style={styles.sheetConfirm} onPress={onClose}>
-                        <Text style={styles.sheetConfirmText}>
-                            {t("common.confirm", "확인")}
-                        </Text>
-                    </Pressable>
-                </View>
+        <>
+            <View style={StyleSheet.absoluteFill}>
+                <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
+                <View style={commonStyles.modalDimLight} />
             </View>
-        </Modal>
+            <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+                <View style={styles.sheetOverlay}>
+                    <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+                    <View style={[ styles.sheetCardDate, weeks === 6 ? styles.sheetCardDate6w : styles.sheetCardDate5w, ]} >
+                        <View style={styles.dateRangeBody}>
+                            <CalendarRange
+                                mode={mode}
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChangeStart={onChangeStart}
+                                onChangeEnd={onChangeEnd}
+                                onClose={onClose}
+                                onWeeksChange={setWeeks}
+                                resetKey={resetKey}
+                            />
+                        </View>
+
+                        <Pressable style={styles.sheetConfirm} onPress={onClose}>
+                            <AppText style={styles.sheetConfirmText}>
+                                {t("common.confirm", "확인")}
+                            </AppText>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+        </>
     );
 }
 
@@ -909,19 +920,20 @@ export default function EditScheduleScreen(): React.ReactElement {
     return (
         <SafeAreaView style={styles.screen}>
             <View style={styles.topbarMain}>
-                <View style={commonStyles.icon24} />
+                <View style={commonStyles.icon40} />
 
-                <Text style={styles.topbarTitle}>{t("schedule_edit.title")}</Text>
+                <AppText style={styles.topbarTitle}>{t("schedule_edit.title")}</AppText>
 
-                <Pressable style={styles.iconBtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
+                <Pressable style={commonStyles.iconbtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
                     <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                 </Pressable>
             </View>
 
             <ScrollView contentContainerStyle={styles.newEvent} keyboardShouldPersistTaps="handled" >
-                <TextInput
+                <AppTextInput
                     style={styles.titleInput}
                     placeholder={t("schedule_edit.titlePlaceholder")}
+                    placeholderTextColor="#A2A2A2"
                     value={title}
                     onChangeText={setTitle}
                 />
@@ -931,17 +943,17 @@ export default function EditScheduleScreen(): React.ReactElement {
                         <Image source={require("../../../assets/icons/clock-01.png")} style={styles.scheduleLineIcon} />
                         <View style={styles.dateInline}>
                             <Pressable style={styles.datePill} onPress={openStartOnlyRangeSheet} accessibilityLabel="set start date" >
-                                <Text style={styles.datePillText}>
+                                <AppText style={styles.datePillText}>
                                     {formatRangeDate(startDate, locale)}
-                                </Text>
+                                </AppText>
                             </Pressable>
 
-                            <Text style={styles.dateSep}>-</Text>
+                            <AppText style={styles.dateSep}>-</AppText>
 
                             <Pressable style={styles.datePill} onPress={openEndOnlyRangeSheet} accessibilityLabel="set end date" >
-                                <Text style={styles.datePillText}>
+                                <AppText style={styles.datePillText}>
                                     {formatRangeDate(endDate, locale)}
-                                </Text>
+                                </AppText>
                             </Pressable>
                         </View>
                     </View>
@@ -951,9 +963,9 @@ export default function EditScheduleScreen(): React.ReactElement {
                             <View style={styles.scheduleLineTime}>
                                 <Image source={require("../../../assets/icons/schedule_stopwatch.png")} style={styles.scheduleLineIconTime} />
                                 <View style={styles.rowToggleLeft}>
-                                    <Text style={styles.rowToggleLeftText}>
+                                    <AppText style={styles.rowToggleLeftText}>
                                         {t("schedule_new.addTime")}
-                                    </Text>
+                                    </AppText>
                                 </View>
 
                                 <Pressable
@@ -993,17 +1005,17 @@ export default function EditScheduleScreen(): React.ReactElement {
 
                                     <View style={styles.timeInline}>
                                         <Pressable style={styles.timePill} onPress={() => { setTimeStep("start"); setShowSheet(true); }} >
-                                            <Text style={styles.timePillText}>
+                                            <AppText style={styles.timePillText}>
                                                 {hasTime ? displayTimePillLabel(startTime!) : "09:00 AM"}
-                                            </Text>
+                                            </AppText>
                                         </Pressable>
 
-                                        <Text style={styles.dateSep}>-</Text>
+                                        <AppText style={styles.dateSep}>-</AppText>
 
                                         <Pressable style={styles.timePill} onPress={() => { setTimeStep("end"); setShowSheet(true); }} >
-                                            <Text style={styles.timePillText}>
+                                            <AppText style={styles.timePillText}>
                                                 {hasTime ? displayTimePillLabel(endTime!) : "10:00 AM"}
-                                            </Text>
+                                            </AppText>
                                         </Pressable>
                                     </View>
                                 </View>
@@ -1013,7 +1025,7 @@ export default function EditScheduleScreen(): React.ReactElement {
                 </View>
 
                 <View style={styles.memoBox}>
-                    <TextInput
+                    <AppTextInput
                         style={styles.memoInput}
                         placeholder={t("schedule_edit.memoPlaceholder")}
                         value={memo}
@@ -1027,11 +1039,11 @@ export default function EditScheduleScreen(): React.ReactElement {
 
             <View style={styles.footerFixed}>
                 <Pressable style={styles.btnDelete} onPress={handleDelete}>
-                    <Text style={styles.btnDeleteText}>{t("schedule_edit.delete")}</Text>
+                    <AppText style={styles.btnDeleteText}>{t("schedule_edit.delete")}</AppText>
                 </Pressable>
 
                 <Pressable style={styles.btnPrimary} onPress={handleSave}>
-                    <Text style={styles.btnPrimaryText}>{t("schedule_edit.save")}</Text>
+                    <AppText style={styles.btnPrimaryText}>{t("schedule_edit.save")}</AppText>
                 </Pressable>
             </View>
 

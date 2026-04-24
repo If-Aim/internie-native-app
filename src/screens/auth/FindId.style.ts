@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: "#FFFFFF", paddingTop: 18, paddingHorizontal: 12, paddingBottom: 32 },
+    page: { flex: 1, backgroundColor: "#FFFFFF", paddingTop: 11, paddingHorizontal: 12, paddingBottom: 32 },
     scrollContent: { paddingBottom: 120 },
     header: {flexDirection: "row", alignItems: "center", justifyContent: "space-between", },
     headerTitle: { fontSize: 16, fontWeight: "700", color: "#000000", lineHeight: 20 },

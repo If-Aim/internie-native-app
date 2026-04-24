@@ -11,6 +11,9 @@ import { apiUpload, ApiError, getEventDayDetail, getEventDayQuestions, type Even
 import { Screen } from "../../../components/Screen";
 import { styles } from "./Questions.style";
 import { commonStyles } from "../../../theme/common.Style";
+import { replaceExperienceName } from "../../../theme/josa";
+
+import AppText from "../../../../AppText";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "Questions">;
 
@@ -29,11 +32,6 @@ const PREPARE_MS = 800;
 const MIC_LOCK_MS = 3000;
 const AUTO_STOP_MS = 5 * 60 * 1000;
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
-
-function applyExperienceName(q: string, title: string) {
-    if (!q.includes("(@experience_name)")) return q;
-    return q.split("(@experience_name)").join(title);
-}
 
 async function ensureRecordPermissionAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
@@ -261,7 +259,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 const mapped: QuestionDto[] = list.map((text, i) => ({
                     id: `${data.questionId}_${i + 1}`,
                     order: i + 1,
-                    text: applyExperienceName(text, title),
+                    text: replaceExperienceName(text, title),
                     totalCount,
                 }));
 
@@ -271,12 +269,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     Alert.alert("안내", "표시할 질문이 없습니다.");
                 }
 
-                const answeredCount = Array.isArray(day.transcriptions)
-                    ? day.transcriptions.length
-                    : 0;
-
+                const answeredCount = Array.isArray(day.transcriptions) ? day.transcriptions.length : 0;
                 const nextIndex = Math.max(0, Math.min(answeredCount, mapped.length - 1));
-
                 if (day.completed === true || answeredCount >= mapped.length) {
                     setStage("completed");
                     return;
@@ -289,7 +283,6 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     if (err.status === 401 || err.status === 403) {
                         return;
                     }
-
                     if (err.status === 404) {
                         Alert.alert(
                             "안내",
@@ -507,12 +500,12 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                         </Pressable>
 
                         <View style={styles.headerCenter}>
-                            <Text style={styles.topbarTitle} numberOfLines={1}>
+                            <AppText style={styles.topbarTitle} numberOfLines={1}>
                                 {eventDayTitle || "기록"}
-                            </Text>
+                            </AppText>
                         </View>
 
-                        <View style={styles.headerRightSpace} />
+                        <View style={commonStyles.icon40} />
                     </View>
                     <ScrollView
                         showsVerticalScrollIndicator={false}
@@ -527,24 +520,24 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                 </View>
 
                                 <View style={styles.progressLabelRow}>
-                                    <Text style={styles.progressLabelText}>진행률</Text>
-                                    <Text style={styles.progressLabelText}>
+                                    <AppText style={styles.progressLabelText}>진행률</AppText>
+                                    <AppText style={styles.progressLabelText}>
                                         {currentNo}/{total}
-                                    </Text>
+                                    </AppText>
                                 </View>
 
                                 <View style={styles.questionCard}>
                                     <View style={styles.questionHeader}>
                                         <View style={styles.qBadge}>
-                                            <Text style={styles.qBadgeText}>Q</Text>
+                                            <AppText style={styles.qBadgeText}>Q</AppText>
                                         </View>
                                     </View>
 
-                                    <Text style={styles.questionText}>
+                                    <AppText style={styles.questionText}>
                                         {isLoadingQuestions
                                             ? "질문을 불러오는 중이에요…"
                                             : current?.text ?? ""}
-                                    </Text>
+                                    </AppText>
                                 </View>
                             </View>
                         </View>
@@ -581,11 +574,11 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                     </View>
                                 </View>
 
-                                <Text style={styles.recordingText}>
+                                <AppText style={styles.recordingText}>
                                     {recordStage === "recording" && isMicOn
                                         ? "지금 말하세요"
                                         : "인터니가 기록을\n준비하고 있어요!"}
-                                </Text>
+                                </AppText>
 
                                 <View style={styles.recordingMicRing}>
                                     <View
@@ -642,7 +635,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                 style={styles.outroIconImg}
                             />
                         </View>
-                        <Text style={styles.outroText}>기록완료!</Text>
+                        <AppText style={styles.outroText}>기록완료!</AppText>
                     </View>
                 </View>
             )}
@@ -651,11 +644,11 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 <View style={styles.completedWrap}>
                     <View style={styles.completionContent}>
                         <LoadingDots />
-                        <Text style={styles.completionTitle}>역량 분석 중</Text>
-                        <Text style={styles.completionDesc}>
+                        <AppText style={styles.completionTitle}>역량 분석 중</AppText>
+                        <AppText style={styles.completionDesc}>
                             인터니가 답변을 분석 중이에요!{"\n"}
                             완료까지 약 5분 정도 소요될 수 있어요
-                        </Text>
+                        </AppText>
                         <View style={styles.completionMargin} />
                         <ActivityIndicator />
                     </View>

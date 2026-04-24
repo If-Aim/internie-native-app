@@ -8,7 +8,6 @@ export const styles = StyleSheet.create({
 	// Header
 	headerCenter: { flex: 1, justifyContent: "center", alignItems: "center", },
 	headerTitle: { fontSize: 16, fontFamily: tokens.typography.fontFamily, color: tokens.colors.ink, textAlignVertical: "center",},
-	headerRightSpace: { width: 24, height: 24, }, 
 
     topbarTitle: { textAlign: "center", fontSize: 16, fontWeight: "700", color: tokens.colors.ink, fontFamily: tokens.typography.fontFamily, paddingHorizontal: 12 },
 
@@ -48,7 +47,7 @@ export const styles = StyleSheet.create({
 
     recordingMicBtnImage: { width: 42, height: 42 },
 
-    outroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255,255,255,0.58)", alignItems: "center", justifyContent: "center", zIndex: 2000 },
+    outroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(255,255,255,0.58)", alignItems: "center", justifyContent: "center", zIndex: 2000 },
     outroCard: { alignItems: "center", justifyContent: "center" },
     outroIcon: { width: 52, height: 52, borderRadius: 999, marginBottom: 10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center" },
     outroIconImg: { width: 40, height: 40 },

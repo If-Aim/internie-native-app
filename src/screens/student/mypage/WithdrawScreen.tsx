@@ -2,10 +2,15 @@ import React from "react";
 import { Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
 import { getUserMe, withdraw, type UserMe } from "../../../api/client";
 import { commonStyles } from "../../../theme/common.Style";
 import { styles } from "./Withdraw.style";
+
+import AppText from "../../../../AppText";
+import AppTextInput from "../../../../AppTextInput";
 
 const REASONS = [
     "mypage.WithdrawR.reason.notUsing",
@@ -97,14 +102,14 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
     };
 
     return (
-        <View style={styles.page}>
+        <SafeAreaView style={commonStyles.appRoot}>
             <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
                     <View style={styles.dropdownOverlay}>
                         <Pressable style={styles.optionList} onPress={(e) => e.stopPropagation()}>
                             {REASONS.map((item) => (
                                 <Pressable key={item} style={styles.optionItem} onPress={() => handleSelectReason(item)}>
-                                    <Text style={[styles.optionText, reason === item ? styles.optionTextSelected : null]}>{t(item)}</Text>
+                                    <AppText style={[styles.optionText, reason === item ? styles.optionTextSelected : null]}>{t(item)}</AppText>
                                 </Pressable>
                             ))}
                         </Pressable>
@@ -112,27 +117,27 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
                 </Pressable>
             </Modal>
 
+            <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
+                <Pressable style={commonStyles.iconbtn} onPress={() => navigation.goBack()}>
+                    <Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
+                </Pressable>
+                <View style={commonStyles.icon40} />
+            </View>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <View style={styles.header}>
-                    <Pressable style={[styles.backBtn, commonStyles.iconbtn]} onPress={() => navigation.goBack()}>
-                        <Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
-                    </Pressable>
-                </View>
-
                 <View style={styles.hero}>
                     <View style={styles.copy}>
-                        <Text style={styles.title}>
+                        <AppText style={styles.title}>
                             {t("mypage.WithdrawTitle", { name: displayName })}
                             {"\n"}
                             {t("mypage.WithdrawTitle2")}
-                        </Text>
-                        <Text style={styles.desc}>
+                        </AppText>
+                        <AppText style={styles.desc}>
                             {t("mypage.WithdrawDesc")}
                             {"\n"}
                             {t("mypage.WithdrawDesc2")}
                             {"\n"}
                             {t("mypage.WithdrawDesc3")}
-                        </Text>
+                        </AppText>
                     </View>
 
                     <View style={styles.imageWrap}>
@@ -143,22 +148,22 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
                 <View style={styles.card}>
                     <View style={styles.questionRow}>
                         <View style={styles.questionBadge}>
-                            <Text style={styles.questionBadgeText}>Q</Text>
+                            <AppText style={styles.questionBadgeText}>Q</AppText>
                         </View>
-                        <Text style={styles.question}>{t("mypage.WithdrawQuestion", { name: displayName })}</Text>
+                        <AppText style={styles.question}>{t("mypage.WithdrawQuestion", { name: displayName })}</AppText>
                     </View>
 
                     <View style={styles.selectWrap}>
                         <Pressable style={styles.selectBtn} onPress={() => setOpen((prev) => !prev)}>
-                            <Text style={[styles.selectText, !reason ? styles.selectPlaceholder : null]}>
+                            <AppText style={[styles.selectText, !reason ? styles.selectPlaceholder : null]}>
                                 {reason ? t(reason) : t("mypage.WithdrawReasonSelect")}
-                            </Text>
+                            </AppText>
                             <Image source={require("../../../assets/icons/chevron-down-ae.png")} style={commonStyles.icon24} resizeMode="contain" />
                         </Pressable>
                     </View>
 
                     {isEtcReason ? (
-                        <TextInput
+                        <AppTextInput
                             style={styles.detailInput}
                             placeholder={t("mypage.WithdrawR.reason.detailPlaceholder", "서비스 탈퇴 사유를 적어주세요")}
                             value={detail}
@@ -175,11 +180,11 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
 
             <View style={styles.submitDock} pointerEvents="box-none">
                 <Pressable style={[styles.submitBtn, !canSubmit ? styles.submitBtnDisabled : null]} onPress={confirmWithdraw} disabled={!canSubmit}>
-                    <Text style={[styles.submitBtnText, !canSubmit ? styles.submitBtnTextDisabled : null]}>
+                    <AppText style={[styles.submitBtnText, !canSubmit ? styles.submitBtnTextDisabled : null]}>
                         {submitting ? (isKo ? "처리 중..." : "Processing...") : (isKo ? "탈퇴하기" : "Delete account")}
-                    </Text>
+                    </AppText>
                 </Pressable>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }

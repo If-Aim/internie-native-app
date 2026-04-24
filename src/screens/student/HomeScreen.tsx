@@ -1,7 +1,7 @@
 // src/screens/student/HomeScreen.tsx
 import React from "react";
 import { API_BASE_URL } from "@env";
-import { StyleSheet, View, Text, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
+import { StyleSheet, View, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +17,8 @@ import type { StudentStackParamList } from "../../navigation/StudentNavigator";
 
 import { styles } from "./Home.style";
 import { commonStyles, tokens } from "../../theme/common.Style";
+
+import AppText from "../../../AppText";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "StudentHome">;
 
@@ -241,7 +243,7 @@ function MonthHeader({
     return (
         <View style={styles.monthRow}>
             <View style={styles.monthLeft}>
-                <Text style={styles.h1}>{label}</Text>
+                <AppText style={styles.h1}>{label}</AppText>
                 <Pressable style={styles.monthBtn} onPress={onOpen} accessibilityLabel={t("calendar.selectMonth")}>
                     <Image source={require("../../assets/icons/chevron-right.png")} style={[commonStyles.icon24, styles.chevronRotate]} />
                 </Pressable>
@@ -354,7 +356,7 @@ function MonthPickerModal({
     return (
         <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
             <View style={commonStyles.periodSheetBackdrop}>
-                <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
                 <View style={commonStyles.periodSheet}>
                     <View style={commonStyles.monthpickerHeader}>
@@ -391,9 +393,9 @@ function MonthPickerModal({
                                     const active = item === selectedYear;
                                     return (
                                         <View style={commonStyles.wheelItem}>
-                                            <Text style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
+                                            <AppText style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
                                                 {pickerYearLabel(item, lang)}
-                                            </Text>
+                                            </AppText>
                                         </View>
                                     );
                                 }}
@@ -423,9 +425,9 @@ function MonthPickerModal({
                                     const active = item === selectedMonth;
                                     return (
                                         <View style={commonStyles.wheelItem}>
-                                            <Text style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
+                                            <AppText style={[commonStyles.wheelItemText, active ? commonStyles.wheelItemTextActive : null]}>
                                                 {pickerMonthLabel(item, lang)}
-                                            </Text>
+                                            </AppText>
                                         </View>
                                     );
                                 }}
@@ -434,7 +436,7 @@ function MonthPickerModal({
                     </View>
 
                     <Pressable style={commonStyles.monthpickerConfirm} onPress={() => onConfirm(toYm(selectedYear, selectedMonth))} >
-                        <Text style={commonStyles.monthpickerConfirmText}>{t("common.confirm")}</Text>
+                        <AppText style={commonStyles.monthpickerConfirmText}>{t("common.confirm")}</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -474,16 +476,14 @@ function MonthFilterSheet({
     return (
         <>
             <View style={commonStyles.periodSheetBackdrop}>
-                <BlurView
-                    style={StyleSheet.absoluteFillObject}
-                    blurType="dark"
-                    blurAmount={5}
-                    reducedTransparencyFallbackColor="rgba(0,0,0,0.5)"
-                /> 
-                <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+                <View style={StyleSheet.absoluteFill}>
+                    <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
+                    <View style={commonStyles.modalDimLight} />
+                </View>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
                 <View style={commonStyles.periodSheet}>
                     <View style={commonStyles.periodSheetHeader}>
-                        <Text style={commonStyles.periodSheetTitle}>{t("filter.title")}</Text>
+                        <AppText style={commonStyles.periodSheetTitle}>{t("filter.title")}</AppText>
                         <Pressable style={commonStyles.periodSheetClose} onPress={onClose}>
                             <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                         </Pressable>
@@ -491,7 +491,7 @@ function MonthFilterSheet({
 
                     <View style={commonStyles.periodSheetBody}>
                         <View style={commonStyles.periodSheetSection}>
-                            <Text style={commonStyles.periodSheetLabel}>{t("filter.period")}</Text>
+                            <AppText style={commonStyles.periodSheetLabel}>{t("filter.period")}</AppText>
 
                             <Pressable
                                 style={styles.monthInputRow}
@@ -500,40 +500,40 @@ function MonthFilterSheet({
                                     setIsMonthPickerOpen(true);
                                 }}
                             >
-                                <Text style={styles.monthInputText}>
+                                <AppText style={styles.monthInputText}>
                                     {ymLabel(tmpYm, i18n.language)}
-                                </Text>
+                                </AppText>
 
                                 <Image source={require("../../assets/icons/calendar-07.png")} style={commonStyles.icon24} />
                             </Pressable>
                         </View>
 
                         <View style={commonStyles.periodSheetSection}>
-                            <Text style={commonStyles.periodSheetLabel}>{t("filter.sort")}</Text>
+                            <AppText style={commonStyles.periodSheetLabel}>{t("filter.sort")}</AppText>
                             <View style={commonStyles.sortRow}>
                                 <Pressable
                                     style={[commonStyles.sortBtn, tmpSort === "past" ? commonStyles.sortBtnActive : null]}
                                     onPress={() => setTmpSort("past")}
                                 >
-                                    <Text style={[commonStyles.sortBtnText, tmpSort === "past" ? commonStyles.sortBtnActiveText : null]}>
+                                    <AppText style={[commonStyles.sortBtnText, tmpSort === "past" ? commonStyles.sortBtnActiveText : null]}>
                                         {t("filter.sortPast")}
-                                    </Text>
+                                    </AppText>
                                 </Pressable>
 
                                 <Pressable
                                     style={[commonStyles.sortBtn, tmpSort === "latest" ? commonStyles.sortBtnActive : null]}
                                     onPress={() => setTmpSort("latest")}
                                 >
-                                    <Text style={[commonStyles.sortBtnText, tmpSort === "latest" ? commonStyles.sortBtnActiveText : null]}>
+                                    <AppText style={[commonStyles.sortBtnText, tmpSort === "latest" ? commonStyles.sortBtnActiveText : null]}>
                                         {t("filter.sortLatest")}
-                                    </Text>
+                                    </AppText>
                                 </Pressable>
                             </View>
                         </View>
                     </View>
 
                     <Pressable style={commonStyles.monthpickerConfirmGet} onPress={() => onApply(tmpYm, tmpSort)}>
-                        <Text style={commonStyles.monthpickerConfirmText}>{t("filter.apply")}</Text>
+                        <AppText style={commonStyles.monthpickerConfirmText}>{t("filter.apply")}</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -621,7 +621,7 @@ function Header({
                 <Image source={require("../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
             </Pressable>
 
-            <Text style={styles.appTitle}>internie</Text>
+            <AppText style={styles.appTitle}>internie</AppText>
 
             <Pressable style={commonStyles.iconbtn} onPress={onAddClick} accessibilityLabel={t("common.add")}>
                 <Image source={require("../../assets/icons/plus-01.png")} style={commonStyles.icon24} />
@@ -661,14 +661,14 @@ function SideMenu({
 
     return (
         <View style={commonStyles.drawerBackdrop}>
-            <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
             <View style={commonStyles.drawerPanel}>
                 <View style={commonStyles.drawerHeader}>
                     <View style={commonStyles.profileWrap}>
                         <View>
-                            <Text style={commonStyles.profileName}>{userName}</Text>
-                            <Text style={commonStyles.profileEmail}>{userEmail}</Text>
+                            <AppText style={commonStyles.profileName}>{userName}</AppText>
+                            <AppText style={commonStyles.profileEmail}>{userEmail}</AppText>
                         </View>
 
                         <View style={commonStyles.profileImgRadius}>
@@ -688,17 +688,17 @@ function SideMenu({
                 <View style={commonStyles.drawerBody}>
                     <Pressable style={commonStyles.drawerMenuItem} onPress={() => { onMyPage(); onClose(); }}>
                         <Image source={require("../../assets/icons/user-profile-02.png")} style={commonStyles.icon24} />
-                        <Text style={commonStyles.drawerMenuItemText}>{t("menu.mypage")}</Text>
+                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.mypage")}</AppText>
                     </Pressable>
 
                     <Pressable style={commonStyles.drawerMenuItem} onPress={handleServicePreparing}>
                         <Image source={require("../../assets/icons/settings.png")} style={commonStyles.icon24} />
-                        <Text style={commonStyles.drawerMenuItemText}>{t("menu.settings")}</Text>
+                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.settings")}</AppText>
                     </Pressable>
 
                     <Pressable style={commonStyles.drawerMenuItem} onPress={() => { void toggleLang(); }}>
                         <Image source={require("../../assets/icons/globe-01.png")} style={commonStyles.icon24} />
-                        <Text style={commonStyles.drawerMenuItemText}>{t("menu.language")}</Text>
+                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.language")}</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -977,17 +977,17 @@ export default function HomeScreen({ navigation }: Props) {
                     ) : (
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
-                            <Text style={styles.emptyTitle}>{t("empty.title")}{"\n"}{t("empty.subtitle")}</Text>
+                            <AppText style={styles.emptyTitle}>{t("empty.title")}{"\n"}{t("empty.subtitle")}</AppText>
 
                             <Pressable style={styles.emptyBtn} onPress={() => handleServicePreparing()} >
-                                <Text style={styles.emptyBtnText}>{t("empty.sync")}</Text>
+                                <AppText style={styles.emptyBtnText}>{t("empty.sync")}</AppText>
                             </Pressable>
                         </View>
                     )
                 }
                 renderItem={({ item: [date, arr] }) => (
                     <View>
-                        <Text style={styles.sectionTitle}>{dateLabel(date, i18n.language, t)}</Text>
+                        <AppText style={styles.sectionTitle}>{dateLabel(date, i18n.language, t)}</AppText>
 
                         {arr.map((it) => {
                             const locked = !!it.isLocked;
@@ -1015,10 +1015,10 @@ export default function HomeScreen({ navigation }: Props) {
                                             <View style={styles.cardRow}>
                                                 <View style={[styles.thumb, selected || locked ? styles.thumbSelected : null]} />
                                                 <View style={styles.cardTextWrap}>
-                                                    <Text style={styles.cardTitle}>{it.title}</Text>
-                                                    <Text style={styles.cardSub}>
+                                                    <AppText style={styles.cardTitle}>{it.title}</AppText>
+                                                    <AppText style={styles.cardSub}>
                                                         {timeRangeText(it.startTime, it.endTime, t)}
-                                                    </Text>
+                                                    </AppText>
                                                 </View>
                                             </View>
 
@@ -1062,9 +1062,9 @@ export default function HomeScreen({ navigation }: Props) {
                         disabled={!canRecord}
                         onPress={() => requireAuth("StudentHome", () => setRecordModalOpen(true))}
                     >
-                        <Text style={canRecord ? commonStyles.recordBtnEnabledText : commonStyles.recordBtnText}>
+                        <AppText style={canRecord ? commonStyles.recordBtnEnabledText : commonStyles.recordBtnText}>
                             {t("common.record")}
-                        </Text>
+                        </AppText>
                     </Pressable>
                 </View>
             )}
@@ -1094,15 +1094,15 @@ export default function HomeScreen({ navigation }: Props) {
                 <Pressable style={styles.backdrop} onPress={() => setRecordModalOpen(false)}>
                     <Pressable style={styles.sheet} onPress={() => {}}>
                         <View style={[commonStyles.topbarMain, styles.topbarRow]}>
-                            <Text style={styles.sheetTitle}>{selectedItem?.title ?? ""}</Text>
+                            <AppText style={styles.sheetTitle}>{selectedItem?.title ?? ""}</AppText>
                             <Pressable onPress={() => setRecordModalOpen(false)}>
                                 <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                             </Pressable>
                         </View>
                         {!!selectedItem && (
-                            <Text style={styles.sheetDate}>
+                            <AppText style={styles.sheetDate}>
                                 {recordModalDateLabel(selectedItem.date, i18n.language)}
-                            </Text>
+                            </AppText>
                         )}
                         {selectedItem && (
                             <View style={styles.weekRow}>
@@ -1114,7 +1114,7 @@ export default function HomeScreen({ navigation }: Props) {
 
                                     return (
                                         <View key={w} style={[styles.weekChip, active ? styles.weekChipActive : null]}>
-                                            <Text style={[styles.weekChipText, active ? styles.weekChipTextActive : null]}>{w}</Text>
+                                            <AppText style={[styles.weekChipText, active ? styles.weekChipTextActive : null]}>{w}</AppText>
                                         </View>
                                     );
                                 })}
@@ -1123,10 +1123,10 @@ export default function HomeScreen({ navigation }: Props) {
                         <View style={styles.recordIntroWrap}>
                             <View style={styles.speechBubble}>
                                 <View style={styles.speechDesc}>
-                                    <Text style={styles.speechBubbleText}>
+                                    <AppText style={styles.speechBubbleText}>
                                         {t("modal.desc1")}{"\n"}
                                         {t("modal.desc2")}
-                                    </Text>
+                                    </AppText>
                                 </View>
                                 <View style={styles.speechBubbleTail} />
                             </View>
@@ -1134,7 +1134,7 @@ export default function HomeScreen({ navigation }: Props) {
                             <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.recordMascot} resizeMode="contain" />
                         </View>
                         <Pressable style={styles.sheetPrimary} onPress={handleRecord}>
-                            <Text style={styles.sheetPrimaryText}>{t("common.record")}</Text>
+                            <AppText style={styles.sheetPrimaryText}>{t("common.record")}</AppText>
                         </Pressable>
                     </Pressable>
                 </Pressable>
@@ -1143,11 +1143,11 @@ export default function HomeScreen({ navigation }: Props) {
                 <View style={styles.preparingOverlay} pointerEvents="auto">
                     <View style={styles.preparingContent}>
                         <PreparingDots />
-                        <Text style={styles.preparingTitle}>{t("modal.questionsPreparingTitle")}</Text>
-                        <Text style={styles.preparingDesc}>
+                        <AppText style={styles.preparingTitle}>{t("modal.questionsPreparingTitle")}</AppText>
+                        <AppText style={styles.preparingDesc}>
                             {t("modal.questionsPreparingDesc1")}{"\n"}
                             {t("modal.questionsPreparingDesc2")}
-                        </Text>
+                        </AppText>
                     </View>
                 </View>
             )}
@@ -1156,22 +1156,22 @@ export default function HomeScreen({ navigation }: Props) {
                 <Pressable style={styles.backdrop} onPress={() => setLoginGateOpen(false)} >
                     <Pressable style={styles.sheet} onPress={() => {}}>
                         <View style={styles.sheetHeader}>
-                            <Text style={styles.sheetTitle}>
+                            <AppText style={styles.sheetTitle}>
                                 {t("login.getLoginTitle", "로그인이 필요해요")}
-                            </Text>
+                            </AppText>
                             <Pressable onPress={() => setLoginGateOpen(false)}>
-                                <Text style={styles.sheetClose}><Image source={require("../../assets/icons/x-01.png")} style={styles.editIcon} /></Text>
+                                <AppText style={styles.sheetClose}><Image source={require("../../assets/icons/x-01.png")} style={styles.editIcon} /></AppText>
                             </Pressable>
                         </View>
 
-                        <Text style={styles.sheetDesc}>
+                        <AppText style={styles.sheetDesc}>
                             {t("login.getLoginSub", "이 기능을 이용하려면 로그인해 주세요")}
-                        </Text>
+                        </AppText>
 
                         <Pressable style={styles.sheetPrimary} onPress={() => { setLoginGateOpen(false); rootNavigation.navigate("Auth"); }} >
-                            <Text style={styles.sheetPrimaryText}>
+                            <AppText style={styles.sheetPrimaryText}>
                                 {t("common.login", "로그인")}
-                            </Text>
+                            </AppText>
                         </Pressable>
                     </Pressable>
                 </Pressable>

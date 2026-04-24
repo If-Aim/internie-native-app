@@ -1,6 +1,6 @@
 import React from "react";
 import { API_BASE_URL } from "@env";
-import { View, Text, Pressable, Image, ScrollView, Alert, Modal, StyleSheet } from "react-native";
+import { View, Pressable, Image, ScrollView, Alert, Modal, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,6 +13,8 @@ import { getUserMe, logout, getEventDaysByMonth, type UserMe, type EventDay, wit
 
 import { styles } from "./MyPage.style";
 import { commonStyles } from "../../../theme/common.Style";
+
+import AppText from "../../../../AppText";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "MyPage">;
 type VerifyStatus = "UNVERIFIED" | "PENDING" | "APPROVED" | "REJECTED";
@@ -56,7 +58,7 @@ function Header({ onPreviousClick }: { onPreviousClick: () => void }) {
             <Pressable style={commonStyles.iconbtn} onPress={onPreviousClick}>
                 <Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
             </Pressable>
-            <Text style={styles.headerTitle} />
+            <AppText style={styles.headerTitle} />
             <View style={commonStyles.icon40} />
         </View>
     );
@@ -227,45 +229,45 @@ export default function MyPageScreen({ navigation }: Props) {
                             ) : null}
                         </View>
 
-                        <Text style={styles.greeting}>
-                            {t("mypage.greeting")} <Text style={styles.name}>{displayName}</Text>{t("mypage.greeting2")}
-                        </Text>
+                        <AppText style={styles.greeting}>
+                            {t("mypage.greeting")} <AppText style={styles.name}>{displayName}</AppText>{t("mypage.greeting2")}
+                        </AppText>
 
-                        <Text style={styles.subText}>{mypageSubText}</Text>
+                        <AppText style={styles.subText}>{mypageSubText}</AppText>
                     </View>
 
                     <View style={styles.cards}>
                         {status !== "APPROVED" ? (
                             <Pressable style={[styles.verifyCard, status === "PENDING" ? styles.verifyCardPending : null]} onPress={verifyUi.onPress} disabled={verifyUi.disabled}>
-                                <Text style={[styles.verifyCardTitle, status === "PENDING" ? styles.verifyCardTitlePending : null]}>{verifyUi.label}</Text>
+                                <AppText style={[styles.verifyCardTitle, status === "PENDING" ? styles.verifyCardTitlePending : null]}>{verifyUi.label}</AppText>
                             </Pressable>
                         ) : null}
 
                         <View style={styles.menu}>
                             <Pressable style={styles.menuItem} onPress={() => navigation.navigate("UserModify")}>
-                                <Text style={styles.menuTitle}>{t("mypage.editProfile")}</Text>
+                                <AppText style={styles.menuTitle}>{t("mypage.editProfile")}</AppText>
                                 <View style={styles.menuRight}>
                                     <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
                                 </View>
                             </Pressable>
 
                             <Pressable style={styles.menuItem} onPress={() => navigation.navigate("TargetCom")}>
-                                <Text style={styles.menuTitle}>{t("mypage.targetCompany")}</Text>
+                                <AppText style={styles.menuTitle}>{t("mypage.targetCompany")}</AppText>
                                 <View style={styles.menuRight}>
-                                    <Text style={styles.menuValue}>{me?.interestCompany?.trim() ? me.interestCompany : t("mypage.notSet")}</Text>
+                                    <AppText style={styles.menuValue}>{me?.interestCompany?.trim() ? me.interestCompany : t("mypage.notSet")}</AppText>
                                     <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
                                 </View>
                             </Pressable>
 
                             <Pressable style={styles.menuItem} onPress={() => navigation.navigate("Certificates")}>
-                                <Text style={styles.menuTitle}>{t("mypage.certs")}</Text>
+                                <AppText style={styles.menuTitle}>{t("mypage.certs")}</AppText>
                                 <View style={styles.menuRight}>
                                     <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
                                 </View>
                             </Pressable>
 
                             <Pressable style={styles.menuItem} onPress={() => navigation.navigate("VerifyCode")}>
-                                <Text style={styles.menuTitle}>{t("mypage.verifyCode")}</Text>
+                                <AppText style={styles.menuTitle}>{t("mypage.verifyCode")}</AppText>
                                 <View style={styles.menuRight}>
                                     <Image source={require("../../../assets/icons/chevron-right.png")} style={styles.menuChevron} resizeMode="contain" />
                                 </View>
@@ -273,31 +275,34 @@ export default function MyPageScreen({ navigation }: Props) {
                         </View>
 
                         <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate("Withdraw")}>
-                            <Text style={styles.withdrawText}>{isKo ? "회원탈퇴" : "Delete account"}</Text>
+                            <AppText style={styles.withdrawText}>{isKo ? "회원탈퇴" : "Delete account"}</AppText>
                         </Pressable>
                     </View>
                     <View style={styles.logoutDock} pointerEvents="box-none">
                         <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                            <Text style={styles.logoutText}>{t("mypage.logout")}</Text>
+                            <AppText style={styles.logoutText}>{t("mypage.logout")}</AppText>
                         </Pressable>
                     </View>
                 </ScrollView>
                 <Modal visible={showRejectModal} transparent animationType="fade" onRequestClose={closeRejectModal}>
                     <View style={styles.modalBackdrop}>
-                        <BlurView style={StyleSheet.absoluteFill} blurType="dark" blurAmount={5} />
+                        <View style={StyleSheet.absoluteFill}>
+                            <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
+                            <View style={commonStyles.modalDimLight} />
+                        </View>
                         <View style={styles.modalCard}>
-                            <Pressable style={[styles.modalClose, commonStyles.iconbtn]} accessibilityLabel="close" onPress={closeRejectModal}>
+                            <Pressable style={commonStyles.iconbtn} accessibilityLabel="close" onPress={closeRejectModal}>
                                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                             </Pressable>
 
                             <View style={styles.modalBody}>
-                                <Text style={styles.modalTitle}>{t("mypage_modal.title")}</Text>
-                                <Text style={styles.modalReason}>사유:</Text>
-                                <Text style={styles.modalReason}>{rejectReasonText || "-"}</Text>
+                                <AppText style={styles.modalTitle}>{t("mypage_modal.title")}</AppText>
+                                <AppText style={styles.modalReason}>사유:</AppText>
+                                <AppText style={styles.modalReason}>{rejectReasonText || "-"}</AppText>
                             </View>
 
                             <Pressable style={styles.modalPrimaryButton} onPress={goReVerify}>
-                                <Text style={styles.modalPrimaryButtonText}>{t("mypage_modal.reVerify")}</Text>
+                                <AppText style={styles.modalPrimaryButtonText}>{t("mypage_modal.reVerify")}</AppText>
                             </Pressable>
                         </View>
                     </View>

@@ -2,11 +2,10 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     page: { flex: 1, backgroundColor: "#F0F6FF" },
-    header: { height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 24, paddingHorizontal: 12 },
-    headerSpacer: { width: 44, height: 40 },
+    header: { paddingTop: 11, paddingHorizontal: 12, paddingBottom: 15,},
     headerTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
     headerClose: { alignSelf: "flex-end" },
-    content: { flexGrow: 1, paddingTop: 40, paddingRight: 22, paddingBottom: 0, paddingLeft: 32 },
+    content: { flexGrow: 1, paddingTop: 21, paddingRight: 22, paddingBottom: 0, paddingLeft: 32 },
     errorText: { marginBottom: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#FFFFFF", color: "#C62828", fontSize: 14 },
     section: { marginTop: 25 },
     label: { marginBottom: 10, fontSize: 16, fontWeight: "500", color: "#000000" },

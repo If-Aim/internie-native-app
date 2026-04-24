@@ -1,8 +1,9 @@
 // src/screens/student/schedule/NewScheduleScreen.tsx
 import { useTranslation } from "react-i18next";
 import React from "react";
-import { View, Text, Pressable, Image, TextInput, ScrollView, Modal, Alert, } from "react-native";
+import { StyleSheet, View, Pressable, Image, ScrollView, Modal, Alert, } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { BlurView } from "@react-native-community/blur";
 import { createEvent } from "../../../api/client";
 import { styles } from "./Schedule.style";
 import { commonStyles } from "../../../theme/common.Style";
@@ -11,6 +12,8 @@ import { TIME_OPTIONS, WEEK_LABELS, toApiHHmmss, displayTimeLabel, toYmd, stripT
 import type { RangeSheetMode, TimeSheetProps, DateRangeSheetProps, } from "./scheduleTypes";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import AppText from "../../../../AppText";
+import AppTextInput from "../../../../AppTextInput";
 
 function TimeSheet({
     step,
@@ -29,140 +32,142 @@ function TimeSheet({
     const locale = i18n.language.startsWith("ko") ? "ko-KR" : "en-US";
 
     return (
-        <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-            <View style={styles.sheetOverlay}>
-                <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+        <>
+            <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+                <View style={styles.sheetOverlay}>
+                    <Pressable style={styles.sheetBackdrop} onPress={onClose} />
 
-                <View style={styles.sheetCard}>
-                    <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle}>{t("common.time")}</Text>
+                    <View style={styles.sheetCard}>
+                        <View style={styles.sheetHeader}>
+                            <AppText style={styles.sheetTitle}>{t("common.time")}</AppText>
 
-                        <Pressable style={styles.sheetCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
-                            <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
-                        </Pressable>
-                    </View>
+                            <Pressable style={styles.sheetCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
+                                <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
+                            </Pressable>
+                        </View>
 
-                    <View style={styles.sheetCols}>
-                        {step === "start" ? (
-                            <View style={styles.sheetCol}>
-                                <ScrollView
-                                    style={styles.timeList}
-                                    nestedScrollEnabled={true}
-                                    keyboardShouldPersistTaps="handled"
-                                    showsVerticalScrollIndicator={false}
-                                >
-                                    <Pressable
-                                        style={[
-                                            styles.timeItem,
-                                            isAllDay ? styles.timeItemSelected : null,
-                                        ]}
-                                        onPress={() => {
-                                            setIsAllDay(true);
-                                            setStartTime(null);
-                                            setEndTime(null);
-                                            setStep("start");
-                                            onClose();
-                                        }}
+                        <View style={styles.sheetCols}>
+                            {step === "start" ? (
+                                <View style={styles.sheetCol}>
+                                    <ScrollView
+                                        style={styles.timeList}
+                                        nestedScrollEnabled={true}
+                                        keyboardShouldPersistTaps="handled"
+                                        showsVerticalScrollIndicator={false}
                                     >
-                                        <Text
+                                        <Pressable
                                             style={[
-                                                styles.timeItemText,
-                                                isAllDay
-                                                    ? styles.timeItemSelectedText
-                                                    : null,
+                                                styles.timeItem,
+                                                isAllDay ? styles.timeItemSelected : null,
                                             ]}
+                                            onPress={() => {
+                                                setIsAllDay(true);
+                                                setStartTime(null);
+                                                setEndTime(null);
+                                                setStep("start");
+                                                onClose();
+                                            }}
                                         >
-                                            {t("common.allDay")}
-                                        </Text>
-                                    </Pressable>
-
-                                    {TIME_OPTIONS.map((opt) => {
-                                        const selected = opt === startTime;
-
-                                        return (
-                                            <Pressable
-                                                key={opt}
+                                            <AppText
                                                 style={[
-                                                    styles.timeItem,
-                                                    selected
-                                                        ? styles.timeItemSelected
+                                                    styles.timeItemText,
+                                                    isAllDay
+                                                        ? styles.timeItemSelectedText
                                                         : null,
                                                 ]}
-                                                onPress={() => {
-                                                    setIsAllDay(false);
-                                                    onChangeStart(opt);
-                                                    setStep("end");
-                                                }}
                                             >
-                                                <Text
-                                                    style={[
-                                                        styles.timeItemText,
-                                                        selected
-                                                            ? styles.timeItemSelectedText
-                                                            : null,
-                                                    ]}
-                                                >
-                                                    {displayTimeLabel(opt, locale)} -
-                                                </Text>
-                                            </Pressable>
-                                        );
-                                    })}
-                                </ScrollView>
-                            </View>
-                        ) : (
-                            <View style={styles.sheetCol}>
-                                <ScrollView
-                                    style={styles.timeList}
-                                    nestedScrollEnabled={true}
-                                    keyboardShouldPersistTaps="handled"
-                                    showsVerticalScrollIndicator={false}
-                                >
-                                    {TIME_OPTIONS.map((opt) => {
-                                        const startIdx = getTimeIndex(startTime);
-                                        const endIdx = getTimeIndex(opt);
-                                        const isDisabled = startTime
-                                            ? endIdx <= startIdx
-                                            : false;
-                                        const selected = opt === endTime;
+                                                {t("common.allDay")}
+                                            </AppText>
+                                        </Pressable>
 
-                                        return (
-                                            <Pressable
-                                                key={opt}
-                                                disabled={isDisabled}
-                                                style={[
-                                                    styles.timeItem,
-                                                    selected
-                                                        ? styles.timeItemSelected
-                                                        : null,
-                                                    isDisabled
-                                                        ? styles.timeItemDisabled
-                                                        : null,
-                                                ]}
-                                                onPress={() => {
-                                                    onChangeEnd(opt);
-                                                    onClose();
-                                                }}
-                                            >
-                                                <Text
+                                        {TIME_OPTIONS.map((opt) => {
+                                            const selected = opt === startTime;
+
+                                            return (
+                                                <Pressable
+                                                    key={opt}
                                                     style={[
-                                                        styles.timeItemText,
+                                                        styles.timeItem,
                                                         selected
-                                                            ? styles.timeItemSelectedText
+                                                            ? styles.timeItemSelected
                                                             : null,
                                                     ]}
+                                                    onPress={() => {
+                                                        setIsAllDay(false);
+                                                        onChangeStart(opt);
+                                                        setStep("end");
+                                                    }}
                                                 >
-                                                    - {displayTimeLabel(opt, locale)}
-                                                </Text>
-                                            </Pressable>
-                                        );
-                                    })}
-                                </ScrollView>
-                            </View>
-                        )}
+                                                    <AppText
+                                                        style={[
+                                                            styles.timeItemText,
+                                                            selected
+                                                                ? styles.timeItemSelectedText
+                                                                : null,
+                                                        ]}
+                                                    >
+                                                        {displayTimeLabel(opt, locale)} -
+                                                    </AppText>
+                                                </Pressable>
+                                            );
+                                        })}
+                                    </ScrollView>
+                                </View>
+                            ) : (
+                                <View style={styles.sheetCol}>
+                                    <ScrollView
+                                        style={styles.timeList}
+                                        nestedScrollEnabled={true}
+                                        keyboardShouldPersistTaps="handled"
+                                        showsVerticalScrollIndicator={false}
+                                    >
+                                        {TIME_OPTIONS.map((opt) => {
+                                            const startIdx = getTimeIndex(startTime);
+                                            const endIdx = getTimeIndex(opt);
+                                            const isDisabled = startTime
+                                                ? endIdx <= startIdx
+                                                : false;
+                                            const selected = opt === endTime;
+
+                                            return (
+                                                <Pressable
+                                                    key={opt}
+                                                    disabled={isDisabled}
+                                                    style={[
+                                                        styles.timeItem,
+                                                        selected
+                                                            ? styles.timeItemSelected
+                                                            : null,
+                                                        isDisabled
+                                                            ? styles.timeItemDisabled
+                                                            : null,
+                                                    ]}
+                                                    onPress={() => {
+                                                        onChangeEnd(opt);
+                                                        onClose();
+                                                    }}
+                                                >
+                                                    <AppText
+                                                        style={[
+                                                            styles.timeItemText,
+                                                            selected
+                                                                ? styles.timeItemSelectedText
+                                                                : null,
+                                                        ]}
+                                                    >
+                                                        - {displayTimeLabel(opt, locale)}
+                                                    </AppText>
+                                                </Pressable>
+                                            );
+                                        })}
+                                    </ScrollView>
+                                </View>
+                            )}
+                        </View>
                     </View>
                 </View>
-            </View>
-        </Modal>
+            </Modal>
+        </>
     );
 }
 
@@ -183,35 +188,41 @@ function DateRangeSheet({
     }, []);
 
     return (
-        <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-            <Pressable style={[styles.sheetBackdrop, styles.sheetBackdropCal]} onPress={onClose} >
-                <Pressable
-                    style={[
-                        styles.sheetCardDate,
-                        weeks === 6 ? styles.sheetCardDate6w : styles.sheetCardDate5w,
-                    ]}
-                    onPress={(e) => e.stopPropagation()}
-                >
-                    <View style={styles.dateRangeBody}>
-                        <CalendarRange
-                            mode={mode}
-                            startDate={startDate}
-                            endDate={endDate}
-                            onChangeStart={onChangeStart}
-                            onChangeEnd={onChangeEnd}
-                            onDone={onClose}
-                            onClose={onClose}
-                            onWeeksChange={setWeeks}
-                            resetKey={resetKey}
-                        />
-                    </View>
+        <>
+            <View style={StyleSheet.absoluteFill}>
+                <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
+                <View style={commonStyles.modalDimLight} />
+            </View>
+            <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+                <Pressable style={styles.sheetBackdrop} onPress={onClose} >
+                    <Pressable
+                        style={[
+                            styles.sheetCardDate,
+                            weeks === 6 ? styles.sheetCardDate6w : styles.sheetCardDate5w,
+                        ]}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.dateRangeBody}>
+                            <CalendarRange
+                                mode={mode}
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChangeStart={onChangeStart}
+                                onChangeEnd={onChangeEnd}
+                                onDone={onClose}
+                                onClose={onClose}
+                                onWeeksChange={setWeeks}
+                                resetKey={resetKey}
+                            />
+                        </View>
 
-                    <Pressable style={styles.sheetConfirm} onPress={onClose}>
-                        <Text style={styles.sheetConfirmText}>{t("common.confirm")}</Text>
+                        <Pressable style={styles.sheetConfirm} onPress={onClose}>
+                            <AppText style={styles.sheetConfirmText}>{t("common.confirm")}</AppText>
+                        </Pressable>
                     </Pressable>
                 </Pressable>
-            </Pressable>
-        </Modal>
+            </Modal>
+        </>
     );
 }
 
@@ -236,8 +247,8 @@ function CalendarRange({
     resetKey: number;
 }) {
     const { t } = useTranslation();
-    const s = stripTime(startDate);
-    const e = stripTime(endDate);
+    const s = React.useMemo(() => stripTime(startDate), [startDate]);
+    const e = React.useMemo(() => stripTime(endDate), [endDate]);
     const sameDay = isSameDay(s, e);
 
     const [cursor, setCursor] = React.useState(
@@ -251,7 +262,7 @@ function CalendarRange({
 
     React.useEffect(() => {
         setCursor(new Date(s.getFullYear(), s.getMonth(), 1));
-    }, [s]);
+    }, [s.getFullYear(), s.getMonth()]);
 
     React.useEffect(() => {
         if (mode === "range") setFocus("start");
@@ -318,16 +329,17 @@ function CalendarRange({
         <View style={styles.cal}>
             <View style={styles.calHeader}>
                 <View style={styles.calHeaderTop}>
-                    <Pressable style={styles.calCloseBtn} accessibilityLabel={t("common.close")} onPress={onClose} >
+                    <View style={commonStyles.icon40}></View>
+                    <Pressable style={commonStyles.iconbtn} accessibilityLabel={t("common.close")} onPress={onClose} >
                         <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                     </Pressable>
                 </View>
 
                 <View style={styles.calHeaderBottom}>
-                    <Text style={styles.calTitle}>{title}</Text>
+                    <AppText style={styles.calTitle}>{title}</AppText>
 
                     <View style={styles.calNav}>
-                        <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, -1))} accessibilityLabel="prev month" > 
+                        <Pressable style={styles.calNavBtn} onPress={() => setCursor((prev) => addMonths(prev, -1))} accessibilityLabel="prev month">
                             <Image
                                 source={require("../../../assets/icons/Previous (Stroke).png")}
                                 style={commonStyles.iconArrow}
@@ -335,7 +347,7 @@ function CalendarRange({
                             />
                         </Pressable>
 
-                        <Pressable style={styles.calNavBtn} onPress={() => setCursor(addMonths(cursor, 1))} accessibilityLabel="next month" >
+                        <Pressable style={styles.calNavBtn} onPress={() => setCursor((prev) => addMonths(prev, 1))} accessibilityLabel="next month">
                             <Image source={require("../../../assets/icons/Next (Stroke).png")} style={commonStyles.iconArrow} resizeMode="contain" />
                         </Pressable>
                     </View>
@@ -345,9 +357,9 @@ function CalendarRange({
             <View style={styles.calBody}>
                 <View style={styles.calWeek}>
                     {WEEK_LABELS.map((w) => (
-                        <Text key={w} style={styles.calWeekday}>
+                        <AppText key={w} style={styles.calWeekday}>
                             {w}
-                        </Text>
+                        </AppText>
                     ))}
                 </View>
 
@@ -394,9 +406,9 @@ function CalendarRange({
                                 )}
 
                                 <Pressable style={[ styles.calDay, isSelected ? styles.calDaySelected : null, styles.calDayFront, ]} onPress={() => handlePick(day)} >
-                                    <Text  style={[ styles.calDayText, isSelected ? styles.calDaySelectedText : null, ]} >
+                                    <AppText  style={[ styles.calDayText, isSelected ? styles.calDaySelectedText : null, ]} >
                                         {day.getDate()}
-                                    </Text>
+                                    </AppText>
                                 </Pressable>
                             </View>
                         );
@@ -622,11 +634,11 @@ export default function NewScheduleScreen(): React.ReactElement {
     return (
         <SafeAreaView style={styles.screen}>
             <View style={styles.topbarMain}>
-                <View style={commonStyles.icon24} />
+                <View style={commonStyles.icon40} />
 
-                <Text style={styles.appTitle}>{t("schedule_new.title")}</Text>
+                <AppText style={styles.appTitle}>{t("schedule_new.title")}</AppText>
 
-                <Pressable style={styles.iconBtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
+                <Pressable style={commonStyles.iconbtn} accessibilityLabel={t("common.close")} onPress={() => navigation.goBack()} >
                     <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                 </Pressable>
             </View>
@@ -635,7 +647,7 @@ export default function NewScheduleScreen(): React.ReactElement {
                 contentContainerStyle={styles.newEvent}
                 keyboardShouldPersistTaps="handled"
             >
-                <TextInput
+                <AppTextInput
                     style={styles.titleInput}
                     placeholder={t("schedule_new.titlePlaceholder")}
                     placeholderTextColor="#A2A2A2"
@@ -648,17 +660,17 @@ export default function NewScheduleScreen(): React.ReactElement {
                         <Image source={require("../../../assets/icons/schedule_clock.png")} style={styles.scheduleLineIcon} />
                         <View style={styles.dateInline}>
                             <Pressable style={styles.datePill} onPress={openStartOnlyRangeSheet} accessibilityLabel="set start date" >
-                                <Text style={styles.datePillText}>
+                                <AppText style={styles.datePillText}>
                                     {formatRangeDate(startDate, locale)}
-                                </Text>
+                                </AppText>
                             </Pressable>
 
-                            <Text style={styles.dateSep}>-</Text>
+                            <AppText style={styles.dateSep}>-</AppText>
 
                             <Pressable style={styles.datePill} onPress={openEndOnlyRangeSheet} accessibilityLabel="set end date" >
-                                <Text style={styles.datePillText}>
+                                <AppText style={styles.datePillText}>
                                     {formatRangeDate(endDate, locale)}
-                                </Text>
+                                </AppText>
                             </Pressable>
                         </View>
                     </View>
@@ -668,9 +680,9 @@ export default function NewScheduleScreen(): React.ReactElement {
                             <View style={styles.scheduleLineTime}>
                                 <Image source={require("../../../assets/icons/schedule_stopwatch.png")} style={styles.scheduleLineIconTime} />
                                 <View style={styles.rowToggleLeft}>
-                                    <Text style={styles.rowToggleLeftText}>
+                                    <AppText style={styles.rowToggleLeftText}>
                                         {t("schedule_new.addTime")}
-                                    </Text>
+                                    </AppText>
                                 </View>
 
                                 <Pressable
@@ -718,12 +730,12 @@ export default function NewScheduleScreen(): React.ReactElement {
                                                 setShowSheet(true);
                                             }}
                                         >
-                                            <Text style={styles.timePillText}>
+                                            <AppText style={styles.timePillText}>
                                                 {startTime ? startTimeLabel : "Start"}
-                                            </Text>
+                                            </AppText>
                                         </Pressable>
 
-                                        <Text style={styles.dateSep}>-</Text>
+                                        <AppText style={styles.dateSep}>-</AppText>
 
                                         <Pressable
                                             style={styles.timePill}
@@ -732,9 +744,9 @@ export default function NewScheduleScreen(): React.ReactElement {
                                                 setShowSheet(true);
                                             }}
                                         >
-                                            <Text style={styles.timePillText}>
+                                            <AppText style={styles.timePillText}>
                                                 {endTime ? endTimeLabel : "End"}
-                                            </Text>
+                                            </AppText>
                                         </Pressable>
                                     </View>
                                 </View>
@@ -744,7 +756,7 @@ export default function NewScheduleScreen(): React.ReactElement {
                 </View>
 
                 <View style={styles.memoBox}>
-                    <TextInput
+                    <AppTextInput
                         style={styles.memoInput}
                         placeholder={t("schedule_new.memoPlaceholder")}
                         placeholderTextColor="#A2A2A2"
@@ -766,7 +778,7 @@ export default function NewScheduleScreen(): React.ReactElement {
                     onPress={handleSave}
                     disabled={!isTitleValid}
                 >
-                    <Text style={[styles.btnPrimaryText, !isTitleValid ? styles.btnDisabled : null,]}>{t("common.save")}</Text>
+                    <AppText style={[styles.btnPrimaryText, !isTitleValid ? styles.btnDisabled : null,]}>{t("common.save")}</AppText>
                 </Pressable>
             </View>
 

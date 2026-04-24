@@ -1,7 +1,7 @@
 import React from "react";
 import { API_BASE_URL } from "@env";
 import { useTranslation } from "react-i18next";
-import { View, Text, Pressable, Image, TextInput, ActivityIndicator, Alert, ScrollView, Modal } from "react-native";
+import { View, Pressable, Image, ActivityIndicator, Alert, ScrollView, Modal } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { launchImageLibrary } from "react-native-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,9 @@ import { ApiError, getUserMe, updateMyProfile, updateMyProfileImage, deleteMyPro
 import { Screen } from "../../../components/Screen";
 import { styles } from "./UserModify.style";
 import { commonStyles } from "../../../theme/common.Style";
+
+import AppText from "../../../../AppText";
+import AppTextInput from "../../../../AppTextInput";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "UserModify">;
 
@@ -42,8 +45,8 @@ function Header({ onCloseClick }: { onCloseClick: () => void }) {
 
     return (
         <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
-            <View style={styles.headerLeftSpace} />
-            <Text style={styles.headerTitle}>{t("mypage.editProfile")}</Text>
+            <View style={commonStyles.icon40} />
+            <AppText style={styles.headerTitle}>{t("mypage.editProfile")}</AppText>
             <Pressable style={commonStyles.iconbtn} onPress={onCloseClick}>
                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
             </Pressable>
@@ -363,18 +366,18 @@ export default function UserModifyScreen({ navigation }: Props) {
 
                         <View style={{ flexDirection: "row", gap: 16 }}>
                             <Pressable style={[styles.avatarBtn, saving ? styles.avatarBtnDisabled : null]} onPress={handlePickImage} disabled={saving}>
-                                <Text style={styles.avatarBtnText}>{t("mypage.edit")}</Text>
+                                <AppText style={styles.avatarBtnText}>{t("mypage.edit")}</AppText>
                             </Pressable>
                             <Pressable style={[styles.avatarBtn, saving ? styles.avatarBtnDisabled : null, { backgroundColor: "#FFD0D1" }]} onPress={onDeleteProfileImage} disabled={saving}>
-                                <Text style={[styles.avatarBtnText, { color: "#FF5959" }]}>{t("mypage.delete")}</Text>
+                                <AppText style={[styles.avatarBtnText, { color: "#FF5959" }]}>{t("mypage.delete")}</AppText>
                             </Pressable>
                         </View>
                     </View>
 
                     <View style={styles.form}>
                         <View style={styles.field}>
-                            <Text style={styles.label}>{t("mypage.name")}</Text>
-                            <TextInput
+                            <AppText style={styles.label}>{t("mypage.name")}</AppText>
+                            <AppTextInput
                                 style={styles.input}
                                 value={form.name}
                                 onChangeText={(txt) => setForm((prev) => ({ ...prev, name: txt }))}
@@ -385,9 +388,9 @@ export default function UserModifyScreen({ navigation }: Props) {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={styles.label}>E-mail</Text>
+                            <AppText style={styles.label}>E-mail</AppText>
                             <Pressable onPress={() => { if (!saving) setEmailConfirmOpen(true); }}>
-                                <TextInput
+                                <AppTextInput
                                     style={[styles.input, styles.inputReadonly]}
                                     value={displayEmail}
                                     editable={false}
@@ -397,9 +400,9 @@ export default function UserModifyScreen({ navigation }: Props) {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={styles.label}>{t("mypage.birth")}</Text>
+                            <AppText style={styles.label}>{t("mypage.birth")}</AppText>
                             <Pressable onPress={handleServicePreparing}>
-                                <TextInput
+                                <AppTextInput
                                     style={[styles.input, styles.inputReadonly]}
                                     value={birth}
                                     editable={false}
@@ -409,8 +412,8 @@ export default function UserModifyScreen({ navigation }: Props) {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={styles.label}>{t("mypage.schoolMajor")}</Text>
-                            <TextInput
+                            <AppText style={styles.label}>{t("mypage.schoolMajor")}</AppText>
+                            <AppTextInput
                                 style={[styles.input, styles.inputReadonly]}
                                 value={schoolMajor}
                                 editable={false}
@@ -421,9 +424,9 @@ export default function UserModifyScreen({ navigation }: Props) {
                     <View style={styles.bottomMargin} />
                     <View style={styles.bottom}>
                         <Pressable style={[styles.saveBtn, (!isDirty || saving) ? styles.saveBtnDisabled : null]} onPress={onSave} disabled={!isDirty || saving}>
-                            <Text style={[styles.saveBtnText, (!isDirty || saving) ? styles.saveBtnTextDisabled : null]}>
+                            <AppText style={[styles.saveBtnText, (!isDirty || saving) ? styles.saveBtnTextDisabled : null]}>
                                 {t("common.save")}
-                            </Text>
+                            </AppText>
                         </Pressable>
                     </View>
                 </ScrollView>
@@ -433,19 +436,19 @@ export default function UserModifyScreen({ navigation }: Props) {
                 <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 }}>
                     <View style={{ width: "100%", maxWidth: 360, backgroundColor: "#F0F6FF", borderRadius: 20, paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20 }}>
                         <View style={{ position: "relative", flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 12 }}>
-                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("userModify.changeEmailTitle", "이메일 변경")}</Text>
+                            <AppText style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("userModify.changeEmailTitle", "이메일 변경")}</AppText>
                             <Pressable style={{ position: "absolute", top: 0, right: 0 }} onPress={() => setEmailConfirmOpen(false)}>
                                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                             </Pressable>
                         </View>
 
-                        <Text style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
+                        <AppText style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
                             {t("userModify.changeEmailDesc", "이메일 변경을 위해 이메일 인증을 진행해야 합니다. 계속하시겠습니까?")}
-                        </Text>
+                        </AppText>
 
                         <View style={{ flexDirection: "row", gap: 10, marginTop: 20 }}>
                             <Pressable style={{ flex: 1, height: 56, borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 12, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }} onPress={() => setEmailConfirmOpen(false)}>
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("common.cancel", "취소")}</Text>
+                                <AppText style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("common.cancel", "취소")}</AppText>
                             </Pressable>
 
                             <Pressable
@@ -458,7 +461,7 @@ export default function UserModifyScreen({ navigation }: Props) {
                                     setEmailVerifyPopupOpen(true);
                                 }}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>{t("common.continue", "계속")}</Text>
+                                <AppText style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>{t("common.continue", "계속")}</AppText>
                             </Pressable>
                         </View>
                     </View>
@@ -469,18 +472,18 @@ export default function UserModifyScreen({ navigation }: Props) {
                 <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 }}>
                     <View style={{ width: "100%", maxWidth: 360, backgroundColor: "#F0F6FF", borderRadius: 20, paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20 }}>
                         <View style={{ position: "relative", flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 12 }}>
-                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("userModify.emailVerifyTitle", "이메일 인증")}</Text>
+                            <AppText style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("userModify.emailVerifyTitle", "이메일 인증")}</AppText>
                             <Pressable style={{ position: "absolute", top: 0, right: 0 }} onPress={() => setEmailVerifyPopupOpen(false)}>
                                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                             </Pressable>
                         </View>
 
-                        <Text style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
+                        <AppText style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
                             {t("userModify.emailVerifyDesc", "이메일 변경을 위해 인증을 진행해주세요.")}
-                        </Text>
+                        </AppText>
 
                         <View style={{ gap: 12 }}>
-                            <TextInput
+                            <AppTextInput
                                 style={{ width: "100%", height: 54, paddingHorizontal: 18, borderRadius: 10, borderWidth: 1, borderColor: "#E2E2E2", backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "400", color: "#000000" }}
                                 value={emailForm.email}
                                 onChangeText={(value) => setEmailForm((prev) => ({ ...prev, email: value }))}
@@ -491,7 +494,7 @@ export default function UserModifyScreen({ navigation }: Props) {
                             />
 
                             <View style={{ flexDirection: "row", gap: 8 }}>
-                                <TextInput
+                                <AppTextInput
                                     style={{ flex: 1, height: 54, paddingHorizontal: 18, borderRadius: 10, borderWidth: 1, borderColor: "#E2E2E2", backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "400", color: "#000000" }}
                                     value={emailForm.code}
                                     onChangeText={(value) => setEmailForm((prev) => ({ ...prev, code: value }))}
@@ -505,19 +508,19 @@ export default function UserModifyScreen({ navigation }: Props) {
                                     onPress={handleSendEmailCode}
                                     disabled={emailSending}
                                 >
-                                    <Text style={{ fontSize: 14, fontWeight: "700", color: emailSending ? "#707070" : "#FFFFFF" }}>
+                                    <AppText style={{ fontSize: 14, fontWeight: "700", color: emailSending ? "#707070" : "#FFFFFF" }}>
                                         {emailSending ? t("userModify.sending", "전송중") : t("userModify.sendCode", "코드 받기")}
-                                    </Text>
+                                    </AppText>
                                 </Pressable>
                             </View>
 
-                            {emailSentMessage ? <Text style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0,0,0,0.6)" }}>{emailSentMessage}</Text> : null}
-                            {emailError ? <Text style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "#d64545" }}>{emailError}</Text> : null}
+                            {emailSentMessage ? <AppText style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0,0,0,0.6)" }}>{emailSentMessage}</AppText> : null}
+                            {emailError ? <AppText style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "#d64545" }}>{emailError}</AppText> : null}
                         </View>
 
                         <View style={{ flexDirection: "row", gap: 10, marginTop: 20 }}>
                             <Pressable style={{ flex: 1, height: 56, borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 12, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }} onPress={() => setEmailVerifyPopupOpen(false)}>
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("userModify.later", "나중에")}</Text>
+                                <AppText style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("userModify.later", "나중에")}</AppText>
                             </Pressable>
 
                             <Pressable
@@ -525,9 +528,9 @@ export default function UserModifyScreen({ navigation }: Props) {
                                 onPress={handleVerifyEmailCode}
                                 disabled={emailVerifying || !emailForm.email.trim() || !emailForm.code.trim()}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: emailVerifying || !emailForm.email.trim() || !emailForm.code.trim() ? "#707070" : "#FFFFFF" }}>
+                                <AppText style={{ fontSize: 16, fontWeight: "700", color: emailVerifying || !emailForm.email.trim() || !emailForm.code.trim() ? "#707070" : "#FFFFFF" }}>
                                     {emailVerifying ? t("userModify.verifying", "인증 중") : t("userModify.verifyNow", "인증하기")}
-                                </Text>
+                                </AppText>
                             </Pressable>
                         </View>
                     </View>

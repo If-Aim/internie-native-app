@@ -1,10 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: "#F0F6FF", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
-    scrollContent: { paddingBottom: 220 },
-    header: { height: 64, position: "relative", alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingTop: 40 },
-    backBtn: { position: "absolute", left: 2, top: 14 },
+    scrollContent: { paddingBottom: 220, paddingHorizontal:20, },
     hero: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginTop: 8 },
     copy: { flex: 1, marginLeft: 24 },
     title: { fontSize: 16, fontWeight: "700", lineHeight: 25, color: "#000000" },
@@ -28,7 +25,7 @@ export const styles = StyleSheet.create({
     submitBtnTextDisabled: { color: "#A2A2A2" },
     bottomSpacer: { height: 300 },
     dropdownBackdrop: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.0)" },
-    dropdownOverlay: { flex: 1, paddingHorizontal: 34, paddingTop: 350 },
+    dropdownOverlay: { flex: 1, paddingRight: 58, paddingLeft: 58, paddingTop: 350 },
     optionList: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 10, paddingBottom: 12, maxHeight: 280 },
     optionItem: { width: "100%", paddingVertical: 12, paddingHorizontal: 11 },
     optionText: { fontSize: 16, fontWeight: "400", color: "#000000" },

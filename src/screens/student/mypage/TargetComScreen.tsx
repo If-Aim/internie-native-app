@@ -1,11 +1,14 @@
 import React from "react";
-import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
 import { getUserMe, submitMyOnboarding, type UserMe } from "../../../api/client";
 import { commonStyles } from "../../../theme/common.Style";
 import { styles } from "./TargetCom.style";
+import AppText from "../../../../AppText";
+import AppTextInput from "../../../../AppTextInput";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "TargetCom">;
 
@@ -109,58 +112,60 @@ export default function TargetComScreen({ navigation }: Props): React.ReactEleme
     };
 
     return (
-        <View style={styles.page}>
-            <View style={styles.header}>
-                <View style={styles.headerSpacer} />
-                <Text style={styles.headerTitle}>{t("mypage.targetCompany")}</Text>
-                <Pressable style={[styles.headerClose, commonStyles.iconbtn]} onPress={onClose}>
-                    <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
-                </Pressable>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                <View style={styles.section}>
-                    <Text style={styles.label}>{t("mypage.desiredJob")}</Text>
-                    <View style={styles.inputRow}>
-                        <TextInput
-                            style={styles.input}
-                            value={form.interestJob}
-                            onChangeText={(value) => setForm((prev) => ({ ...prev, interestJob: value }))}
-                            placeholder={t("mypage.desiredJobEx")}
-                            editable={!loading && !saving}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
-                        <Image source={require("../../../assets/icons/ph_pencil-simple-thin.png")} style={styles.pencil} resizeMode="contain" />
-                    </View>
+        <SafeAreaView style={commonStyles.appRoot}>
+            <View style={styles.page}>
+                <View style={[commonStyles.topbarRow, styles.header]}>
+                    <View style={commonStyles.icon40} />
+                    <AppText style={styles.headerTitle}>{t("mypage.targetCompany")}</AppText>
+                    <Pressable style={commonStyles.iconbtn} onPress={onClose}>
+                        <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
+                    </Pressable>
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={styles.label}>{t("mypage.targetComLabel")}</Text>
-                    <View style={styles.inputRow}>
-                        <TextInput
-                            style={styles.input}
-                            value={form.interestCompany}
-                            onChangeText={(value) => setForm((prev) => ({ ...prev, interestCompany: value }))}
-                            placeholder={t("mypage.targetComLabelEx")}
-                            editable={!loading && !saving}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
-                        <Image source={require("../../../assets/icons/ph_pencil-simple-thin.png")} style={styles.pencil} resizeMode="contain" />
-                    </View>
-                </View>
-            </ScrollView>
+                <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                    {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
 
-            <View style={styles.footer}>
-                <Pressable style={[styles.saveBtn, !canSave ? styles.saveBtnDisabled : null]} onPress={onSave} disabled={!canSave}>
-                    <Text style={[styles.saveBtnText, !canSave ? styles.saveBtnTextDisabled : null]}>
-                        {saving ? t("schedule_edit.saving") : t("schedule_edit.save")}
-                    </Text>
-                </Pressable>
+                    <View style={styles.section}>
+                        <AppText style={styles.label}>{t("mypage.desiredJob")}</AppText>
+                        <View style={styles.inputRow}>
+                            <AppTextInput
+                                style={styles.input}
+                                value={form.interestJob}
+                                onChangeText={(value) => setForm((prev) => ({ ...prev, interestJob: value }))}
+                                placeholder={t("mypage.desiredJobEx")}
+                                editable={!loading && !saving}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                            <Image source={require("../../../assets/icons/ph_pencil-simple-thin.png")} style={styles.pencil} resizeMode="contain" />
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <AppText style={styles.label}>{t("mypage.targetComLabel")}</AppText>
+                        <View style={styles.inputRow}>
+                            <AppTextInput
+                                style={styles.input}
+                                value={form.interestCompany}
+                                onChangeText={(value) => setForm((prev) => ({ ...prev, interestCompany: value }))}
+                                placeholder={t("mypage.targetComLabelEx")}
+                                editable={!loading && !saving}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                            <Image source={require("../../../assets/icons/ph_pencil-simple-thin.png")} style={styles.pencil} resizeMode="contain" />
+                        </View>
+                    </View>
+                </ScrollView>
+
+                <View style={styles.footer}>
+                    <Pressable style={[styles.saveBtn, !canSave ? styles.saveBtnDisabled : null]} onPress={onSave} disabled={!canSave}>
+                        <AppText style={[styles.saveBtnText, !canSave ? styles.saveBtnTextDisabled : null]}>
+                            {saving ? t("schedule_edit.saving") : t("schedule_edit.save")}
+                        </AppText>
+                    </Pressable>
+                </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }

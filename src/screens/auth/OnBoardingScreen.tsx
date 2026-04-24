@@ -3,8 +3,8 @@ import { View, Text, TextInput, Pressable, Image, KeyboardAvoidingView, Platform
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Screen } from "../../components/Screen";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { ApiError, getUserMe, verifyClientUser, getMyJumpOrganizations, submitMyOnboarding, type JumpOrganization, } from "../../api/client";
 import { saveOnboardingCompleted } from "../../auth/tokenStorage";
@@ -182,7 +182,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     const canFinishStep4 = isVerified && form.jumpOrganizationId != null;
 
     return (
-        <Screen style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Pressable style={styles.flex} onPress={() => instOpen && setInstOpen(false)}>
                 <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                     <View style={styles.content}>
@@ -421,6 +421,6 @@ export default function OnboardingScreen({ navigation }: Props) {
                     </View>
                 </KeyboardAvoidingView>
             </Pressable>
-        </Screen>
+        </SafeAreaView>
     );
 }

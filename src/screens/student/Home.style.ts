@@ -5,7 +5,7 @@ import { tokens } from "../../theme/common.Style";
 export const styles = StyleSheet.create({
 	/* Header */
 	topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", },
-	appTitle: { flex:1, textAlign: "center", fontSize: 24, fontWeight: "700", color: "black",  },
+	appTitle: { flex:1, textAlign: "center", fontSize: 24, fontWeight: "700", color: "black", opacity:0 },
 	headerLeftSpace: {width: 24, height: 24,},
 	
 	/* Month header (ListHeaderComponent) */
@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
 	editIcon: { width: 24, height: 24, transform: [{ rotate: "-90deg" }],},
 
 	/* Record Modal */
-    preparingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "#F0F6FF", alignItems: "center", justifyContent: "center", zIndex: 3000 },
+    preparingOverlay: { ...StyleSheet.absoluteFill, backgroundColor: "#F0F6FF", alignItems: "center", justifyContent: "center", zIndex: 3000 },
     preparingContent: { width: "100%", paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },
     preparingDotsRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 48 },
     preparingDot: { width: 12, height: 12, borderRadius: 999, backgroundColor: tokens.colors.primary, marginHorizontal: 5 },

@@ -1,6 +1,6 @@
 // src/screens/student/schedule/DetailScheduleScreen.tsx
 import React from "react";
-import { View, Text, ScrollView, Pressable, Image, useWindowDimensions, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
+import { View, ScrollView, Pressable, Image, useWindowDimensions, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +8,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError, getEventDayDetail, getEventDayQuestions, type Transcription, } from "../../../api/client";
 import { styles } from "./Schedule.style";
 import { commonStyles } from "../../../theme/common.Style";
+import { replaceExperienceName } from "../../../theme/josa";
+
+import AppText from "../../../../AppText";
 
 type DetailScheduleRouteParams = { eventDayId: string };
 type DetailScheduleRoute = RouteProp<
@@ -30,10 +33,6 @@ function formatRecordedAt(date: string) {
     return `${y}.${pad2(m)}.${pad2(d)}`;
 }
 
-function applyExperienceName(q: string, title: string) {
-    if (!q.includes("(@experience_name)")) return q;
-    return q.replaceAll("(@experience_name)", title);
-}
 function Header({
     title,
     onCloseClick,
@@ -43,15 +42,10 @@ function Header({
 }) {
     return (
         <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
-            <View style={commonStyles.iconbtn} />
-
-            <Text numberOfLines={1} style={styles.detailTopbarTitle}>{title}</Text>
-
+            <View style={commonStyles.icon40} />
+            <AppText numberOfLines={1} style={styles.detailTopbarTitle}>{title}</AppText>
             <Pressable style={commonStyles.iconbtn} onPress={onCloseClick}>
-                <Image
-                    source={require("../../../assets/icons/x-01.png")}
-                    style={commonStyles.icon24}
-                />
+                <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />
             </Pressable>
         </View>
     );
@@ -103,7 +97,7 @@ export default function DetailScheduleScreen(): React.ReactElement {
 
                 const merged: SlideItem[] = questions.map((q, i) => ({
                     idx: i + 1,
-                    question: applyExperienceName(q, dRes.title),
+                    question: replaceExperienceName(q, dRes.title),
                     answerText: (trans[i]?.text ?? "").trim(),
                 }));
 
@@ -161,9 +155,9 @@ export default function DetailScheduleScreen(): React.ReactElement {
                     <View style={styles.detailSingleWrap}>
                         <View style={styles.detailCard}>
                             <View style={styles.detailCenter}>
-                                <Text style={styles.muted}>
+                                <AppText style={styles.muted}>
                                     {t("common.loading", "Loading...")}
-                                </Text>
+                                </AppText>
                             </View>
                         </View>
                     </View>
@@ -173,9 +167,9 @@ export default function DetailScheduleScreen(): React.ReactElement {
                     <View style={styles.detailSingleWrap}>
                         <View style={styles.detailCard}>
                             <View style={styles.detailCenter}>
-                                <Text style={styles.muted}>
+                                <AppText style={styles.muted}>
                                     {t("common.error", "오류가 발생했어요")}
-                                </Text>
+                                </AppText>
                             </View>
                         </View>
                     </View>
@@ -185,9 +179,9 @@ export default function DetailScheduleScreen(): React.ReactElement {
                     <View style={styles.detailSingleWrap}>
                         <View style={styles.detailCard}>
                             <View style={styles.detailCenter}>
-                                <Text style={styles.detailEmpty}>
+                                <AppText style={styles.detailEmpty}>
                                     {t("schedule_detail.empty", "기록이 없어요")}
-                                </Text>
+                                </AppText>
                             </View>
                         </View>
                     </View>
@@ -213,23 +207,23 @@ export default function DetailScheduleScreen(): React.ReactElement {
                                 <View style={[styles.detailCard, {width: width - 40}]}>
                                     <View style={styles.qaWrap}>
                                         <View>
-                                            <Text style={styles.qaQText}>{s.question}</Text>
+                                            <AppText style={styles.qaQText}>{s.question}</AppText>
                                         </View>
 
                                         <View>
-                                            <Text style={styles.qaAText}>
+                                            <AppText style={styles.qaAText}>
                                                 {s.answerText.length > 0
                                                     ? s.answerText
                                                     : t("schedule_detail.noAnswer", "답변이 없어요")}
-                                            </Text>
+                                            </AppText>
                                         </View>
 
                                         <View style={styles.detailFooter}>
-                                            <Text style={styles.detailRecordedAt}>
+                                            <AppText style={styles.detailRecordedAt}>
                                                 {i18n.language.startsWith("ko")
                                                     ? `${recordedAtText} 기록됨`
                                                     : `${recordedAtText} recorded`}
-                                            </Text>
+                                            </AppText>
                                         </View>
                                     </View>
                                 </View>

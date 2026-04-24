@@ -216,12 +216,7 @@ export default function ResetPasswordScreen({ navigation }: Props): React.ReactE
         <SafeAreaView style={commonStyles.appRoot}>
             <Modal visible={successModalOpen} transparent animationType="fade" onRequestClose={() => setSuccessModalOpen(false)}>
                 <View style={StyleSheet.absoluteFill}>
-                    <BlurView
-                        style={StyleSheet.absoluteFillObject}
-                        blurType="xlight"
-                        blurAmount={1}
-                        reducedTransparencyFallbackColor="rgba(209, 209, 209, 0.20)"
-                    />
+                    <BlurView style={StyleSheet.absoluteFill} blurType="xlight" blurAmount={1} />
                     <View style={commonStyles.modalDimLight} />
                 </View>
                 <View style={styles.modalOverlay}>
