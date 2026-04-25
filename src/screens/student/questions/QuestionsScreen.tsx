@@ -1,6 +1,6 @@
 // src/screens/student/questions/QuestionsScreen.tsx
 import React from "react";
-import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Animated, PermissionsAndroid, Platform, Alert, } from "react-native";
+import { View, Pressable, Image, ScrollView, ActivityIndicator, Animated, PermissionsAndroid, Platform, Alert, } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import RNFS from "react-native-fs";
@@ -152,6 +152,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
     const [isUploading, setIsUploading] = React.useState(false);
     const [showOutro, setShowOutro] = React.useState(false);
     const [lastUploadOk, setLastUploadOk] = React.useState<boolean | null>(null);
+    const [recorderBusy, setRecorderBusy] = React.useState(false);
 
     const autoStopTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const noiseGate = 0.05;
@@ -343,7 +344,9 @@ export default function QuestionsScreen({ navigation, route }: Props) {
     }, [recordStage, stopWave, clearAutoStopTimer]);
 
     const stopRecordingAndUpload = React.useCallback(async () => {
-        if (micLocked) return;
+        if (micLocked || recorderBusy) return;
+
+        setRecorderBusy(true);
 
         try {
             const filePath = await Sound.stopRecorder();
@@ -352,6 +355,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
             setRecordStage("closed");
             stopWave();
             clearAutoStopTimer();
+
             if (!filePath) return;
 
             setShowOutro(true);
@@ -362,8 +366,10 @@ export default function QuestionsScreen({ navigation, route }: Props) {
             setRecordStage("closed");
             stopWave();
             clearAutoStopTimer();
+        } finally {
+            setRecorderBusy(false);
         }
-    }, [micLocked, stopWave, clearAutoStopTimer, uploadAudioToSTT]);
+    }, [micLocked, recorderBusy, stopWave, clearAutoStopTimer, uploadAudioToSTT]);
 
     React.useEffect(() => {
         if (recordStage !== "recording") return;
@@ -371,6 +377,10 @@ export default function QuestionsScreen({ navigation, route }: Props) {
         let cancelled = false;
 
         const start = async () => {
+            if (recorderBusy) return;
+
+            setRecorderBusy(true);
+
             try {
                 const ok = await ensureRecordPermissionAndroid();
                 if (!ok) {
@@ -397,9 +407,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 Sound.setSubscriptionDuration(0.12);
 
                 Sound.addRecordBackListener((e) => {
-                    const db = typeof e.currentMetering === "number"
-                        ? e.currentMetering
-                        : -160;
+                    const db = typeof e.currentMetering === "number" ? e.currentMetering : -160;
 
                     setLevels((prev) => {
                         const next = prev.slice(1);
@@ -407,7 +415,6 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                         return next;
                     });
 
-                    
                     const nextRing = normalizeRingLevel(db);
                     setRingLevel((prevRing) => prevRing * 0.7 + nextRing * 0.3);
                 });
@@ -421,6 +428,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 console.error("마이크 접근 실패", err);
                 Alert.alert("안내", "마이크 권한을 허용해 주셔야 녹음할 수 있어요.");
                 setRecordStage("closed");
+            } finally {
+                setRecorderBusy(false);
             }
         };
 
@@ -601,7 +610,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                         disabled={
                                             recordStage !== "recording" ||
                                             !isMicOn ||
-                                            micLocked
+                                            micLocked ||
+                                            recorderBusy
                                         }
                                         onPress={() => {
                                             stopRecordingAndUpload().catch(console.error);
