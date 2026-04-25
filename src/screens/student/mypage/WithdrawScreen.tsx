@@ -103,20 +103,6 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
 
     return (
         <SafeAreaView style={commonStyles.appRoot}>
-            <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-                <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
-                    <View style={styles.dropdownOverlay}>
-                        <Pressable style={styles.optionList} onPress={(e) => e.stopPropagation()}>
-                            {REASONS.map((item) => (
-                                <Pressable key={item} style={styles.optionItem} onPress={() => handleSelectReason(item)}>
-                                    <AppText style={[styles.optionText, reason === item ? styles.optionTextSelected : null]}>{t(item)}</AppText>
-                                </Pressable>
-                            ))}
-                        </Pressable>
-                    </View>
-                </Pressable>
-            </Modal>
-
             <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
                 <Pressable style={commonStyles.iconbtn} onPress={() => navigation.goBack()}>
                     <Image source={require("../../../assets/icons/chevron-left.png")} style={commonStyles.icon24} resizeMode="contain" />
@@ -160,6 +146,15 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
                             </AppText>
                             <Image source={require("../../../assets/icons/chevron-down-ae.png")} style={commonStyles.icon24} resizeMode="contain" />
                         </Pressable>
+                        {open ? (
+                            <View style={styles.optionList}>
+                                {REASONS.map((item) => (
+                                    <Pressable key={item} style={styles.optionItem} onPress={() => handleSelectReason(item)}>
+                                        <AppText style={[styles.optionText, reason === item ? styles.optionTextSelected : null]}>{t(item)}</AppText>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        ) : null}
                     </View>
 
                     {isEtcReason ? (

@@ -226,12 +226,12 @@ export default function VerifyCodeScreen({ navigation }: Props) {
         } catch (e) {
             if (e instanceof ApiError) {
                 if (e.status === 400 || e.status === 401) {
-                    setError("인증 코드가 올바르지 않습니다.");
+                    setError(t("onboarding.invalidCode"));
                 } else {
-                    setError("인증에 실패했습니다.");
+                    setError(t("onboarding.verifyFailed"));
                 }
             } else {
-                setError("인증에 실패했습니다.");
+                setError(t("onboarding.verifyFailed"));
             }
         } finally {
             setVerifyingCode(false);

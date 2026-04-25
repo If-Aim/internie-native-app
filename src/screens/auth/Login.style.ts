@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
 
     loginFieldGroup: { width: "100%", gap: 15 },
 
-    input: { width: "100%", height: 48, paddingHorizontal: 20, borderWidth: 1, borderColor: "#DDD", borderRadius: 10, backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "500", color: "#6B6B6B", fontFamily: "Pretendard" },
+    input: { width: "100%", height: 48, paddingHorizontal: 20, borderWidth: 1, borderColor: "#DDD", borderRadius: 10, backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "500", color: "#6B6B6B", },
     inputError: { borderColor: "#F00" },
 
     passwordWrap: { position: "relative", justifyContent: "center" },
@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
     errorTextVisible: { opacity: 1 },
 
     findAuthRow: { marginTop: 3, flexDirection: "row", alignItems: "center", justifyContent: "center", columnGap: 22 },
-    findAuthBtn: { fontSize: 12, lineHeight: 20, fontWeight: "500", color: "#6B6B6B" },
+    findAuthBtn: { fontSize: 12, lineHeight: 20, fontWeight: "500", color: "#6B6B6B", maxWidth: 80, textAlign: "center", },
     findAuthDivider: { width: 1, height: 12, backgroundColor: "#DDDDDD" },
     submitBtn: { width: "100%", height: 48, marginTop: 16, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     submitBtnText: { fontSize: 16, lineHeight: 20, fontWeight: "700", color: "#FFFFFF" },

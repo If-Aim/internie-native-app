@@ -46,6 +46,7 @@
         "returnLogin": "로그인하기",
         "next": "다음",
         "prev": "이전",
+        
         "loginIdPlaceholder": "아이디를 입력해주세요",
         "checkLoginId": "중복확인",
         "checking": "확인 중...",
@@ -63,6 +64,7 @@
         "emailPlaceholder": "이메일 입력하기",
         "loginIdGuide": "영문 소문자와 숫자만을 활용해 4-20자로 만들어주세요",
         "passwordGuide": "영문, 숫자, 특수문자(@$!%*#?&)를 모두 포함한 8~20자여야 합니다",
+
         "sending": "전송 중...",
         "verifyCode": "인증코드",
         "sendVerifyCode": "인증코드 보내기",
@@ -73,6 +75,7 @@
         "checked": "확인됨",
         "verifySuccess": "인증 완료",
         "enterEmailVC": "인증코드를 입력해주세요",
+
         "submit": "회원가입",
         "submitting": "가입 중...",
         "goToLogin": "로그인 화면으로", 
@@ -88,6 +91,7 @@
         "success": "회원가입이 완료되었습니다.",
         "fail": "회원가입에 실패했습니다.",
         "emailRequired": "이메일을 입력해주세요.",
+
         "emailCodeSendFail": "인증코드 발송에 실패했습니다.",
         "emailCodeRequired": "인증코드를 입력해주세요.",
         "emailCodeInvalid": "인증코드가 올바르지 않습니다",

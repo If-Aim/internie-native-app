@@ -13,7 +13,8 @@ export const styles = StyleSheet.create({
     questionBadge: { width: 30, height: 30, borderRadius: 5, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     questionBadgeText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
     question: { flex: 1, fontSize: 16, fontWeight: "700", lineHeight: 27, color: "#000000" },
-    selectWrap: { position: "relative" },
+
+    selectWrap: { position: "relative", zIndex: 20 },
     selectBtn: { width: "100%", minHeight: 36, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10 },
     selectText: { flex: 1, fontSize: 16, fontWeight: "500", color: "#000000" },
     selectPlaceholder: { color: "#B4B4B4" },
@@ -24,9 +25,8 @@ export const styles = StyleSheet.create({
     submitBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
     submitBtnTextDisabled: { color: "#A2A2A2" },
     bottomSpacer: { height: 300 },
-    dropdownBackdrop: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.0)" },
-    dropdownOverlay: { flex: 1, paddingRight: 58, paddingLeft: 58, paddingTop: 350 },
-    optionList: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 10, paddingBottom: 12, maxHeight: 280 },
+
+    optionList: { position: "absolute", top: 35, left: 0, right: 0, zIndex: 30, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 10, paddingBottom: 12, maxHeight: 280, },
     optionItem: { width: "100%", paddingVertical: 12, paddingHorizontal: 11 },
     optionText: { fontSize: 16, fontWeight: "400", color: "#000000" },
     optionTextSelected: { fontWeight: "700" },

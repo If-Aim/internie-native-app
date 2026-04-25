@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
 	/* MonthFilterSheet 내 임시 월 이동 UI */
 	monthInputRow: { height: 60, borderWidth: 1, borderColor: "#DFDFDF", borderRadius: tokens.radius.r10, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", 
 	justifyContent: "space-between", paddingHorizontal: 19, },
-	monthInputText: { fontSize: 18, fontWeight: "500", color: "rgba(0,0,0,0.50)",  }, 
+	monthInputText: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)",  }, 
 
 	/* Loading */
 	loadingWrap: { paddingTop: 40, paddingBottom: 40, alignItems: "center", justifyContent: "center", },
@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
     preparingDotsRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 48 },
     preparingDot: { width: 12, height: 12, borderRadius: 999, backgroundColor: tokens.colors.primary, marginHorizontal: 5 },
     preparingTitle: { fontSize: 20, fontWeight: "700", color: tokens.colors.ink, lineHeight: 22, marginBottom: 21, textAlign: "center" },
-    preparingDesc: { fontSize: 18, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 30, textAlign: "center" },
+    preparingDesc: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 30, textAlign: "center" },
 
 	/* Record Modal */
 	backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end", },
@@ -75,14 +75,14 @@ export const styles = StyleSheet.create({
     weekRow: { flexDirection: "row", justifyContent: "center", paddingTop: 1, paddingBottom: 14 },
     weekChip: { width: 34, height: 34, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: "#D9D9D9", marginHorizontal: 3 },
     weekChipActive: { backgroundColor: tokens.colors.primary },
-    weekChipText: { fontSize: 18, fontWeight: "700", color: "#868686" },
+    weekChipText: { fontSize: 16, fontWeight: "700", color: "#868686" },
     weekChipTextActive: { color: "#FFFFFF" },
 
     recordIntroWrap: { alignItems: "center", marginBottom: 10 },
     speechBubble: { paddingHorizontal: 22, flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" },
     speechDesc: { minHeight: 80, minWidth: 200, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center", },
     speechBubbleTail: { position: "relative", width: 0, height: 0, borderLeftWidth: 15, borderRightWidth: 15, borderTopWidth: 23, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: "#BDD8FF" },
-    speechBubbleText: { fontSize: 18, fontWeight: "700", color: tokens.colors.ink, lineHeight: 25, textAlign: "center" },
+    speechBubbleText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, lineHeight: 25, textAlign: "center" },
     recordMascot: { width: 120, height: 120},
 
 });

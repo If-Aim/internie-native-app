@@ -99,39 +99,39 @@ export const commonStyles = StyleSheet.create({
 	profileWrap: { flexDirection: "row", justifyContent: "space-between",},
 	profileImgRadius: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", flexDirection: "row", justifyContent: "center", alignItems: "center",},
 	profileImg: { width: 50, height: 50, borderRadius: 25,},
-	profileName: { fontSize: 24, lineHeight: 26, fontWeight: "700", color: "#111", marginBottom: 5, fontFamily: tokens.typography.fontFamily, },
-	profileEmail: { fontSize: 13, color: "rgba(0,0,0,0.50)", fontWeight: "500", lineHeight: 20, fontFamily: tokens.typography.fontFamily, },
+	profileName: { fontSize: 24, lineHeight: 26, fontWeight: "700", color: "#111", marginBottom: 5, },
+	profileEmail: { fontSize: 13, color: "rgba(0,0,0,0.50)", fontWeight: "500", lineHeight: 20, },
 
 	drawerBody: { flex: 1, paddingTop: 30, paddingHorizontal: 31, flexDirection: "column", },
 	drawerMenuItem: { flexDirection: "row", alignItems: "center", gap: 14 as any, paddingVertical: 12, },
-	drawerMenuItemText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, fontFamily: tokens.typography.fontFamily, },
+	drawerMenuItemText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, },
 
 	bottomSpacer: { height: 250,},
 
 	// ====== 하단 CTA ======
 	bottomCta: { position: "absolute", left: 0, right: 0, bottom: 0, paddingTop: 37, paddingHorizontal: 20, paddingBottom: 53, backgroundColor: tokens.colors.bg, zIndex: 20, }, 
 	recordBtn: { width: "100%", height: 60, borderRadius: tokens.radius.r10, backgroundColor: tokens.colors.grayE3, alignItems: "center", justifyContent: "center", },  
-	recordBtnText: { fontSize: 16, fontWeight: "800", color: tokens.colors.gray700, fontFamily: tokens.typography.fontFamily, },
+	recordBtnText: { fontSize: 16, fontWeight: "800", color: tokens.colors.gray700, },
 	recordBtnEnabled: { backgroundColor: tokens.colors.primary, borderRadius: tokens.radius.r10, },
-	recordBtnEnabledText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: tokens.typography.fontFamily, },
+	recordBtnEnabledText: { fontSize: 16, fontWeight: "700", color: "#fff", },
 
 	// ====== 기간 선택 ======
 	periodSheetBackdrop: { ...StyleSheet.absoluteFill, zIndex: 99999, justifyContent: "flex-end", },
 	periodSheet: { width: "100%", maxWidth: 520, alignSelf: "center", backgroundColor: "#fff", borderTopLeftRadius: 10, borderTopRightRadius: 10, paddingTop: 23, paddingHorizontal: 12, paddingBottom: 53, ...(tokens.shadow.sheet as any), },
 	periodSheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 5, paddingLeft: 20, },
-	periodSheetTitle: { fontSize: 24, fontWeight: "700", letterSpacing: -0.02 as any, fontFamily: tokens.typography.fontFamily, }, 
+	periodSheetTitle: { fontSize: 24, fontWeight: "700", letterSpacing: -0.02 as any, }, 
 	periodSheetBody: { paddingRight: 19, paddingBottom: 18, paddingLeft: 20, },
 	periodSheetSection: { marginVertical: 10, },
-	periodSheetLabel: { fontSize: 18, fontWeight: "500", color: tokens.colors.ink, marginBottom: 11, paddingLeft: 9, fontFamily: tokens.typography.fontFamily, },
+	periodSheetLabel: { fontSize: 18, fontWeight: "500", color: tokens.colors.ink, marginBottom: 11, paddingLeft: 9, },
 	periodSheetClose: { width: 44, height: 44, alignItems: "center", justifyContent: "center", },
 	sortRow: { flexDirection: "row", gap: 10 as any, },
 	sortBtn: { flex: 1, height: 60, borderRadius: tokens.radius.r10, borderWidth: 1, borderColor: "#DFDFDF", backgroundColor: "#fff", alignItems: "center", justifyContent: "center", },
-	sortBtnText: { fontSize: 18, fontWeight: "500", color: "rgba(0,0,0,0.50)", fontFamily: tokens.typography.fontFamily, },
+	sortBtnText: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", },
 	sortBtnActive: { borderWidth: 2, borderColor: tokens.colors.primary, },
 	sortBtnActiveText: { color: "#000", },
 
 	// ====== wheel ======
-	wheelItemText: { fontSize: 20, fontWeight: "500", color: "rgba(0,0,0,0.50)", fontFamily: tokens.typography.fontFamily, },
+	wheelItemText: { fontSize: 20, fontWeight: "500", color: "rgba(0,0,0,0.50)", },
 	wheelWrap: { position: "relative", flexDirection: "row", justifyContent: "center", height: PICKER_ROW_HEIGHT * PICKER_VISIBLE_ROWS, marginBottom: 24, },
 	wheelCol: { flex: 1, },
 	wheelContent: { paddingVertical: PICKER_ROW_HEIGHT * PICKER_PADDING_ROWS, },
@@ -141,17 +141,17 @@ export const commonStyles = StyleSheet.create({
 	// ====== 월(month) 선택 ======
 	monthpickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.25)", zIndex: 10000, justifyContent: "flex-end", },
 	monthpickerSheet: { width: "100%", backgroundColor: "#fff", borderTopLeftRadius: tokens.radius.r20, borderTopRightRadius: tokens.radius.r20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 53, },
-	monthpickerTitle: { fontSize: 22, fontWeight: "800", fontFamily: tokens.typography.fontFamily, },
+	monthpickerTitle: { fontSize: 22, fontWeight: "800", },
 	monthpickerConfirm: { height: 60, borderRadius: tokens.radius.r10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", marginTop: 55, marginHorizontal: 8,},
 	monthpickerConfirmGet: { height: 60, borderRadius: tokens.radius.r10, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", marginHorizontal: 8,},
-	monthpickerConfirmText: { fontSize: 18, fontWeight: "700", color: "#fff", fontFamily: tokens.typography.fontFamily, marginHorizontal: 8, },
+	monthpickerConfirmText: { fontSize: 16, fontWeight: "700", color: "#fff", marginHorizontal: 8, },
 	monthpickerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 1, marginBottom: 36, },
 	monthpickerIconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", },
 
 	// ====== 로딩 ======
 	preparingPage: { flex: 1, minHeight: "100%" as any, justifyContent: "center", paddingHorizontal: 20, paddingBottom: 50, backgroundColor: tokens.colors.bg, alignItems: "center", }, 
-	preparingTitle: { fontSize: 20, fontWeight: "700", color: tokens.colors.ink, lineHeight: 20, marginBottom: 21, fontFamily: tokens.typography.fontFamily, }, 
-	preparingDesc: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.5)", lineHeight: 28, fontFamily: tokens.typography.fontFamily, },
+	preparingTitle: { fontSize: 20, fontWeight: "700", color: tokens.colors.ink, lineHeight: 20, marginBottom: 21, }, 
+	preparingDesc: { fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.5)", lineHeight: 28, },
 	loadingDots: { flexDirection: "row", alignItems: "center", gap: 11 as any, marginBottom: 14, },
 	loadingDot: { width: 12, height: 12, borderRadius: 9999, backgroundColor: tokens.colors.primary, },
 });

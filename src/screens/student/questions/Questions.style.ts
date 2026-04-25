@@ -7,9 +7,9 @@ export const styles = StyleSheet.create({
     wrap: { paddingHorizontal: 40, paddingBottom: 170 },   
 	// Header
 	headerCenter: { flex: 1, justifyContent: "center", alignItems: "center", },
-	headerTitle: { fontSize: 16, fontFamily: tokens.typography.fontFamily, color: tokens.colors.ink, textAlignVertical: "center",},
+	headerTitle: { fontSize: 16, color: tokens.colors.ink, textAlignVertical: "center",},
 
-    topbarTitle: { textAlign: "center", fontSize: 16, fontWeight: "700", color: tokens.colors.ink, fontFamily: tokens.typography.fontFamily, paddingHorizontal: 12 },
+    topbarTitle: { textAlign: "center", fontSize: 16, fontWeight: "700", color: tokens.colors.ink, paddingHorizontal: 12 },
 
     questionPage: { marginTop: 34 },
     mascot: { width: 119, height: 119, marginBottom: 7, alignSelf: "flex-start" },
@@ -23,8 +23,8 @@ export const styles = StyleSheet.create({
     questionCard: { width: "100%", backgroundColor: "transparent", borderRadius: 20 },
     questionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
     qBadge: { width: 30, height: 30, borderRadius: 5, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", },
-    qBadgeText: { fontSize: 18, color: "#FFFFFF", fontWeight: "700", fontFamily: tokens.typography.fontFamily },
-    questionText: { marginTop: 4, fontSize: 18, color: tokens.colors.ink, fontWeight: "700", lineHeight: 25, fontFamily: tokens.typography.fontFamily },
+    qBadgeText: { fontSize: 20, color: "#FFFFFF", fontWeight: "700", fontFamily: tokens.typography.fontFamily },
+    questionText: { marginTop: 4, fontSize: 20, color: tokens.colors.ink, fontWeight: "700", lineHeight: 25, fontFamily: tokens.typography.fontFamily },
 
     micButton: { position: "absolute", bottom: 54, alignSelf: "center", width: 105, height: 105, borderRadius: 999, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", zIndex: 10 },
     micIcon: { width: 40, height: 40 },
