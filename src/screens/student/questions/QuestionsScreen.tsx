@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import RNFS from "react-native-fs";
 
-import Sound, { type AudioSet, AudioEncoderAndroidType, AudioSourceAndroidType, } from "react-native-nitro-sound"; 
+import Sound, { AudioEncoderAndroidType, AudioSourceAndroidType, type AudioSet } from "react-native-nitro-sound";
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
 import { apiUpload, ApiError, getEventDayDetail, getEventDayQuestions, type EventDayDetailResponse, type EventDayQuestionsResponse, } from "../../../api/client";
 import { Screen } from "../../../components/Screen";
@@ -35,7 +35,6 @@ const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 
 async function ensureRecordPermissionAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
-
     const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
@@ -156,7 +155,6 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
     const autoStopTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const noiseGate = 0.05;
-
     const ringOpacity =
         ringLevel < noiseGate
             ? 0
