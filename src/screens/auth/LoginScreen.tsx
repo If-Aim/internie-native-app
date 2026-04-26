@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Image, NativeModules, Alert, TextInput, ScrollView } from "react-native";
+import { View, Pressable, Image, NativeModules, Alert, ScrollView } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ApiError, exchangeKakaoToken, loginWithGoogle, loginWithLocal } from "../../api/client";
 import { saveAccessToken, saveOnboardingCompleted } from "../../auth/tokenStorage";
@@ -147,6 +147,10 @@ export default function LoginScreen(_props: Props) {
 
     const handleGooglePress = async () => {
         try {
+            if (!GoogleLogin?.signIn) {
+                Alert.alert(t("login.loginFailed"), t("login.googleLoginFailed"));
+                return;
+            }
             const result = await GoogleLogin!.signIn();
             const idToken = result?.idToken ?? "";
 

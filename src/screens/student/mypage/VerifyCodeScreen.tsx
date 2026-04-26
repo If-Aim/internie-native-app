@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, Image, TextInput, FlatList, Modal } from "react-native";
+import { View, Text, Pressable, Image, TextInput, ScrollView, FlatList, Modal } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 
@@ -285,7 +285,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
         <SafeAreaView style={userModifyStyles.vcsSafeAreaView}>
             <Header onPreviousClick={() => navigation.goBack()} />
 
-            <Screen style={userModifyStyles.verifyScreen}>
+            <ScrollView style={userModifyStyles.scroll} contentContainerStyle={userModifyStyles.body}>
                 <View style={userModifyStyles.verifyField}>
                     <Text style={userModifyStyles.verifyLabel}>{t("mypage.enterVerificationCode")}</Text>
                     <TextInput
@@ -347,7 +347,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                         </Text>
                     </Pressable>
                 </View>
-            </Screen>
+            </ScrollView>
 
             <Modal visible={showJumpPopup} transparent animationType="fade" onRequestClose={() => setShowJumpPopup(false)}>
                 <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 }}>

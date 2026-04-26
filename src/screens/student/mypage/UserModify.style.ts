@@ -40,9 +40,9 @@ export const styles = StyleSheet.create({
     profileEditSaveText: { fontSize: 16, color: "#fff",},
 
     /* verification code */
-    verifyScreen: { flex: 1, backgroundColor: "#FFFFFF", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 50 },
+    
     verifyHeader: { backgroundColor: "#fff",}, 
-    verifyField: { marginLeft: 12, gap: 32 },
+    verifyField: { gap: 32 },
     verifyInput: { height: 54, paddingHorizontal: 23, borderRadius: 10, borderWidth: 1, borderColor: "#DFDFDF", backgroundColor: "#fff", fontSize: 16, fontWeight: "500", color: "#5F5F5F", },
     verifyInputFilled: { color: "#000" },
     verifyLabel: { fontSize: 24, fontWeight: "700", color: tokens.colors.ink },

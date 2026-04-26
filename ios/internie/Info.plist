@@ -2,21 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>녹음을 위해 마이크 권한이 필요합니다.</string>
-	<key>KAKAO_APP_SCHEME</key>
-	<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
-	<key>KAKAO_APP_KEY</key>
-	<string>b4e3bfedda9f16b18eab43d14cd00dce</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
-			</array>
-		</dict>
-	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -37,8 +22,31 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.681452511483-feedru12rat1hlf29q21ci4mg1i0647f</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>GIDClientID</key>
+	<string>681452511483-feedru12rat1hlf29q21ci4mg1i0647f.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>681452511483-geq6v268p4nk9ssl8ivaabp5b3mtool0.apps.googleusercontent.com</string>
+	<key>KAKAO_APP_KEY</key>
+	<string>b4e3bfedda9f16b18eab43d14cd00dce</string>
+	<key>KAKAO_APP_SCHEME</key>
+	<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -50,6 +58,8 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>녹음을 위해 마이크 권한이 필요합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

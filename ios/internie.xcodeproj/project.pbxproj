@@ -7,13 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C80B921A6F3F58F76C31292 /* libPods-internie.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-internie.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		313164792F9D08FF00DC384B /* GoogleLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 313164782F9D08FF00DC384B /* GoogleLogin.swift */; };
+		3131647B2F9D094300DC384B /* GoogleLoginBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 3131647A2F9D094300DC384B /* GoogleLoginBridge.m */; };
 		318C46852F82A714006DED82 /* KakaoLoginModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 318C46842F82A70B006DED82 /* KakaoLoginModule.swift */; };
 		318C46892F82AB77006DED82 /* KakaoLoginModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 318C46882F82AB77006DED82 /* KakaoLoginModule.m */; };
 		318C468D2F82B67A006DED82 /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 318C468C2F82B67A006DED82 /* KakaoSDK */; };
 		318C468F2F82B67A006DED82 /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 318C468E2F82B67A006DED82 /* KakaoSDKAuth */; };
 		318C46912F82B67A006DED82 /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 318C46902F82B67A006DED82 /* KakaoSDKUser */; };
+		329E1A1CB69375C535B3C0F7 /* libPods-internie.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5B74C65E5E4B3571985A4A3 /* libPods-internie.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		B7037B67A7EE83B156ADAD66 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
@@ -23,15 +25,17 @@
 		13B07F961A680F5B00A75B9A /* internie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = internie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = internie/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = internie/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		313164782F9D08FF00DC384B /* GoogleLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleLogin.swift; sourceTree = "<group>"; };
+		3131647A2F9D094300DC384B /* GoogleLoginBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GoogleLoginBridge.m; sourceTree = "<group>"; };
 		318C46842F82A70B006DED82 /* KakaoLoginModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KakaoLoginModule.swift; sourceTree = "<group>"; };
 		318C46882F82AB77006DED82 /* KakaoLoginModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KakaoLoginModule.m; sourceTree = "<group>"; };
 		318C468A2F82AB98006DED82 /* internie-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "internie-Bridging-Header.h"; sourceTree = "<group>"; };
 		31B917F32F717E6700746EB9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Base; path = Base.lproj/Info.plist; sourceTree = "<group>"; };
-		3B4392A12AC88292D35C810B /* Pods-internie.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-internie.debug.xcconfig"; path = "Target Support Files/Pods-internie/Pods-internie.debug.xcconfig"; sourceTree = "<group>"; };
-		5709B34CF0A7D63546082F79 /* Pods-internie.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-internie.release.xcconfig"; path = "Target Support Files/Pods-internie/Pods-internie.release.xcconfig"; sourceTree = "<group>"; };
-		5DCACB8F33CDC322A6C60F78 /* libPods-internie.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-internie.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		506DC5C0021F68F24EA32998 /* Pods-internie.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-internie.debug.xcconfig"; path = "Target Support Files/Pods-internie/Pods-internie.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = internie/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = internie/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		D5B74C65E5E4B3571985A4A3 /* libPods-internie.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-internie.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAE969FC25A8E769193F1789 /* Pods-internie.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-internie.release.xcconfig"; path = "Target Support Files/Pods-internie/Pods-internie.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -41,9 +45,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				318C46912F82B67A006DED82 /* KakaoSDKUser in Frameworks */,
-				0C80B921A6F3F58F76C31292 /* libPods-internie.a in Frameworks */,
 				318C468D2F82B67A006DED82 /* KakaoSDK in Frameworks */,
 				318C468F2F82B67A006DED82 /* KakaoSDKAuth in Frameworks */,
+				329E1A1CB69375C535B3C0F7 /* libPods-internie.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,6 +57,7 @@
 		13B07FAE1A68108700A75B9A /* internie */ = {
 			isa = PBXGroup;
 			children = (
+				313164782F9D08FF00DC384B /* GoogleLogin.swift */,
 				318C46882F82AB77006DED82 /* KakaoLoginModule.m */,
 				318C46842F82A70B006DED82 /* KakaoLoginModule.swift */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -61,6 +66,7 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				318C468A2F82AB98006DED82 /* internie-Bridging-Header.h */,
+				3131647A2F9D094300DC384B /* GoogleLoginBridge.m */,
 			);
 			name = internie;
 			sourceTree = "<group>";
@@ -69,7 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-internie.a */,
+				D5B74C65E5E4B3571985A4A3 /* libPods-internie.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -106,8 +112,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3B4392A12AC88292D35C810B /* Pods-internie.debug.xcconfig */,
-				5709B34CF0A7D63546082F79 /* Pods-internie.release.xcconfig */,
+				506DC5C0021F68F24EA32998 /* Pods-internie.debug.xcconfig */,
+				EAE969FC25A8E769193F1789 /* Pods-internie.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -119,13 +125,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "internie" */;
 			buildPhases = (
-				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
+				A26951B79D36D43AC168CDE2 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
-				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				D4D4D9D46567D7FE024EE52E /* [CP] Embed Pods Frameworks */,
+				7DE54066A6A3E2E6A673681B /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -200,28 +206,24 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"\\\"$WITH_ENVIRONMENT\\\" \\\"$REACT_NATIVE_XCODE\\\"\"\n";
 		};
-		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
+		7DE54066A6A3E2E6A673681B /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
+		A26951B79D36D43AC168CDE2 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -243,25 +245,21 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
+		D4D4D9D46567D7FE024EE52E /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
+			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-internie/Pods-internie-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -273,7 +271,9 @@
 			files = (
 				318C46892F82AB77006DED82 /* KakaoLoginModule.m in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				313164792F9D08FF00DC384B /* GoogleLogin.swift in Sources */,
 				318C46852F82A714006DED82 /* KakaoLoginModule.swift in Sources */,
+				3131647B2F9D094300DC384B /* GoogleLoginBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,7 +294,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-internie.debug.xcconfig */;
+			baseConfigurationReference = 506DC5C0021F68F24EA32998 /* Pods-internie.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -324,7 +324,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-internie.release.xcconfig */;
+			baseConfigurationReference = EAE969FC25A8E769193F1789 /* Pods-internie.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

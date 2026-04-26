@@ -4,6 +4,7 @@ import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import KakaoSDKCommon
 import KakaoSDKAuth
+import GoogleSignIn
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -20,7 +21,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     if let kakaoAppKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String {
         KakaoSDK.initSDK(appKey: kakaoAppKey)
     }
-    
+
+    if let googleClientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String {
+      let serverClientID = Bundle.main.object(forInfoDictionaryKey: "GIDServerClientID") as? String
+      GIDSignIn.sharedInstance.configuration = GIDConfiguration(
+        clientID: googleClientID,
+        serverClientID: serverClientID
+      )
+    }
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -40,14 +49,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
   
   func application(
-    _ app: UIApplication,
-    open url: URL,
-    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+      _ app: UIApplication,
+      open url: URL,
+      options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    if AuthApi.isKakaoTalkLoginUrl(url) {
-      return AuthController.handleOpenUrl(url: url)
-    }
-    return false
+      if GIDSignIn.sharedInstance.handle(url) {
+          return true
+      }
+
+      if AuthApi.isKakaoTalkLoginUrl(url) {
+          return AuthController.handleOpenUrl(url: url)
+      }
+
+      return false
   }
 }
 

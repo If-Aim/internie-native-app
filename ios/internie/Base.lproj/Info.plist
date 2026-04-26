@@ -19,6 +19,12 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>com.googleusercontent.apps.681452511483-feedru12rat1hlf29q21ci4mg1i0647f</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
 				<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
 			</array>
 		</dict>
