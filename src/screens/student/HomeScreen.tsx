@@ -1,7 +1,7 @@
 // src/screens/student/HomeScreen.tsx
 import React from "react";
 import { API_BASE_URL } from "@env";
-import { StyleSheet, View, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
+import { StyleSheet, View, Pressable, Image, Modal, ActivityIndicator, FlatList, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, TextInput } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,7 +11,7 @@ import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { api, getUserMe } from "../../api/client";
+import { api, ApiError, getUserMe, sendMyEmailCode, verifyMyEmailCode } from "../../api/client";
 import { getAccessToken } from "../../auth/tokenStorage";
 import type { StudentStackParamList } from "../../navigation/StudentNavigator";
 
@@ -736,6 +736,14 @@ export default function HomeScreen({ navigation }: Props) {
     const [userProfileImg, setUserProfileImg] = React.useState<string | null>(null);
     const [userRoleSet, setUserRoleSet] = React.useState<string[]>([]);
 
+    const [needsEmailVerification, setNeedsEmailVerification] = React.useState(false);
+    const [emailVerifyPopupOpen, setEmailVerifyPopupOpen] = React.useState(false);
+    const [emailForm, setEmailForm] = React.useState({ email: "", code: "" });
+    const [emailSending, setEmailSending] = React.useState(false);
+    const [emailVerifying, setEmailVerifying] = React.useState(false);
+    const [emailSentMessage, setEmailSentMessage] = React.useState<string | null>(null);
+    const [emailError, setEmailError] = React.useState<string | null>(null);
+
 	const byDate = React.useMemo(() => {
 		const g: Record<string, ScheduleItem[]> = {};
 		for (const it of items) (g[it.date] ??= []).push(it);
@@ -839,9 +847,25 @@ export default function HomeScreen({ navigation }: Props) {
         try {
             const me = await getUserMe();
 
+            const nextEmail = (me.email ?? "").trim();
+            const needsVerify = !nextEmail || me.emailVerified !== true;
+
             setUserName((me.name ?? "").trim() || "User");
-            setUserEmail((me.email ?? "").trim());
+            setUserEmail(nextEmail);
             setUserRoleSet(Array.isArray(me.roleSet) ? me.roleSet : []);
+            setNeedsEmailVerification(needsVerify);
+            setEmailForm((prev) => ({
+                ...prev,
+                email: prev.email.trim() ? prev.email : nextEmail,
+            }));
+
+            if (needsVerify) {
+                setEmailVerifyPopupOpen(true);
+            } else {
+                setEmailVerifyPopupOpen(false);
+                setEmailError(null);
+                setEmailSentMessage(null);
+            }
 
             const raw = String(me.profileImage ?? "").trim();
             if (!raw || raw.includes("default")) {
@@ -857,6 +881,11 @@ export default function HomeScreen({ navigation }: Props) {
             setUserEmail("");
             setUserRoleSet([]);
             setUserProfileImg(null);
+            setNeedsEmailVerification(false);
+            setEmailVerifyPopupOpen(false);
+            setEmailForm({ email: "", code: "" });
+            setEmailSentMessage(null);
+            setEmailError(null);
         }
     }
 
@@ -946,6 +975,99 @@ export default function HomeScreen({ navigation }: Props) {
 		}
 	};
     const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
+
+    async function handleSendEmailCode() {
+        const email = emailForm.email.trim();
+
+        if (!email) {
+            setEmailError("이메일을 입력해주세요.");
+            return;
+        }
+
+        setEmailSending(true);
+        setEmailError(null);
+        setEmailSentMessage(null);
+
+        try {
+            const lang = i18n.resolvedLanguage ?? i18n.language ?? "ko";
+            const res = await sendMyEmailCode(email, lang);
+
+            if (res.status === "EXISTING_ACCOUNT_FOUND") {
+                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                return;
+            }
+
+            setEmailSentMessage(`${res.maskedEmail}로 인증코드를 발송했습니다.`);
+        } catch (e) {
+            if (e instanceof ApiError && e.code === "AUTH_EXISTING_ACCOUNT") {
+                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                return;
+            }
+
+            setEmailError("인증코드 발송에 실패했습니다.");
+        } finally {
+            setEmailSending(false);
+        }
+    }
+
+    async function handleVerifyEmailCode() {
+        const email = emailForm.email.trim();
+        const code = emailForm.code.trim();
+
+        if (!email) {
+            setEmailError("이메일을 입력해주세요.");
+            return;
+        }
+
+        if (!code) {
+            setEmailError("인증코드를 입력해주세요.");
+            return;
+        }
+
+        setEmailVerifying(true);
+        setEmailError(null);
+
+        try {
+            const res = await verifyMyEmailCode(email, code);
+
+            if (res.existingAccountFound) {
+                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                return;
+            }
+
+            if (!res.verified) {
+                setEmailError("이메일 인증에 실패했습니다.");
+                return;
+            }
+
+            const nextMe = await getUserMe();
+
+            setUserEmail((nextMe.email ?? "").trim());
+            setNeedsEmailVerification(false);
+            setEmailVerifyPopupOpen(false);
+            setEmailForm({
+                email: (nextMe.email ?? "").trim(),
+                code: "",
+            });
+            setEmailSentMessage(null);
+            setEmailError(null);
+
+            Alert.alert("이메일 인증이 완료되었습니다.");
+        } catch (e) {
+            if (e instanceof ApiError && e.code === "AUTH_EXISTING_ACCOUNT") {
+                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                return;
+            }
+
+            setEmailError("인증코드가 올바르지 않거나 만료되었습니다.");
+        } finally {
+            setEmailVerifying(false);
+        }
+    }
+
+    function handleCloseEmailVerifyPopup() {
+        setEmailVerifyPopupOpen(false);
+    }
 
     function handleServicePreparing() {
         Alert.alert(isKo ? "서비스 준비중입니다.": "Coming Soon");
@@ -1175,6 +1297,73 @@ export default function HomeScreen({ navigation }: Props) {
                         </Pressable>
                     </Pressable>
                 </Pressable>
+            </Modal>
+
+            <Modal visible={emailVerifyPopupOpen && needsEmailVerification} transparent animationType="fade" onRequestClose={handleCloseEmailVerifyPopup}>
+                <View style={styles.emailPopupBackdrop}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseEmailVerifyPopup} />
+                    <View style={styles.emailPopup}>
+                        <View style={styles.emailPopupHeader}>
+                            <AppText style={styles.emailPopupTitle}>이메일 인증</AppText>
+                            <Pressable style={styles.emailPopupClose} onPress={handleCloseEmailVerifyPopup}>
+                                <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
+                            </Pressable>
+                        </View>
+
+                        <AppText style={styles.emailPopupDesc}>
+                            계정 보호와 안정적인 로그인 이용을 위해 이메일 인증을 진행해주세요.
+                        </AppText>
+
+                        <View style={styles.emailPopupBody}>
+                            <TextInput
+                                value={emailForm.email}
+                                onChangeText={(text) => setEmailForm((prev) => ({ ...prev, email: text }))}
+                                placeholder="이메일을 입력해주세요"
+                                placeholderTextColor="#9AA0A6"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                style={styles.emailPopupInput}
+                            />
+
+                            <View style={styles.emailPopupRow}>
+                                <TextInput
+                                    value={emailForm.code}
+                                    onChangeText={(text) => setEmailForm((prev) => ({ ...prev, code: text }))}
+                                    placeholder="인증코드를 입력해주세요"
+                                    placeholderTextColor="#9AA0A6"
+                                    autoCapitalize="none"
+                                    style={[styles.emailPopupInput, styles.emailPopupCodeInput]}
+                                />
+
+                                <Pressable style={[styles.emailPopupSendButton, emailSending ? styles.emailPopupSendButtonDisabled : null]} onPress={handleSendEmailCode} disabled={emailSending}>
+                                    <AppText style={styles.emailPopupSendButtonText}>
+                                        {emailSending ? "전송중" : "코드 받기"}
+                                    </AppText>
+                                </Pressable>
+                            </View>
+
+                            {emailSentMessage ? (
+                                <AppText style={styles.emailPopupInfo}>{emailSentMessage}</AppText>
+                            ) : null}
+
+                            {emailError ? (
+                                <AppText style={styles.emailPopupError}>{emailError}</AppText>
+                            ) : null}
+                        </View>
+
+                        <View style={styles.emailPopupFooter}>
+                            <Pressable style={styles.emailPopupSecondary} onPress={handleCloseEmailVerifyPopup}>
+                                <AppText style={styles.emailPopupSecondaryText}>나중에</AppText>
+                            </Pressable>
+
+                            <Pressable style={[styles.emailPopupPrimary, emailVerifying || !emailForm.email.trim() || !emailForm.code.trim() ? styles.emailPopupPrimaryDisabled : null]} onPress={handleVerifyEmailCode} disabled={emailVerifying || !emailForm.email.trim() || !emailForm.code.trim()}>
+                                <AppText style={styles.emailPopupPrimaryText}>
+                                    {emailVerifying ? "확인중" : "인증하기"}
+                                </AppText>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
             </Modal>
         </SafeAreaView>
     );

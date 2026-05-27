@@ -3,12 +3,13 @@ package com.internie.google
 import android.app.Activity
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.NoCredentialException
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.internie.R
 import kotlinx.coroutines.CoroutineScope
@@ -34,10 +35,7 @@ class GoogleLoginModule(
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val googleIdOption = GetGoogleIdOption.Builder()
-                    .setServerClientId(serverClientId)
-                    .setFilterByAuthorizedAccounts(false)
-                    .setAutoSelectEnabled(false)
+                val googleIdOption = GetSignInWithGoogleOption.Builder(serverClientId)
                     .setNonce(UUID.randomUUID().toString())
                     .build()
 
@@ -56,8 +54,17 @@ class GoogleLoginModule(
                 val map = Arguments.createMap()
                 map.putString("idToken", googleCredential.idToken)
                 promise.resolve(map)
+            } catch (e: NoCredentialException) {
+                promise.reject("GOOGLE_NO_CREDENTIAL", "사용 가능한 Google 계정을 찾을 수 없습니다. 기기에 Google 계정이 로그인되어 있는지 확인해주세요.", e)
             } catch (e: Exception) {
-                promise.reject("GOOGLE_SIGN_IN_FAILED", e)
+                val message = e.message ?: ""
+
+                if (message.contains("canceled", ignoreCase = true) || message.contains("cancelled", ignoreCase = true)) {
+                    promise.reject("GOOGLE_SIGN_IN_CANCELED", "Google 로그인이 취소되었습니다.", e)
+                    return@launch
+                }
+
+                promise.reject("GOOGLE_SIGN_IN_FAILED", message.ifBlank { "Google sign in failed" }, e)
             }
         }
     }

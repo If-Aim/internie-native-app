@@ -32,6 +32,8 @@ const PREPARE_MS = 800;
 const MIC_LOCK_MS = 3000;
 const AUTO_STOP_MS = 5 * 60 * 1000;
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+const OUTRO_VISIBLE_MS = 1200;
+const OUTRO_FADE_MS = 220;
 
 async function ensureRecordPermissionAndroid(): Promise<boolean> {
     if (Platform.OS !== "android") return true;
@@ -154,6 +156,9 @@ export default function QuestionsScreen({ navigation, route }: Props) {
     const [recorderBusy, setRecorderBusy] = React.useState(false);
 
     const autoStopTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stoppingRef = React.useRef(false);
+    const outroOpacity = React.useRef(new Animated.Value(0)).current;
+    const outroScale = React.useRef(new Animated.Value(0.88)).current;
     const noiseGate = 0.05;
     const ringOpacity =
         ringLevel < noiseGate
@@ -205,7 +210,6 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 );
 
                 const result = await apiUpload<string>(`/api/stt/upload/${eventDayIdNum}`, formData);
-                console.log("STT 결과:", result);
                 return true;
             } catch (err) {
                 console.error(err);
@@ -342,8 +346,11 @@ export default function QuestionsScreen({ navigation, route }: Props) {
     }, [recordStage, stopWave, clearAutoStopTimer]);
 
     const stopRecordingAndUpload = React.useCallback(async () => {
-        if (micLocked || recorderBusy) return;
+        if (micLocked || stoppingRef.current) {
+            return;
+        }
 
+        stoppingRef.current = true;
         setRecorderBusy(true);
 
         try {
@@ -354,20 +361,24 @@ export default function QuestionsScreen({ navigation, route }: Props) {
             stopWave();
             clearAutoStopTimer();
 
-            if (!filePath) return;
+            if (!filePath) {
+                return;
+            }
 
             setShowOutro(true);
+
             const recordOk = await uploadAudioToSTT(filePath);
             setLastUploadOk(recordOk);
         } catch (err) {
-            console.error("녹음 종료 실패", err);
+            console.error("[RECORD_STOP] failed:", err);
             setRecordStage("closed");
             stopWave();
             clearAutoStopTimer();
         } finally {
+            stoppingRef.current = false;
             setRecorderBusy(false);
         }
-    }, [micLocked, recorderBusy, stopWave, clearAutoStopTimer, uploadAudioToSTT]);
+    }, [micLocked, stopWave, clearAutoStopTimer, uploadAudioToSTT]);
 
     React.useEffect(() => {
         if (recordStage !== "recording") return;
@@ -436,7 +447,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [recordStage, stopRecordingAndUpload]);
+    }, [recordStage]);
 
     React.useEffect(() => {
         if (recordStage === "recording" && isMicOn) {
@@ -450,34 +461,68 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
     React.useEffect(() => {
         if (!showOutro) return;
-        if (isUploading) return;
+
+        outroOpacity.setValue(0);
+        outroScale.setValue(0.92);
+
+        Animated.parallel([
+            Animated.timing(outroOpacity, {
+                toValue: 1,
+                duration: OUTRO_FADE_MS,
+                useNativeDriver: true,
+            }),
+            Animated.spring(outroScale, {
+                toValue: 1,
+                friction: 7,
+                tension: 90,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, [showOutro, outroOpacity, outroScale]);
+
+    React.useEffect(() => {
+        if (!showOutro) return;
         if (lastUploadOk == null) return;
 
-        const timer = setTimeout(() => {
-            if (!lastUploadOk) {
+        if (!lastUploadOk) {
+            Animated.timing(outroOpacity, {
+                toValue: 0,
+                duration: OUTRO_FADE_MS,
+                useNativeDriver: true,
+            }).start(() => {
+                setShowOutro(false);
+                setLastUploadOk(null);
+
                 Alert.alert(
                     "업로드 실패",
                     "업로드에 실패했습니다.\n네트워크를 확인하고 다시 시도해 주세요."
                 );
+            });
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            Animated.timing(outroOpacity, {
+                toValue: 0,
+                duration: OUTRO_FADE_MS,
+                useNativeDriver: true,
+            }).start(() => {
+                if (isLastQuestion) {
+                    setStage("completed");
+                } else {
+                    setIndex((prev) => prev + 1);
+                    setStage("asking");
+                }
+
                 setShowOutro(false);
                 setLastUploadOk(null);
-                return;
-            }
-
-            if (isLastQuestion) {
-                setStage("completed");
-            } else {
-                setIndex((prev) => prev + 1);
-                setStage("asking");
-            }
-
-            setShowOutro(false);
-            setLastUploadOk(null);
-        }, 500);
+            });
+        }, OUTRO_VISIBLE_MS);
 
         return () => clearTimeout(timer);
-    }, [showOutro, isUploading, lastUploadOk, isLastQuestion]);
+    }, [showOutro, lastUploadOk, isLastQuestion, outroOpacity]);
 
+    
     React.useEffect(() => {
         if (stage !== "completed") return;
 
@@ -516,7 +561,10 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     </View>
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.wrap}
+                        contentContainerStyle={[
+                            styles.wrap,
+                            recordStage !== "closed" && !showOutro ? styles.wrapRecording : null,
+                        ]}
                         keyboardShouldPersistTaps="handled"
                     >
                         <View style={styles.questionPage}>
@@ -635,8 +683,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
             )}
 
             {showOutro && (
-                <View style={styles.outroOverlay} pointerEvents="none">
-                    <View style={styles.outroCard}>
+                <Animated.View style={[styles.outroOverlay, { opacity: outroOpacity }]} pointerEvents="none">
+                    <Animated.View style={[styles.outroCard, { transform: [{ scale: outroScale }] }]}>
                         <View style={styles.outroIcon}>
                             <Image
                                 source={require("../../../assets/icons/check-02.png")}
@@ -644,8 +692,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                             />
                         </View>
                         <AppText style={styles.outroText}>기록완료!</AppText>
-                    </View>
-                </View>
+                    </Animated.View>
+                </Animated.View>
             )}
 
             {stage === "completed" && (

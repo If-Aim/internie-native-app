@@ -30,4 +30,7 @@ export const styles = StyleSheet.create({
     optionItem: { width: "100%", paddingVertical: 12, paddingHorizontal: 11 },
     optionText: { fontSize: 16, fontWeight: "400", color: "#000000" },
     optionTextSelected: { fontWeight: "700" },
+    notice: { marginTop: 18, marginHorizontal: 24, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 10, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D9D9D9" },
+noticeTitle: { marginBottom: 8, color: "#000000", fontSize: 12, fontWeight: "700" },
+noticeDesc: { marginBottom: 4, color: "#666666", fontSize: 12, fontWeight: "400", lineHeight: 18 },
 });

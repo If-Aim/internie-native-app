@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -72,7 +72,7 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
             setSubmitting(true);
 
             await withdraw({
-                reason,
+                reason: t(reason),
                 detail: isEtcReason ? trimmedDetail : "",
             });
 
@@ -169,7 +169,11 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
                         />
                     ) : null}
                 </View>
-
+                <View style={styles.notice}>
+                    <AppText style={styles.noticeTitle}>{t("mypage.WithdrawNoticeTitle")}</AppText>
+                    <AppText style={styles.noticeDesc}>{t("mypage.WithdrawNoticeDesc")}</AppText>
+                    <AppText style={styles.noticeDesc}>{t("mypage.WithdrawNoticeDesc2")}</AppText>
+                </View>
                 <View style={styles.bottomSpacer} />
             </ScrollView>
 

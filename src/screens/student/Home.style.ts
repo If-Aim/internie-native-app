@@ -5,7 +5,7 @@ import { tokens } from "../../theme/common.Style";
 export const styles = StyleSheet.create({
 	/* Header */
 	topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", },
-	appTitle: { flex:1, textAlign: "center", fontSize: 24, fontWeight: "700", color: "black", opacity:0 },
+	appTitle: { flex:1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "black",},
 	headerLeftSpace: {width: 24, height: 24,},
 	
 	/* Month header (ListHeaderComponent) */
@@ -84,5 +84,28 @@ export const styles = StyleSheet.create({
     speechBubbleTail: { position: "relative", width: 0, height: 0, borderLeftWidth: 15, borderRightWidth: 15, borderTopWidth: 23, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: "#BDD8FF" },
     speechBubbleText: { fontSize: 16, fontWeight: "700", color: tokens.colors.ink, lineHeight: 25, textAlign: "center" },
     recordMascot: { width: 120, height: 120},
+
+	/* Record Modal - weekday chips */
+	emailPopupBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+	emailPopup: { width: "100%", maxWidth: 360, backgroundColor: "#F8F8F8", borderRadius: 20, paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 30, elevation: 10 },
+	emailPopupHeader: { position: "relative", alignItems: "center", justifyContent: "center", marginBottom: 12 },
+	emailPopupTitle: { fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" },
+	emailPopupClose: { position: "absolute", top: 0, right: 0, padding: 0, width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+	emailPopupDesc: { fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 },
+	emailPopupBody: { gap: 12 },
+	emailPopupInput: { width: "100%", height: 54, paddingHorizontal: 18, borderRadius: 10, borderWidth: 1, borderColor: "#E2E2E2", backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "400", color: "#000000" },
+	emailPopupRow: { flexDirection: "row", gap: 8 },
+	emailPopupCodeInput: { flex: 1 },
+	emailPopupSendButton: { minWidth: 96, height: 54, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center", paddingHorizontal: 14 },
+	emailPopupSendButtonDisabled: { opacity: 0.6 },
+	emailPopupSendButtonText: { color: "#0B0B0B", fontSize: 15, fontWeight: "700" },
+	emailPopupInfo: { fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0,0,0,0.6)", textAlign: "left" },
+	emailPopupError: { fontSize: 14, fontWeight: "500", lineHeight: 20, color: "#D64545", textAlign: "left" },
+	emailPopupFooter: { flexDirection: "row", gap: 10, marginTop: 20 },
+	emailPopupSecondary: { flex: 1, height: 56, borderWidth: 1, borderColor: "#D9D9D9", borderRadius: 12, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+	emailPopupSecondaryText: { color: "#000000", fontSize: 16, fontWeight: "700" },
+	emailPopupPrimary: { flex: 1, height: 56, borderRadius: 12, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
+	emailPopupPrimaryDisabled: { opacity: 0.6 },
+	emailPopupPrimaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 
 });

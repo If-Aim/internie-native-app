@@ -4,7 +4,8 @@ import { tokens } from "../../../theme/common.Style";
 
 export const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: "#F0F6FF" },
-    wrap: { paddingHorizontal: 40, paddingBottom: 170 },   
+    wrap: { paddingHorizontal: 40, paddingBottom: 170 },
+    wrapRecording: { paddingBottom: 470 },
 	// Header
 	headerCenter: { flex: 1, justifyContent: "center", alignItems: "center", },
 	headerTitle: { fontSize: 16, color: tokens.colors.ink, textAlignVertical: "center",},
@@ -24,7 +25,7 @@ export const styles = StyleSheet.create({
     questionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
     qBadge: { width: 30, height: 30, borderRadius: 5, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", },
     qBadgeText: { fontSize: 20, color: "#FFFFFF", fontWeight: "700", fontFamily: tokens.typography.fontFamily },
-    questionText: { marginTop: 4, fontSize: 20, color: tokens.colors.ink, fontWeight: "700", lineHeight: 25, fontFamily: tokens.typography.fontFamily },
+    questionText: { marginTop: 4, fontSize: 16, color: tokens.colors.ink, fontWeight: "700", lineHeight: 25, fontFamily: tokens.typography.fontFamily },
 
     micButton: { position: "absolute", bottom: 54, alignSelf: "center", width: 105, height: 105, borderRadius: 999, backgroundColor: tokens.colors.primary, alignItems: "center", justifyContent: "center", zIndex: 10 },
     micIcon: { width: 40, height: 40 },
@@ -34,7 +35,7 @@ export const styles = StyleSheet.create({
     recordingMeter: { width: "100%", height: 100, backgroundColor: "#FFFFFF", borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 35 },
     recordingWave: { flexDirection: "row", alignItems: "center", justifyContent: "center", height: 64, overflow: "hidden" },
     waveBar: { width: 4, height: 67, borderRadius: 999, backgroundColor: tokens.colors.primary, marginHorizontal: 2.5 },
-    recordingText: { marginTop: 0, marginBottom: 21, fontSize: 20, fontWeight: "700", color: "#FFFFFF", textAlign: "center", lineHeight: 22, height: 40, textAlignVertical: "center",},
+    recordingText: { marginTop: 0, marginBottom: 21, fontSize: 20, fontWeight: "700", color: "#FFFFFF", textAlign: "center", lineHeight: 22, height: 44, textAlignVertical: "center",},
 
     recordingMicRing: { width: 133, height: 133, borderRadius: 999, alignItems: "center", justifyContent: "center" },
     recordingMicRingBg: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 999 },
@@ -53,8 +54,8 @@ export const styles = StyleSheet.create({
     outroIconImg: { width: 40, height: 40 },
     outroText: { fontSize: 20, fontWeight: "700", color: tokens.colors.primary, lineHeight: 28, fontFamily: tokens.typography.fontFamily },
 
-    completedWrap: { flex: 1, backgroundColor: "#F0F6FF", alignItems: "center", justifyContent: "flex-start", paddingLeft: 20, paddingRight: 20, paddingBottom: 50 },
-    completionContent: { width: "100%", alignItems: "center", justifyContent: "center", marginTop: 220 },
+    completedWrap: { flex: 1, backgroundColor: "#F0F6FF", alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingBottom: 50 },
+    completionContent: { width: "100%", alignItems: "center", justifyContent: "center", transform: [{ translateY: -25 }] },
     completionTitle: { fontSize: 24, fontWeight: "700", color: tokens.colors.ink, lineHeight: 30, marginBottom: 21, fontFamily: tokens.typography.fontFamily },
     completionDesc: { marginTop: 0, fontSize: 16, fontWeight: "500", color: "rgba(0,0,0,0.50)", lineHeight: 28, textAlign: "center", fontFamily: tokens.typography.fontFamily },
     completionMargin: { height: 18 },

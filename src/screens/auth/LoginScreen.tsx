@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Pressable, Image, NativeModules, Alert, ScrollView } from "react-native";
+import { View, Pressable, Image, NativeModules, Alert, ScrollView, Modal } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ApiError, exchangeKakaoToken, loginWithGoogle, loginWithLocal } from "../../api/client";
 import { saveAccessToken, saveOnboardingCompleted } from "../../auth/tokenStorage";
@@ -45,6 +45,7 @@ export default function LoginScreen(_props: Props) {
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
+    const [kakaoMethodOpen, setKakaoMethodOpen] = useState(false);
 
     const moveAfterLogin = async (onboardingCompleted: boolean) => {
         await saveOnboardingCompleted(onboardingCompleted === true);
@@ -134,24 +135,27 @@ export default function LoginScreen(_props: Props) {
     };
 
     const onPressKakao = () => {
-        Alert.alert(
-            t("login.selectMethodTitle"),
-            t("login.selectMethodDesc"),
-            [
-                { text: t("login.withKakaoTalk"), onPress: handleKakaoTalkLogin },
-                { text: t("login.withKakaoAccount"), onPress: handleKakaoAccountLogin },
-                { text: t("common.cancel"), style: "cancel" },
-            ]
-        );
+        setKakaoMethodOpen(true);
+    };
+
+    const runKakaoTalkLogin = async () => {
+        setKakaoMethodOpen(false);
+        await handleKakaoTalkLogin();
+    };
+
+    const runKakaoAccountLogin = async () => {
+        setKakaoMethodOpen(false);
+        await handleKakaoAccountLogin();
     };
 
     const handleGooglePress = async () => {
         try {
             if (!GoogleLogin?.signIn) {
-                Alert.alert(t("login.loginFailed"), t("login.googleLoginFailed"));
+                Alert.alert(t("login.loginFailed"), "GoogleLogin.signIn 네이티브 모듈을 찾을 수 없습니다.");
                 return;
             }
-            const result = await GoogleLogin!.signIn();
+
+            const result = await GoogleLogin.signIn();
             const idToken = result?.idToken ?? "";
 
             if (!idToken) {
@@ -160,14 +164,34 @@ export default function LoginScreen(_props: Props) {
             }
 
             const data = await loginWithGoogle(idToken);
+
             await moveAfterLogin(data.onboardingCompleted);
-        } catch (e) {
-            if (e instanceof ApiError) {
-                Alert.alert(t("login.loginFailed"), e.message || t("login.googleLoginFailed"));
-                return;
+            } catch (e: any) {
+                if (e?.code === "GOOGLE_SIGN_IN_CANCELED") {
+                    return;
+                }
+
+                if (e?.code === "GOOGLE_NO_CREDENTIAL") {
+                    Alert.alert(
+                        t("login.loginFailed"),
+                        "사용 가능한 Google 계정을 찾을 수 없습니다. 기기에 Google 계정이 로그인되어 있는지 확인해주세요."
+                    );
+                    return;
+                }
+
+                if (e instanceof ApiError) {
+                    Alert.alert(
+                        t("login.loginFailed"),
+                        e.bodyText || e.message || t("login.googleLoginFailed")
+                    );
+                    return;
+                }
+
+                Alert.alert(
+                    t("login.loginFailed"),
+                    "Google 로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                );
             }
-            Alert.alert(t("login.loginFailed"), t("login.googleLoginFailed"));
-        }
     };
 
     return (
@@ -256,6 +280,33 @@ export default function LoginScreen(_props: Props) {
                     </Pressable>
                 </View>
             </ScrollView>
+            <Modal visible={kakaoMethodOpen} transparent animationType="fade" onRequestClose={() => setKakaoMethodOpen(false)}>
+                <View style={styles.kakaoModalBackdrop}>
+                    <Pressable style={styles.kakaoModalBackdropPress} onPress={() => setKakaoMethodOpen(false)} />
+                    <View style={styles.kakaoModal}>
+                        <View style={styles.kakaoModalIconWrap}>
+                            <Image source={require("../../assets/logo/kakao_Logo.png")} style={styles.kakaoModalIcon} resizeMode="contain" />
+                        </View>
+
+                        <AppText style={styles.kakaoModalTitle}>{t("login.selectMethodTitle")}</AppText>
+                        <AppText style={styles.kakaoModalDesc}>{t("login.selectMethodDesc")}</AppText>
+
+                        <View style={styles.kakaoModalButtonGroup}>
+                            <Pressable style={styles.kakaoModalPrimaryButton} onPress={runKakaoTalkLogin}>
+                                <AppText style={styles.kakaoModalPrimaryButtonText}>{t("login.withKakaoTalk")}</AppText>
+                            </Pressable>
+
+                            <Pressable style={styles.kakaoModalSecondaryButton} onPress={runKakaoAccountLogin}>
+                                <AppText style={styles.kakaoModalSecondaryButtonText}>{t("login.withKakaoAccount")}</AppText>
+                            </Pressable>
+                        </View>
+
+                        <Pressable style={styles.kakaoModalCancelButton} onPress={() => setKakaoMethodOpen(false)}>
+                            <AppText style={styles.kakaoModalCancelButtonText}>{t("common.cancel")}</AppText>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
