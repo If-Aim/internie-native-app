@@ -51,17 +51,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   func application(
       _ app: UIApplication,
       open url: URL,
-      options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+      options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
+      print("OPEN URL:", url.absoluteString)
+
       if GIDSignIn.sharedInstance.handle(url) {
+          print("GOOGLE URL HANDLED")
           return true
       }
 
       if AuthApi.isKakaoTalkLoginUrl(url) {
+          print("KAKAO URL DETECTED")
           return AuthController.handleOpenUrl(url: url)
       }
 
-      return false
+      print("RCT LINKING URL")
+      return RCTLinkingManager.application(app, open: url, options: options)
   }
 }
 
