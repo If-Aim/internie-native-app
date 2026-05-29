@@ -31,6 +31,8 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>kakaob4e3bfedda9f16b18eab43d14cd00dce</string>
