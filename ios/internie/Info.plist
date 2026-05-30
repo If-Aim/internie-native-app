@@ -45,6 +45,8 @@
 	<string>681452511483-feedru12rat1hlf29q21ci4mg1i0647f.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
 	<string>681452511483-geq6v268p4nk9ssl8ivaabp5b3mtool0.apps.googleusercontent.com</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>KAKAO_APP_KEY</key>
 	<string>b4e3bfedda9f16b18eab43d14cd00dce</string>
 	<key>KAKAO_APP_SCHEME</key>
