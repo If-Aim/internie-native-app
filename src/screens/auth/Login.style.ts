@@ -45,6 +45,8 @@ export const styles = StyleSheet.create({
     socialBtn: { width: "100%", height: 48, borderRadius: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 2, elevation: 4 },
     kakaoBtn: { backgroundColor: "#FEE500" },
     googleBtn: { backgroundColor: "#FFF", borderWidth: 0 },
+    appleBtn: { backgroundColor: "#fff" },
+    appleText: { fontSize: 16, lineHeight: 20, fontWeight: "700", color: "#000" },
     socialIconWrap: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
     socialIcon: { width: 20, height: 20 },
     socialText: { fontSize: 16, lineHeight: 20, fontWeight: "700", color: "#000000" },

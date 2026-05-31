@@ -22,6 +22,7 @@
         "loginWithKakao": "카카오 로그인",
         "startWithGoogle": "Google로 시작하기",
 		"startWithGoogleAria": "구글로 시작하기",
+        "startWithApple": "Apple로 시작하기",
 		"loginWithGoogle": "구글 로그인",
         "getLoginTitle": "로그인이 필요한 서비스입니다",
         "getLoginSub": "로그인 하시겠습니까?",

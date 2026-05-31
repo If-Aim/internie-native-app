@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { View, Pressable, Image, NativeModules, Alert, ScrollView, Modal } from "react-native";
 import { useTranslation } from "react-i18next";
-import { ApiError, exchangeKakaoToken, loginWithGoogle, loginWithLocal } from "../../api/client";
+import { ApiError, exchangeKakaoToken, loginWithApple, loginWithGoogle, loginWithLocal } from "../../api/client";
 import { saveAccessToken, saveOnboardingCompleted } from "../../auth/tokenStorage";
 import { styles } from "./Login.style";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
+import appleAuth from "@invertase/react-native-apple-authentication";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import AppText from "../../../AppText";
@@ -194,6 +195,54 @@ export default function LoginScreen(_props: Props) {
             }
     };
 
+    const handleApplePress = async () => {
+        try {
+            const result = await appleAuth.performRequest({
+                requestedOperation: appleAuth.Operation.LOGIN,
+                requestedScopes: [
+                    appleAuth.Scope.FULL_NAME,
+                    appleAuth.Scope.EMAIL,
+                ],
+            });
+
+            const identityToken = result.identityToken ?? "";
+
+            if (!identityToken) {
+                Alert.alert(t("login.loginFailed"), "Apple identityToken을 받지 못했습니다.");
+                return;
+            }
+
+            const fullNameParts = [
+                result.fullName?.familyName,
+                result.fullName?.givenName,
+            ].filter(Boolean);
+
+            const fullName = fullNameParts.length > 0 ? fullNameParts.join("") : null;
+            const data = await loginWithApple({identityToken, fullName,});
+
+            await moveAfterLogin(data.onboardingCompleted);
+        } catch (e: any) {
+            if (e?.code === appleAuth.Error.CANCELED) {
+                return;
+            }
+
+            if (e instanceof ApiError) {
+                Alert.alert(
+                    t("login.loginFailed"),
+                    e.bodyText || e.message || "Apple 로그인에 실패했습니다."
+                );
+                return;
+            }
+
+            console.log("Apple login error:", e);
+
+            Alert.alert(
+                t("login.loginFailed"),
+                String(e?.message || e?.code || "Apple 로그인 중 문제가 발생했습니다.")
+            );
+        }
+    };
+
     return (
         <View style={styles.page}>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -270,6 +319,12 @@ export default function LoginScreen(_props: Props) {
                             <Image source={require("../../assets/logo/google_Logo.png")} style={styles.socialIcon} resizeMode="contain" />
                         </View>
                         <AppText style={styles.socialText}>{t("login.startWithGoogle")}</AppText>
+                    </Pressable>
+                    <Pressable style={[styles.socialBtn, styles.appleBtn]} onPress={handleApplePress}>
+                        <View style={styles.socialIconWrap}>
+                            <Image source={require("../../assets/logo/apple_Logo.png")} style={styles.socialIcon} resizeMode="contain" />
+                        </View>
+                        <AppText style={styles.appleText}>{t("login.startWithApple")}</AppText>
                     </Pressable>
                 </View>
 
