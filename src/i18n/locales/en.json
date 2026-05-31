@@ -21,6 +21,7 @@
         "startWithKakaoAria": "Continue with Kakao",
         "loginWithKakao": "Log in with Kakao",
         "startWithGoogle": "Continue with Google",
+		"startWithApple": "Continue with Apple",
         "startWithGoogleAria": "Continue with Google",
         "loginWithGoogle": "Log in with Google",
         "getLoginTitle": "Login Required",

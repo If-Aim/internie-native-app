@@ -268,6 +268,42 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
     return (await res.json()) as LoginResponse;
 }
 
+// 애플 로그인
+export async function loginWithApple(input: AppleLoginRequest): Promise<LoginResponse> {
+    const res = await fetch(buildUrl("/auth/apple"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            identityToken: input.identityToken,
+            fullName: input.fullName ?? null,
+            nonce: input.nonce ?? null,
+        }),
+    });
+
+    if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        const parsed = parseErrorBody(bodyText);
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
+    }
+
+    const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    if (!auth) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No Authorization header in /auth/apple response", bodyText);
+    }
+
+    await saveAccessToken(auth);
+
+    return (await res.json()) as LoginResponse;
+}
+
 // 회원가입
 export async function signup(input: SignupRequest): Promise<void> {
     const res = await fetch(buildUrl("/auth/signup"), {
@@ -638,6 +674,12 @@ export type SignupRequest = {
 export type LoginRequest = {
     loginId: string;
     password: string;
+};
+
+export type AppleLoginRequest = {
+    identityToken: string;
+    fullName?: string | null;
+    nonce?: string | null;
 };
 
 export type LoginIdAvailabilityResponse = {
