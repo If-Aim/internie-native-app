@@ -7,6 +7,10 @@ export const styles = StyleSheet.create({
     logoText: { fontSize: 32, lineHeight: 36, fontWeight: "700", color: "#000000", fontFamily: "Montserrat" },
     formSection: { width: "100%", marginTop: 82 },
 
+    loginTopbar: {height: 56,justifyContent: "center",paddingHorizontal: 16,},
+    loginBackButton: {width: 40,height: 40,alignItems: "center",justifyContent: "center",},
+    loginBackIcon: {width: 24,height: 24,},
+    
     loginFieldGroup: { width: "100%", gap: 15 },
 
     input: { width: "100%", height: 48, paddingHorizontal: 20, borderWidth: 1, borderColor: "#DDD", borderRadius: 10, backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "500", color: "#6B6B6B", },
