@@ -1115,7 +1115,6 @@ export default function HomeScreen({ navigation }: Props) {
                             <AppText style={styles.emptyTitle}>
                                 {"일정을 만들고 질문에 답변을 녹음해보세요.\n일정 등록과 답변 녹음은 로그인 후 이용할 수 있습니다."}
                             </AppText>
-
                             <Pressable style={styles.emptyBtn} onPress={() => setLoginGateOpen(true)}>
                                 <AppText style={styles.emptyBtnText}>로그인하고 시작하기</AppText>
                             </Pressable>
@@ -1124,7 +1123,6 @@ export default function HomeScreen({ navigation }: Props) {
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
                             <AppText style={styles.emptyTitle}>{t("empty.title")}{"\n"}{t("empty.subtitle")}</AppText>
-
                             <Pressable style={styles.emptyBtn} onPress={() => handleServicePreparing()}>
                                 <AppText style={styles.emptyBtnText}>{t("empty.sync")}</AppText>
                             </Pressable>
@@ -1311,7 +1309,7 @@ export default function HomeScreen({ navigation }: Props) {
                         </View>
 
                         <AppText style={styles.sheetDesc}>
-                            {t("login.getLoginSub", "이 기능을 이용하려면 로그인해 주세요")}
+                            {t("login.getLoginSub", "일정 등록과 답변 녹음은 로그인 후 이용할 수 있습니다.")}
                         </AppText>
 
                         <Pressable style={styles.sheetPrimary} onPress={() => { setLoginGateOpen(false); rootNavigation.replace("Auth"); }} >

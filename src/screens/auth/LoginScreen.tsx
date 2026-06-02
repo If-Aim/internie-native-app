@@ -194,6 +194,10 @@ export default function LoginScreen(_props: Props) {
                 );
             }
     };
+    
+    const handleBackToHome = () => {
+        rootNav.replace("Student");
+    };
 
     const handleApplePress = async () => {
         try {
