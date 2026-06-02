@@ -891,8 +891,21 @@ export default function HomeScreen({ navigation }: Props) {
 
     useFocusEffect(
         React.useCallback(() => {
+            if (!isAuthed) {
+                setUserName("Guest");
+                setUserEmail("");
+                setUserRoleSet([]);
+                setUserProfileImg(null);
+                setNeedsEmailVerification(false);
+                setEmailVerifyPopupOpen(false);
+                setEmailForm({ email: "", code: "" });
+                setEmailSentMessage(null);
+                setEmailError(null);
+                return;
+            }
+
             void loadMeForHome();
-        }, [])
+        }, [isAuthed])
     );
 
     useFocusEffect(
@@ -1076,7 +1089,7 @@ export default function HomeScreen({ navigation }: Props) {
         <SafeAreaView style={commonStyles.appRoot}>
             {/* Header */}
             <Header
-                onMenuClick={() => requireAuth("StudentHome", () => setMenuOpen(true))}
+                onMenuClick={() => setMenuOpen(true)}
                 onAddClick={() => requireAuth("NewSchedule", () => navigation.navigate("NewSchedule"))}
             />
 
@@ -1088,7 +1101,7 @@ export default function HomeScreen({ navigation }: Props) {
                 contentContainerStyle={commonStyles.wrap}
                 ListHeaderComponent={
                     <> 
-                        <MonthHeader valueYm={month} lang={i18n.language} onOpen={() => setFilterOpen(true)} />  
+                        <MonthHeader valueYm={month} lang={i18n.language} onOpen={() => requireAuth("StudentHome", () => setFilterOpen(true))} />
                     </>
                 }
                 ListEmptyComponent={
@@ -1096,12 +1109,23 @@ export default function HomeScreen({ navigation }: Props) {
                         <View style={styles.loadingWrap}>
                             <ActivityIndicator />
                         </View>
+                    ) : !isAuthed ? (
+                        <View style={styles.emptyWrap}>
+                            <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
+                            <AppText style={styles.emptyTitle}>
+                                {"일정을 만들고 질문에 답변을 녹음해보세요.\n일정 등록과 답변 녹음은 로그인 후 이용할 수 있습니다."}
+                            </AppText>
+
+                            <Pressable style={styles.emptyBtn} onPress={() => setLoginGateOpen(true)}>
+                                <AppText style={styles.emptyBtnText}>로그인하고 시작하기</AppText>
+                            </Pressable>
+                        </View>
                     ) : (
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
                             <AppText style={styles.emptyTitle}>{t("empty.title")}{"\n"}{t("empty.subtitle")}</AppText>
 
-                            <Pressable style={styles.emptyBtn} onPress={() => handleServicePreparing()} >
+                            <Pressable style={styles.emptyBtn} onPress={() => handleServicePreparing()}>
                                 <AppText style={styles.emptyBtnText}>{t("empty.sync")}</AppText>
                             </Pressable>
                         </View>
@@ -1194,10 +1218,10 @@ export default function HomeScreen({ navigation }: Props) {
             <SideMenu
                 isOpen={menuOpen}
                 onClose={() => setMenuOpen(false)}
-                userName={userName}
-                userEmail={userEmail}
-                userProfileImg={userProfileImg}
-                onMyPage={() => navigation.navigate("MyPage")}
+                userName={isAuthed ? userName : "Guest"}
+                userEmail={isAuthed ? userEmail : ""}
+                userProfileImg={isAuthed ? userProfileImg : null}
+                onMyPage={() => requireAuth("MyPage", () => navigation.navigate("MyPage"))}
             />
 
             <MonthFilterSheet
@@ -1290,7 +1314,7 @@ export default function HomeScreen({ navigation }: Props) {
                             {t("login.getLoginSub", "이 기능을 이용하려면 로그인해 주세요")}
                         </AppText>
 
-                        <Pressable style={styles.sheetPrimary} onPress={() => { setLoginGateOpen(false); rootNavigation.navigate("Auth"); }} >
+                        <Pressable style={styles.sheetPrimary} onPress={() => { setLoginGateOpen(false); rootNavigation.replace("Auth"); }} >
                             <AppText style={styles.sheetPrimaryText}>
                                 {t("common.login", "로그인")}
                             </AppText>

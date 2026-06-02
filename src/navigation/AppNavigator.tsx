@@ -27,7 +27,7 @@ export default function AppNavigator() {
                 const token = await getAccessToken();
 
                 if (!token) {
-                    setInitialRouteName("Auth");
+                    setInitialRouteName("Student");
                     return;
                 }
 
