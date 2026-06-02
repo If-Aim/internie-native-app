@@ -250,11 +250,6 @@ export default function LoginScreen(_props: Props) {
     return (
         <View style={styles.page}>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                <View style={styles.loginTopbar}>
-                    <Pressable style={styles.loginBackButton} onPress={handleBackToHome}>
-                        <Image source={require("../../assets/icons/chevron-left.png")} style={styles.loginBackIcon} resizeMode="contain" />
-                    </Pressable>
-                </View>
                 <View style={styles.logoSection}>
                     <AppText style={styles.logoText}>internie</AppText>
                 </View>
