@@ -53,7 +53,7 @@ export default function AppNavigator() {
             } catch (error) {
                 console.error("Failed to bootstrap auth:", error);
                 await clearAccessToken().catch(() => {});
-                setInitialRouteName("Auth");
+                setInitialRouteName("Student");
             }
         };
 
