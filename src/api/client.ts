@@ -54,11 +54,17 @@ async function requestWithAutoRefresh(
     const makeHeaders = async (): Promise<Record<string, string>> => {
         const base = normalizeHeaders(init.headers);
         const auth = await getAuthHeader();
-
         const headers: Record<string, string> = {
             ...base,
             ...auth,
         };
+        const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+
+        if (isFormData) {
+            delete headers["Content-Type"];
+            delete headers["content-type"];
+            return headers;
+        }
 
         if (
             expectJson &&

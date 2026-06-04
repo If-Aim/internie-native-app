@@ -12,11 +12,14 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api, ApiError, getUserMe, sendMyEmailCode, verifyMyEmailCode } from "../../api/client";
+import { getMyParticipatingExternalActivities, type StudentExternalActivityResponse } from "../../api/ea";
 import { getAccessToken } from "../../auth/tokenStorage";
 import type { StudentStackParamList } from "../../navigation/StudentNavigator";
 
 import { styles } from "./Home.style";
 import { commonStyles, tokens } from "../../theme/common.Style";
+
+import StudentMobileSideMenu from "./StudentSideMenu";
 
 import AppText from "../../../AppText";
 
@@ -630,82 +633,6 @@ function Header({
     );
 }
 
-// SIDE MENU
-function SideMenu({
-    isOpen,
-    onClose,
-    userName,
-    userEmail,
-    userProfileImg,
-    onMyPage,
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    userName: string;
-    userEmail: string;
-    userProfileImg: string | null;
-    onMyPage: () => void;
-}) {
-    const { t, i18n } = useTranslation();
-    const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
-
-    async function toggleLang() {
-        await i18n.changeLanguage(isKo ? "en" : "ko");
-    }
-
-    function handleServicePreparing() {
-        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
-    }
-
-    if (!isOpen) return null;
-
-    return (
-        <View style={commonStyles.drawerBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-            <View style={commonStyles.drawerPanel}>
-                <View style={commonStyles.drawerHeader}>
-                    <View style={commonStyles.profileWrap}>
-                        <View>
-                            <AppText style={commonStyles.profileName}>{userName}</AppText>
-                            <AppText style={commonStyles.profileEmail}>{userEmail}</AppText>
-                        </View>
-
-                        <View style={commonStyles.profileImgRadius}>
-                            <Image
-                                source={
-                                    userProfileImg
-                                        ? { uri: userProfileImg }
-                                        : require("../../assets/images/internie_mascot_normal.png")
-                                }
-                                style={commonStyles.profileImg}
-                                resizeMode="cover"
-                            />
-                        </View>
-                    </View>
-                </View>
-
-                <View style={commonStyles.drawerBody}>
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { onMyPage(); onClose(); }}>
-                        <Image source={require("../../assets/icons/user-profile-02.png")} style={commonStyles.icon24} />
-                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.mypage")}</AppText>
-                    </Pressable>
-
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={handleServicePreparing}>
-                        <Image source={require("../../assets/icons/settings.png")} style={commonStyles.icon24} />
-                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.settings")}</AppText>
-                    </Pressable>
-
-                    <Pressable style={commonStyles.drawerMenuItem} onPress={() => { void toggleLang(); }}>
-                        <Image source={require("../../assets/icons/globe-01.png")} style={commonStyles.icon24} />
-                        <AppText style={commonStyles.drawerMenuItemText}>{t("menu.language")}</AppText>
-                    </Pressable>
-                </View>
-            </View>
-        </View>
-    );
-}
-
 export default function HomeScreen({ navigation }: Props) {
 	const { t, i18n } = useTranslation();
 	const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -744,7 +671,10 @@ export default function HomeScreen({ navigation }: Props) {
     const [emailSentMessage, setEmailSentMessage] = React.useState<string | null>(null);
     const [emailError, setEmailError] = React.useState<string | null>(null);
 
-	const byDate = React.useMemo(() => {
+    // eca
+    const [myActivities, setMyActivities] = React.useState<StudentExternalActivityResponse[]>([]);
+	
+    const byDate = React.useMemo(() => {
 		const g: Record<string, ScheduleItem[]> = {};
 		for (const it of items) (g[it.date] ??= []).push(it);
 
@@ -889,6 +819,24 @@ export default function HomeScreen({ navigation }: Props) {
         }
     }
 
+    async function loadSideMenuData(): Promise<void> {
+        const token = await getAccessToken();
+
+        if (!token) {
+            setMyActivities([]);
+            return;
+        }
+
+        try {
+            const activityData = await getMyParticipatingExternalActivities();
+
+            setMyActivities(activityData);
+        } catch (error) {
+            console.error(error);
+            setMyActivities([]);
+        }
+    }
+
     useFocusEffect(
         React.useCallback(() => {
             if (!isAuthed) {
@@ -905,6 +853,7 @@ export default function HomeScreen({ navigation }: Props) {
             }
 
             void loadMeForHome();
+            void loadSideMenuData();
         }, [isAuthed])
     );
 
@@ -918,14 +867,21 @@ export default function HomeScreen({ navigation }: Props) {
 		if (!selectedItem) setRecordModalOpen(false);
 	}, [selectedItem]);
 
-	const requireAuth = (routeNameAfterLogin: string, action?: () => void) => {
-		if (!isAuthed) {
-			setPendingRouteName(routeNameAfterLogin);
-			setLoginGateOpen(true);
-			return;
-		}
-		action?.();
-	};
+    function requireAuth(action: () => void): void {
+        if (!isAuthed) {
+            Alert.alert(
+                "로그인이 필요합니다.",
+                "로그인 후 이용할 수 있습니다.",
+                [
+                    { text: "취소", style: "cancel" },
+                    { text: "로그인", onPress: () => rootNavigation.navigate("Auth" as never) },
+                ]
+            );
+            return;
+        }
+
+        action();
+    }
 
 	const handleRecord = async () => {
 		if (!selectedItem) return;
@@ -1078,6 +1034,47 @@ export default function HomeScreen({ navigation }: Props) {
         }
     }
 
+    function moveHome(): void {
+        navigation.navigate("StudentHome");
+    }
+
+    function moveMyPage(): void {
+        requireAuth(() => {
+            navigation.navigate("MyPage" as never);
+        });
+    }
+
+    function moveActivityMenu(
+        activityId: number,
+        menuKey: "dashboard" | "assignment" | "attendance" | "team-activity"
+    ): void {
+        requireAuth(() => {
+            if (menuKey === "dashboard") {
+                navigation.navigate("EcaStudentDashboard", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "assignment") {
+                navigation.navigate("EcaStudentAssignment", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            Alert.alert("서비스 준비중입니다.");
+        });
+    }
+
+    function moveSystemAdmin(): void {
+        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+    }
+
+    function moveJumpAdmin(): void {
+        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+    }
+
+    function moveKakaoAdmin(): void {
+        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+    }
+
     function handleCloseEmailVerifyPopup() {
         setEmailVerifyPopupOpen(false);
     }
@@ -1090,7 +1087,7 @@ export default function HomeScreen({ navigation }: Props) {
             {/* Header */}
             <Header
                 onMenuClick={() => setMenuOpen(true)}
-                onAddClick={() => requireAuth("NewSchedule", () => navigation.navigate("NewSchedule"))}
+                onAddClick={() => requireAuth(() => navigation.navigate("NewSchedule"))}
             />
 
             {/* 리스트 */}
@@ -1101,7 +1098,7 @@ export default function HomeScreen({ navigation }: Props) {
                 contentContainerStyle={commonStyles.wrap}
                 ListHeaderComponent={
                     <> 
-                        <MonthHeader valueYm={month} lang={i18n.language} onOpen={() => requireAuth("StudentHome", () => setFilterOpen(true))} />
+                        <MonthHeader valueYm={month} lang={i18n.language} onOpen={() => requireAuth(() => setFilterOpen(true))} />
                     </>
                 }
                 ListEmptyComponent={
@@ -1113,10 +1110,10 @@ export default function HomeScreen({ navigation }: Props) {
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
                             <AppText style={styles.emptyTitle}>
-                                {"일정을 만들고 질문에 답변을 녹음해보세요.\n일정 등록과 답변 녹음은 로그인 후 이용할 수 있습니다."}
+                                {t("empty.guestTitle") + "\n" + t("empty.guestSubtitle")}
                             </AppText>
                             <Pressable style={styles.emptyBtn} onPress={() => setLoginGateOpen(true)}>
-                                <AppText style={styles.emptyBtnText}>로그인하고 시작하기</AppText>
+                                <AppText style={styles.emptyBtnText}>{t("empty.loginStart")}</AppText>
                             </Pressable>
                         </View>
                     ) : (
@@ -1204,7 +1201,7 @@ export default function HomeScreen({ navigation }: Props) {
                     <Pressable
                         style={[commonStyles.recordBtn, canRecord ? commonStyles.recordBtnEnabled : null]}
                         disabled={!canRecord}
-                        onPress={() => requireAuth("StudentHome", () => setRecordModalOpen(true))}
+                        onPress={() => requireAuth(() => setRecordModalOpen(true))}
                     >
                         <AppText style={canRecord ? commonStyles.recordBtnEnabledText : commonStyles.recordBtnText}>
                             {t("common.record")}
@@ -1213,13 +1210,20 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
             )}
 
-            <SideMenu
+            <StudentMobileSideMenu
                 isOpen={menuOpen}
                 onClose={() => setMenuOpen(false)}
-                userName={isAuthed ? userName : "Guest"}
-                userEmail={isAuthed ? userEmail : ""}
-                userProfileImg={isAuthed ? userProfileImg : null}
-                onMyPage={() => requireAuth("MyPage", () => navigation.navigate("MyPage"))}
+                userName={userName}
+                userEmail={userEmail}
+                userProfileImg={userProfileImg}
+                userRoleSet={userRoleSet}
+                activities={myActivities}
+                onMoveHome={moveHome}
+                onMoveMyPage={moveMyPage}
+                onMoveActivityMenu={moveActivityMenu}
+                onMoveSystemAdmin={moveSystemAdmin}
+                onMoveJumpAdmin={moveJumpAdmin}
+                onMoveKakaoAdmin={moveKakaoAdmin}
             />
 
             <MonthFilterSheet

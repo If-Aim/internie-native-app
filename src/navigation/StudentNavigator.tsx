@@ -15,6 +15,10 @@ import NewScheduleScreen from "../screens/student/schedule/NewScheduleScreen";
 import EditScheduleScreen from "../screens/student/schedule/EditScheduleScreen";
 import DetailScheduleScreen from "../screens/student/schedule/DetailScheduleScreen";
 
+import EcaStudentDashboard from "../screens/student/eca/dashboard/EcaStudentDashboard";
+import EcaStudentAssignment from "../screens/student/eca/assignment/EcaStudentAssignment";
+import EcaStudentAssignmentSubmit from "../screens/student/eca/assignment/EcaStudentAssignmentSubmit";
+
 export type StudentStackParamList = {
   StudentHome: undefined;
   MyPage: undefined;
@@ -28,6 +32,10 @@ export type StudentStackParamList = {
   Questions: { eventDayId: number };
   EditSchedule: { eventId: number };
   DetailSchedule: { eventDayId: number };
+
+  EcaStudentDashboard: { externalActivityId: string };
+  EcaStudentAssignment: { externalActivityId: string };
+  EcaStudentAssignmentSubmit: { externalActivityId: string; assignmentId: string };
 };
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
@@ -47,6 +55,10 @@ export default function StudentNavigator() {
       <Stack.Screen name="NewSchedule" component={NewScheduleScreen} />
       <Stack.Screen name="EditSchedule" component={EditScheduleScreen} />
       <Stack.Screen name="DetailSchedule" component={DetailScheduleScreen} />
+
+      <Stack.Screen name="EcaStudentDashboard" component={EcaStudentDashboard} />
+      <Stack.Screen name="EcaStudentAssignment" component={EcaStudentAssignment} />
+      <Stack.Screen name="EcaStudentAssignmentSubmit" component={EcaStudentAssignmentSubmit} />
     </Stack.Navigator>
   );
 }
