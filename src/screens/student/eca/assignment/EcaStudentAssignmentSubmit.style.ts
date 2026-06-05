@@ -39,7 +39,7 @@ export const styles = StyleSheet.create({
     fileList: { marginTop: 16, gap: 4 },
     fileItem: { minHeight: 40, flexDirection: "row", alignItems: "center", gap: 16 },
     fileMain: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 16 },
-    fileIcon: { width: 46, height: 24, alignItems: "center", justifyContent: "flex-end" },
+    fileIcon: { width: 24, height: 24, alignItems: "center", justifyContent: "flex-end" },
     fileNameWrap: { flex: 1, minWidth: 0, gap: 4 },
     fileName: { color: "#000000", fontSize: 16, fontWeight: "700", lineHeight: 24 },
     fileWarning: { color: "#FF0000", fontSize: 12, fontWeight: "500", lineHeight: 15 },
