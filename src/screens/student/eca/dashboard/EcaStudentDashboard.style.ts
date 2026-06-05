@@ -1,12 +1,11 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: "#F0F6FF" },
-    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 40, paddingRight: 20, paddingBottom: 23, paddingLeft: 20, height: 113, backgroundColor: "#F0F6FF" },
+    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
     iconButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     appTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
-    topActions: { flexDirection: "row", alignItems: "center", gap: 20 },
-    main: { flex: 1, paddingTop: 27, paddingRight: 20, paddingBottom: 30, paddingLeft: 20 },
+    main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingBottom: 30, paddingLeft: 20 },
+    scrollContent: { paddingBottom: 80 },
     titleSection: { marginBottom: 24, paddingHorizontal: 4 },
     todayText: { marginLeft: 3, color: "#808080", fontSize: 16, fontWeight: "700", lineHeight: 20 },
     activityTitle: { marginTop: 11, color: "#000000", fontSize: 24, fontWeight: "700", lineHeight: 28 },
@@ -24,7 +23,7 @@ export const styles = StyleSheet.create({
     metricBadgeText: { color: "#0166FF", fontSize: 16, fontWeight: "700" },
     metricBadgeTextPrimary: { color: "#FFFFFF" },
     metricArrow: { width: 36, height: 36, marginLeft: 2, alignItems: "center", justifyContent: "center" },
-    scheduleSection: { marginTop: 47 },
+    scheduleSection: { marginTop: 37 },
     scheduleTitle: { marginHorizontal: 11, marginBottom: 21, color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 24 },
     scheduleList: { gap: 10 },
     scheduleItem: { width: "100%", minHeight: 84, paddingVertical: 18, paddingHorizontal: 20, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 14, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", gap: 14 },

@@ -191,6 +191,7 @@
 		"cancel": "Cancel"
 	},
 	"menu": {
+		"home": "Home",
 		"mypage": "Profile",
 		"recent": "Recent Activity",
 		"settings": "Settings & Privacy",

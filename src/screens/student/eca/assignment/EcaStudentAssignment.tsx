@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "re
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppText from "../../../../../AppText";
 import { API_BASE_URL } from "@env";
@@ -284,11 +285,33 @@ export default function EcaStudentAssignment({
     }
 
     return (
-        <EcaStudentApp externalActivityId={externalActivityId} activeTab="assignment">
-            <View style={styles.page}>
+        <EcaStudentApp
+            externalActivityId={externalActivityId}
+            activeTab="assignment"
+            overlay={(
+                <StudentMobileSideMenu
+                    isOpen={menuOpen}
+                    onClose={() => setMenuOpen(false)}
+                    userName={userName}
+                    userEmail={userEmail}
+                    userProfileImg={userProfileImg}
+                    userRoleSet={userRoleSet}
+                    activities={myActivities}
+                    currentActivityId={Number(externalActivityId)}
+                    currentActivityMenu="assignment"
+                    onMoveHome={moveHome}
+                    onMoveMyPage={moveMyPage}
+                    onMoveActivityMenu={moveActivityMenu}
+                    onMoveSystemAdmin={moveSystemAdmin}
+                    onMoveJumpAdmin={moveJumpAdmin}
+                    onMoveKakaoAdmin={moveKakaoAdmin}
+                />
+            )}
+        >
+            <SafeAreaView style={commonStyles.appRoot}>
                 <Header activityName={activity?.name ?? ""} onMenuClick={() => setMenuOpen(true)} />
 
-                <ScrollView style={styles.main} showsVerticalScrollIndicator={false}>
+                <ScrollView style={styles.main} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.titleRow}>
                         <AppText style={styles.title}>과제 현황</AppText>
 
@@ -332,25 +355,7 @@ export default function EcaStudentAssignment({
                         )}
                     </View>
                 </ScrollView>
-
-                <StudentMobileSideMenu
-                    isOpen={menuOpen}
-                    onClose={() => setMenuOpen(false)}
-                    userName={userName}
-                    userEmail={userEmail}
-                    userProfileImg={userProfileImg}
-                    userRoleSet={userRoleSet}
-                    activities={myActivities}
-                    currentActivityId={Number(externalActivityId)}
-                    currentActivityMenu="assignment"
-                    onMoveHome={moveHome}
-                    onMoveMyPage={moveMyPage}
-                    onMoveActivityMenu={moveActivityMenu}
-                    onMoveSystemAdmin={moveSystemAdmin}
-                    onMoveJumpAdmin={moveJumpAdmin}
-                    onMoveKakaoAdmin={moveKakaoAdmin}
-                />
-            </View>
+            </SafeAreaView>
         </EcaStudentApp>
     );
 }

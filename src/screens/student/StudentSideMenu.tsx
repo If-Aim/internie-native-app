@@ -274,7 +274,7 @@ export default function StudentMobileSideMenu({
 
                             <Pressable style={sideMenuStyles.menuItem} onPress={() => closeAfter(onMoveMyPage)}>
                                 <View style={sideMenuStyles.icon}><SettingsIcon /></View>
-                                <AppText style={sideMenuStyles.menuText}>{t("menu.mypage")}</AppText>
+                                <AppText style={sideMenuStyles.menuText}>{t("menu.settings")}</AppText>
                             </Pressable>
 
                             {/* <Pressable style={sideMenuStyles.menuItem} onPress={showPreparing}>

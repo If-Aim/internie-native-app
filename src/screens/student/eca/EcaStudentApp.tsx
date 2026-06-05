@@ -15,6 +15,7 @@ type EcaStudentAppProps = {
     children: React.ReactNode;
     externalActivityId: string;
     activeTab: EcaStudentTab;
+    overlay?: React.ReactNode;
 };
 
 type BottomNavItem = {
@@ -72,6 +73,7 @@ export default function EcaStudentApp({
     children,
     externalActivityId,
     activeTab,
+    overlay,
 }: EcaStudentAppProps): React.ReactElement {
     const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
 
@@ -121,6 +123,7 @@ export default function EcaStudentApp({
                     })}
                 </View>
             </SafeAreaView>
+            {overlay}
         </View>
     );
 }

@@ -1,12 +1,12 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: "#F0F6FF" },
-    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 40, paddingRight: 20, paddingBottom: 23, paddingLeft: 20, height: 113, backgroundColor: "#F0F6FF" },
+    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
     iconButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     appTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
     headerRightSpace: { width: 36, height: 36 },
     main: { flex: 1, paddingTop: 13, paddingRight: 20, paddingBottom: 40, paddingLeft: 20 },
+    scrollContent: { paddingBottom: 80 },
     titleRow: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 10 },
     backButton: { width: 30, height: 36, alignItems: "center", justifyContent: "center" },
     title: { flex: 1, color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 36 },
@@ -55,8 +55,13 @@ export const styles = StyleSheet.create({
     emptyText: { color: "#808080", fontSize: 15, fontWeight: "700", textAlign: "center" },
     modalBackdrop: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 3000, backgroundColor: "rgba(209, 209, 209, 0.50)", alignItems: "center", justifyContent: "center", paddingHorizontal: 46 },
     modal: { width: "100%", maxWidth: 300, minHeight: 304, paddingTop: 55, paddingRight: 70, paddingBottom: 45, paddingLeft: 70, borderRadius: 20, backgroundColor: "#FFFFFF", shadowColor: "#000000", shadowOpacity: 0.25, shadowRadius: 10, elevation: 8, alignItems: "center" },
+    modifymodal: { width: "100%", maxWidth: 300, minHeight: 304, paddingTop: 55, paddingHorizontal: 25, paddingBottom: 45, borderRadius: 20, backgroundColor: "#FFFFFF", shadowColor: "#000000", shadowOpacity: 0.25, shadowRadius: 10, elevation: 8, alignItems: "center" },
     modalIcon: { width: 80, height: 80, alignItems: "center", justifyContent: "center", marginBottom: 16 },
-    modalTitle: { color: "#000000", fontSize: 20, fontWeight: "400", lineHeight: 27, marginBottom: 31 },
-    modalButton: { width: 160, height: 48, borderRadius: 8, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
+    modalTitle: { color: "#000000", fontSize: 20, fontWeight: "400", lineHeight: 27, marginBottom: 31, textAlign: "center", },
+    modalButton: { width: 120, height: 48, borderRadius: 8, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     modalButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+    modalMessage: { marginTop: 8, marginBottom: 24, color: "#808080", fontSize: 16, fontWeight: "700", lineHeight: 22, textAlign: "center" },
+    modalButtonRow: { width: "100%", flexDirection: "row", gap: 10 },
+    modalSecondaryButton: { backgroundColor: "#E6E6E6" },
+    modalSecondaryButtonText: { color: "#808080" },
 });

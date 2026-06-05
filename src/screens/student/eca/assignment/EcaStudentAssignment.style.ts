@@ -1,11 +1,11 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: "#F0F6FF" },
-    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 40, paddingRight: 20, paddingBottom: 23, paddingLeft: 20, height: 113, backgroundColor: "#F0F6FF" },
+    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
     appTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
     headerRightSpace: { width: 24, height: 24 },
-    main: { flex: 1, paddingTop: 14, paddingRight: 20, paddingBottom: 40, paddingLeft: 20 },
+    main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingBottom: 30, paddingLeft: 20 },
+    scrollContent: { paddingBottom: 80 },
     titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginLeft: 4, marginBottom: 21 },
     title: { margin: 0, color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 36 },
     filterButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", gap: 5 },

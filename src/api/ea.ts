@@ -206,17 +206,22 @@ export async function getMyAssignmentSubmissions(
     );
 }
 
+function appendJsonPart(formData: FormData, fieldName: string, value: unknown): void {
+    formData.append(
+        fieldName,
+        {
+            string: JSON.stringify(value),
+            name: `${fieldName}.json`,
+            type: "application/json",
+        } as any
+    );
+}
+
 export async function submitAssignment(
     assignmentId: number | string,
     input: SubmitAssignmentInput
 ): Promise<AssignmentSubmissionResponse> {
     const formData = new FormData();
-    const meta = {
-        description: input.description ?? "",
-        participantId: input.participantId ?? null,
-    };
-
-    formData.append("meta", JSON.stringify(meta));
 
     input.files?.forEach((file) => {
         appendFile(formData, "files", file);
@@ -236,11 +241,6 @@ export async function updateAssignmentSubmission(
     input: UpdateAssignmentSubmissionInput
 ): Promise<AssignmentSubmissionResponse> {
     const formData = new FormData();
-    const meta = {
-        description: input.description ?? "",
-    };
-
-    formData.append("meta", JSON.stringify(meta));
 
     input.keepFileIds?.forEach((fileId) => {
         formData.append("keepFileIds", String(fileId));

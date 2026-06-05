@@ -4,6 +4,7 @@ import Svg, { Path } from "react-native-svg";
 import { pick } from "@react-native-documents/picker";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppText from "../../../../../AppText";
 import { API_BASE_URL } from "@env";
@@ -242,6 +243,17 @@ function ReadonlyField({
     );
 }
 
+function getAssignmentDeadlineTime(assignment?: AssignmentResponse | null): number | null {
+    if (!assignment?.endDate) return null;
+
+    const time = assignment.endTime ?? "23:59:59";
+    const deadline = new Date(`${assignment.endDate}T${time}`);
+
+    if (Number.isNaN(deadline.getTime())) return null;
+
+    return deadline.getTime();
+}
+
 export default function EcaStudentAssignmentSubmit({
     route,
     navigation,
@@ -265,6 +277,7 @@ export default function EcaStudentAssignmentSubmit({
     const [error, setError] = React.useState("");
     const [submitResultModalOpen, setSubmitResultModalOpen] = React.useState(false);
     const [submitResult, setSubmitResult] = React.useState<"success" | "fail">("success");
+    const [closedConfirmModalOpen, setClosedConfirmModalOpen] = React.useState(false);
 
     const userName = (me?.name ?? "").trim() || "User";
     const userEmail = (me?.email ?? "").trim();
@@ -347,6 +360,8 @@ export default function EcaStudentAssignmentSubmit({
     const hasFileChange = files.length > 0 || !isSameNumberArray(initialExistingFileIds, currentExistingFileIds);
     const hasLinkChange = trimmedLinkUrl.length > 0 || !isSameNumberArray(initialExistingLinkIds, currentExistingLinkIds);
     const hasSubmissionChange = !mySubmission || hasFileChange || hasLinkChange;
+    const assignmentDeadlineTime = getAssignmentDeadlineTime(assignment);
+    const isSubmissionClosed = assignmentDeadlineTime != null && Date.now() > assignmentDeadlineTime;
     const submitDisabled = !hasRequiredSubmission || !hasSubmissionChange || hasInvalidFileType || hasInvalidLink || submitting || loading || !!error;
 
     async function openFilePicker(): Promise<void> {
@@ -432,24 +447,7 @@ export default function EcaStudentAssignmentSubmit({
         }
     }
 
-    async function handleSubmit(): Promise<void> {
-        if (submitting) return;
-
-        if (!hasRequiredSubmission) {
-            Alert.alert(acceptsLink && !acceptsFile ? "제출할 링크를 입력해주세요." : "제출할 파일 또는 링크를 입력해주세요.");
-            return;
-        }
-
-        if (hasInvalidLink) {
-            Alert.alert("http 또는 https로 시작하는 링크를 입력해주세요.");
-            return;
-        }
-
-        if (hasInvalidFileType) {
-            Alert.alert("과제 형식에 맞지 않는 파일이 포함되어 있습니다.");
-            return;
-        }
-
+    async function submitNow(): Promise<void> {
         const uploadFiles = files.map((item) => item.file);
         const keepFileIds = [
             ...existingFiles.map((file) => file.submissionFileId),
@@ -485,6 +483,41 @@ export default function EcaStudentAssignmentSubmit({
         } finally {
             setSubmitting(false);
         }
+    }
+
+    async function handleSubmit(): Promise<void> {
+        if (submitting) return;
+
+        if (!hasRequiredSubmission) {
+            Alert.alert(acceptsLink && !acceptsFile ? "제출할 링크를 입력해주세요." : "제출할 파일 또는 링크를 입력해주세요.");
+            return;
+        }
+
+        if (hasInvalidLink) {
+            Alert.alert("http 또는 https로 시작하는 링크를 입력해주세요.");
+            return;
+        }
+
+        if (hasInvalidFileType) {
+            Alert.alert("과제 형식에 맞지 않는 파일이 포함되어 있습니다.");
+            return;
+        }
+
+        if (mySubmission && isSubmissionClosed) {
+            setClosedConfirmModalOpen(true);
+            return;
+        }
+
+        await submitNow();
+    }
+
+    function closeClosedConfirmModal(): void {
+        setClosedConfirmModalOpen(false);
+    }
+
+    function confirmClosedAssignmentSubmit(): void {
+        setClosedConfirmModalOpen(false);
+        void submitNow();
     }
 
     function requireAuth(action: () => void): void {
@@ -535,11 +568,32 @@ export default function EcaStudentAssignmentSubmit({
     }
 
     return (
-        <EcaStudentApp externalActivityId={externalActivityId} activeTab="assignment">
-            <View style={styles.page}>
+        <EcaStudentApp
+            externalActivityId={externalActivityId}
+            activeTab="assignment"
+            overlay={(
+                <StudentMobileSideMenu
+                    isOpen={menuOpen}
+                    onClose={() => setMenuOpen(false)}
+                    userName={userName}
+                    userEmail={userEmail}
+                    userProfileImg={userProfileImg}
+                    userRoleSet={userRoleSet}
+                    activities={myActivities}
+                    currentActivityId={Number(externalActivityId)}
+                    currentActivityMenu="assignment"
+                    onMoveHome={moveHome}
+                    onMoveMyPage={moveMyPage}
+                    onMoveActivityMenu={moveActivityMenu}
+                    onMoveSystemAdmin={moveSystemAdmin}
+                    onMoveJumpAdmin={moveJumpAdmin}
+                    onMoveKakaoAdmin={moveKakaoAdmin}
+                />
+            )}
+        >
+            <SafeAreaView style={commonStyles.appRoot}>
                 <Header activityName={activity?.name ?? ""} onMenuClick={() => setMenuOpen(true)} />
-
-                <ScrollView style={styles.main} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <ScrollView style={styles.main} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.titleRow}>
                         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="뒤로가기">
                             <BackIcon />
@@ -717,25 +771,28 @@ export default function EcaStudentAssignmentSubmit({
                         </>
                     )}
                 </ScrollView>
+                <Modal visible={closedConfirmModalOpen} transparent animationType="fade" onRequestClose={closeClosedConfirmModal}>
+                    <View style={styles.modalBackdrop}>
+                        <View style={styles.modifymodal}>
+                            <View style={styles.modalIcon}>
+                                <ResultIcon success={false} />
+                            </View>
 
-                <StudentMobileSideMenu
-                    isOpen={menuOpen}
-                    onClose={() => setMenuOpen(false)}
-                    userName={userName}
-                    userEmail={userEmail}
-                    userProfileImg={userProfileImg}
-                    userRoleSet={userRoleSet}
-                    activities={myActivities}
-                    currentActivityId={Number(externalActivityId)}
-                    currentActivityMenu="assignment"
-                    onMoveHome={moveHome}
-                    onMoveMyPage={moveMyPage}
-                    onMoveActivityMenu={moveActivityMenu}
-                    onMoveSystemAdmin={moveSystemAdmin}
-                    onMoveJumpAdmin={moveJumpAdmin}
-                    onMoveKakaoAdmin={moveKakaoAdmin}
-                />
+                            <AppText style={styles.modalTitle}>이미 종료된 과제입니다.</AppText>
+                            <AppText style={styles.modalMessage}>수정하시겠습니까?</AppText>
 
+                            <View style={styles.modalButtonRow}>
+                                <Pressable style={[styles.modalButton, styles.modalSecondaryButton]} onPress={closeClosedConfirmModal}>
+                                    <AppText style={[styles.modalButtonText, styles.modalSecondaryButtonText]}>아니요</AppText>
+                                </Pressable>
+
+                                <Pressable style={styles.modalButton} onPress={confirmClosedAssignmentSubmit}>
+                                    <AppText style={styles.modalButtonText}>예</AppText>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
                 <Modal visible={submitResultModalOpen} transparent animationType="fade" onRequestClose={() => setSubmitResultModalOpen(false)}>
                     <View style={styles.modalBackdrop}>
                         <View style={styles.modal}>
@@ -751,7 +808,7 @@ export default function EcaStudentAssignmentSubmit({
                         </View>
                     </View>
                 </Modal>
-            </View>
+            </SafeAreaView>
         </EcaStudentApp>
     );
 }

@@ -17,7 +17,7 @@ import { getAccessToken } from "../../auth/tokenStorage";
 import type { StudentStackParamList } from "../../navigation/StudentNavigator";
 
 import { styles } from "./Home.style";
-import { commonStyles, tokens } from "../../theme/common.Style";
+import { commonStyles } from "../../theme/common.Style";
 
 import StudentMobileSideMenu from "./StudentSideMenu";
 
