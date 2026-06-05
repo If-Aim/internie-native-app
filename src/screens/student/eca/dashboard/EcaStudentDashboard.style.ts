@@ -4,7 +4,7 @@ export const styles = StyleSheet.create({
     topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
     iconButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     appTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
-    main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingBottom: 30, paddingLeft: 20 },
+    main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingLeft: 20, paddingBottom: 0, margin: 0, },
     scrollContent: { paddingBottom: 80 },
     titleSection: { marginBottom: 24, paddingHorizontal: 4 },
     todayText: { marginLeft: 3, color: "#808080", fontSize: 16, fontWeight: "700", lineHeight: 20 },

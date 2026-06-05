@@ -2070,6 +2070,34 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-document-picker (12.0.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-image-picker (8.2.1):
     - boost
     - DoubleConversion
@@ -2919,7 +2947,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNSVG (15.15.4):
+  - RNSVG (15.15.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -2945,10 +2973,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNSVG/common (= 15.15.4)
+    - RNSVG/common (= 15.15.5)
     - SocketRocket
     - Yoga
-  - RNSVG/common (15.15.4):
+  - RNSVG/common (15.15.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -3030,6 +3058,7 @@ DEPENDENCIES:
   - react-native-blob-util (from `../node_modules/react-native-blob-util`)
   - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
   - react-native-config (from `../node_modules/react-native-config`)
+  - "react-native-document-picker (from `../node_modules/@react-native-documents/picker`)"
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-pdf-thumbnail (from `../node_modules/react-native-pdf-thumbnail`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -3186,6 +3215,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-community/blur"
   react-native-config:
     :path: "../node_modules/react-native-config"
+  react-native-document-picker:
+    :path: "../node_modules/@react-native-documents/picker"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
   react-native-pdf-thumbnail:
@@ -3333,6 +3364,7 @@ SPEC CHECKSUMS:
   react-native-blob-util: 6dec9023ecc3ee5ac8ad377598e943f9ca63f741
   react-native-blur: 6af83e7e3c4c1446a188d9b2c493600fc4beb173
   react-native-config: 2249b7e68644c86ea68358f5a0d746d1c648f900
+  react-native-document-picker: dc2d83366e47e89e7c51e8a41eab99c1d54e941c
   react-native-image-picker: 0314366753615115fa55c3cc937ac44cb7e75702
   react-native-pdf-thumbnail: 89dd3532effd7733a33229ce666fd02068dac985
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
@@ -3376,7 +3408,7 @@ SPEC CHECKSUMS:
   RNKeychain: a2c134ab796272c3d605e035ab727591000b30f3
   RNScreens: 7f643ee0fd1407dc5085c7795460bd93da113b8f
   RNShare: 51d221e8ac06263e91168c604b94274fdcc4784f
-  RNSVG: 3405336c4507ee0bafb02b08058d57216daa2c50
+  RNSVG: 6470d6f2636d71bd4bbc44a4f27fb7444e437b2f
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: b73469916992acf4c6e8315d03ae0379bd9bd6e4
 

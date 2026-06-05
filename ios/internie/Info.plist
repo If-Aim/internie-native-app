@@ -61,13 +61,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>학생증 업로드를 위해 카메라에 접근합니다.</string>
+	<string>학생증 인증, 프로필 이미지 등록, 과제 제출 파일 촬영을 위해 카메라 접근 권한이 필요합니다.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>사용자의 음성 답변을 녹음하고 텍스트로 변환하기 위해 마이크 접근 권한이 필요합니다.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>학생증 이미지를 저장하기 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>학생증 업로드를 위해 사진 보관함에 접근합니다.</string>
+	<string>학생증 인증, 프로필 이미지 등록, 과제 제출 파일 선택을 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
