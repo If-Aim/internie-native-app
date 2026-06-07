@@ -1,6 +1,7 @@
 // src/navigation/StudentNavigator.tsx
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { VlogFinalVideoStatus, VlogProjectStatus } from "../api/vlog";
 
 import StudentHomeScreen from "../screens/student/HomeScreen";
 import MyPageScreen from "../screens/student/mypage/MyPageScreen";
@@ -19,6 +20,12 @@ import EcaStudentDashboard from "../screens/student/eca/dashboard/EcaStudentDash
 import EcaStudentAssignment from "../screens/student/eca/assignment/EcaStudentAssignment";
 import EcaStudentAssignmentSubmit from "../screens/student/eca/assignment/EcaStudentAssignmentSubmit";
 
+import VlogHomeScreen from "../screens/student/vlog/VlogHomeScreen";
+import NewVlogScreen from "../screens/student/vlog/internship/NewVlogScreen";
+import RecordVlogScreen from "../screens/student/vlog/record/RecordVlogScreen";
+import EditVlogScreen from "../screens/student/vlog/edit/EditVlogScreen";
+import SelectClipScreen from "../screens/student/vlog/edit/SelectClipScreen";
+
 export type StudentStackParamList = {
   StudentHome: undefined;
   MyPage: undefined;
@@ -36,6 +43,30 @@ export type StudentStackParamList = {
   EcaStudentDashboard: { externalActivityId: string };
   EcaStudentAssignment: { externalActivityId: string };
   EcaStudentAssignmentSubmit: { externalActivityId: string; assignmentId: string };
+  
+  VlogHome: undefined;
+  NewVlog: undefined;
+  RecordVlog: {
+      projectId: number | string;
+      title?: string | null;
+      subText?: string | null;
+      progressPercent?: number | null;
+      completedMissionCount?: number | null;
+      totalMissionCount?: number | null;
+      projectStatus?: VlogProjectStatus | null;
+      finalVideoStatus?: VlogFinalVideoStatus | null;
+      locked?: boolean | null;
+  };
+  EditVlog: {
+      projectId: number | string;
+      title?: string | null;
+      subText?: string | null;
+  };
+  SelectClip: {
+      projectId: number | string;
+      title?: string | null;
+  };
+
 };
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
@@ -59,6 +90,12 @@ export default function StudentNavigator() {
       <Stack.Screen name="EcaStudentDashboard" component={EcaStudentDashboard} />
       <Stack.Screen name="EcaStudentAssignment" component={EcaStudentAssignment} />
       <Stack.Screen name="EcaStudentAssignmentSubmit" component={EcaStudentAssignmentSubmit} />
+
+      <Stack.Screen name="VlogHome" component={VlogHomeScreen} />
+      <Stack.Screen name="NewVlog" component={NewVlogScreen} />
+      <Stack.Screen name="RecordVlog" component={RecordVlogScreen} />
+      <Stack.Screen name="EditVlog" component={EditVlogScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SelectClip" component={SelectClipScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

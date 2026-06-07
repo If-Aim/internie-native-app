@@ -242,6 +242,9 @@ export default function EcaStudentDashboard({
     function moveMyPage(): void {
         navigation.navigate("MyPage");
     }
+    function moveVlogHome(): void {
+        navigation.navigate("VlogHome");
+    }
 
     function moveActivityMenu(activityId: number, menuKey: ActivityMenuKey): void {
         requireAuth(() => {
@@ -303,6 +306,7 @@ export default function EcaStudentDashboard({
                     onMoveSystemAdmin={moveSystemAdmin}
                     onMoveJumpAdmin={moveJumpAdmin}
                     onMoveKakaoAdmin={moveKakaoAdmin}
+                    onMoveVlogHome={moveVlogHome}
                 />
             )}
         >

@@ -245,6 +245,10 @@ export default function EcaStudentAssignment({
         navigation.navigate("MyPage");
     }
 
+    function moveVlogHome(): void {
+        navigation.navigate("VlogHome");
+    }
+
     function moveActivityMenu(activityId: number, menuKey: ActivityMenuKey): void {
         requireAuth(() => {
             if (menuKey === "dashboard") {
@@ -305,6 +309,7 @@ export default function EcaStudentAssignment({
                     onMoveSystemAdmin={moveSystemAdmin}
                     onMoveJumpAdmin={moveJumpAdmin}
                     onMoveKakaoAdmin={moveKakaoAdmin}
+                    onMoveVlogHome={moveVlogHome}
                 />
             )}
         >

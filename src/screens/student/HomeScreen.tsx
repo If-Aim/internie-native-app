@@ -1044,6 +1044,12 @@ export default function HomeScreen({ navigation }: Props) {
         });
     }
 
+    function moveVlogHome(): void {
+        requireAuth(() => {
+            navigation.navigate("VlogHome");
+        });
+    }
+
     function moveActivityMenu(
         activityId: number,
         menuKey: "dashboard" | "assignment" | "attendance" | "team-activity"
@@ -1218,12 +1224,14 @@ export default function HomeScreen({ navigation }: Props) {
                 userProfileImg={userProfileImg}
                 userRoleSet={userRoleSet}
                 activities={myActivities}
+                currentMenu="home"
                 onMoveHome={moveHome}
                 onMoveMyPage={moveMyPage}
                 onMoveActivityMenu={moveActivityMenu}
                 onMoveSystemAdmin={moveSystemAdmin}
                 onMoveJumpAdmin={moveJumpAdmin}
                 onMoveKakaoAdmin={moveKakaoAdmin}
+                onMoveVlogHome={moveVlogHome}
             />
 
             <MonthFilterSheet

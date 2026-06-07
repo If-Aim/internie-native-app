@@ -1,7 +1,7 @@
 // src/api/client.ts
 import { API_BASE_URL } from "@env";
 import { jwtDecode } from "jwt-decode";
-import { getAccessToken, saveAccessToken, clearAccessToken } from "../auth/tokenStorage";
+import { getAccessToken, saveAccessToken, clearAccessToken, getRefreshToken, saveRefreshToken, clearRefreshToken, clearTokens } from "../auth/tokenStorage";
 
 /** URL util */
 function buildUrl(path: string) {
@@ -32,12 +32,39 @@ function normalizeHeaders(h?: HeaderInput): Record<string, string> {
 
     return h as Record<string, string>;
 }
+
 async function getAuthHeader(): Promise<Record<string, string>> {
     const token = await getAccessToken();
     if (!token) return {};
     return {
         Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
     };
+}
+
+let refreshPromise: Promise<string> | null = null;
+
+async function isAccessTokenExpiringSoon(bufferSeconds = 60): Promise<boolean> {
+    const token = await getAccessToken();
+
+    if (!token) {
+        return false;
+    }
+
+    const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+
+    try {
+        const payload = jwtDecode<JwtPayload>(raw);
+
+        if (!payload.exp) {
+            return false;
+        }
+
+        const nowSeconds = Math.floor(Date.now() / 1000);
+
+        return payload.exp <= nowSeconds + bufferSeconds;
+    } catch {
+        return true;
+    }
 }
 
 /* =========================
@@ -85,6 +112,17 @@ async function requestWithAutoRefresh(
         });
     };
 
+    if (!skipAuthRefresh && await isAccessTokenExpiringSoon()) {
+        try {
+            await refreshAccessToken();
+        } catch (error) {
+            await clearTokens().catch(() => {});
+            throw error instanceof ApiError
+                ? error
+                : new ApiError(401, "Refresh failed");
+        }
+    }
+
     let res = await doFetch();
 
     if (!skipAuthRefresh && (res.status === 401 || res.status === 403)) {
@@ -92,14 +130,14 @@ async function requestWithAutoRefresh(
             await refreshAccessToken();
             res = await doFetch();
         } catch (error) {
-            await clearAccessToken().catch(() => {});
+            await clearTokens().catch(() => {});
             throw error instanceof ApiError
                 ? error
                 : new ApiError(401, "Refresh failed");
         }
 
         if (res.status === 401 || res.status === 403) {
-            await clearAccessToken().catch(() => {});
+            await clearTokens().catch(() => {});
             const bodyText = await res.text().catch(() => "");
             throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
         }
@@ -224,7 +262,7 @@ export async function apiUpload<T = unknown>(
 }
 
 // android 카카오 로그인
-export async function exchangeKakaoToken(accessToken: string): Promise<Response> {
+export async function exchangeKakaoToken(accessToken: string): Promise<LoginResponse> {
     const res = await fetch(buildUrl("/auth/kakao/android"), {
         method: "POST",
         headers: {
@@ -236,15 +274,39 @@ export async function exchangeKakaoToken(accessToken: string): Promise<Response>
 
     if (!res.ok) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(res.status, `HTTP ${res.status}`, bodyText);
+        const parsed = parseErrorBody(bodyText);
+
+        throw new ApiError(
+            res.status,
+            parsed.message ?? `HTTP ${res.status}`,
+            bodyText,
+            parsed.code,
+            parsed.path
+        );
     }
 
-    return res;
+    const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    const refreshToken = res.headers.get("x-refresh-token") || res.headers.get("X-Refresh-Token");
+
+    if (!auth) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No Authorization header in /auth/kakao/android response", bodyText);
+    }
+
+    if (!refreshToken) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No X-Refresh-Token header in /auth/kakao/android response", bodyText);
+    }
+
+    await saveAccessToken(auth);
+    await saveRefreshToken(refreshToken);
+
+    return (await res.json()) as LoginResponse;
 }
 
 // 구글 로그인
 export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
-    const res = await fetch(buildUrl("/auth/google"), {
+    const res = await fetch(buildUrl("/auth/google/app"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -264,19 +326,27 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponse> {
     }
 
     const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    const refreshToken = res.headers.get("x-refresh-token") || res.headers.get("X-Refresh-Token");
+
     if (!auth) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(200, "No Authorization header in /auth/google response", bodyText);
+        throw new ApiError(200, "No Authorization header in /auth/google/app response", bodyText);
+    }
+
+    if (!refreshToken) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No X-Refresh-Token header in /auth/google/app response", bodyText);
     }
 
     await saveAccessToken(auth);
+    await saveRefreshToken(refreshToken);
 
     return (await res.json()) as LoginResponse;
 }
 
 // 애플 로그인
 export async function loginWithApple(input: AppleLoginRequest): Promise<LoginResponse> {
-    const res = await fetch(buildUrl("/auth/apple"), {
+    const res = await fetch(buildUrl("/auth/apple/app"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -300,12 +370,20 @@ export async function loginWithApple(input: AppleLoginRequest): Promise<LoginRes
     }
 
     const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    const refreshToken = res.headers.get("x-refresh-token") || res.headers.get("X-Refresh-Token");
+
     if (!auth) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(200, "No Authorization header in /auth/apple response", bodyText);
+        throw new ApiError(200, "No Authorization header in /auth/apple/app response", bodyText);
+    }
+
+    if (!refreshToken) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No X-Refresh-Token header in /auth/apple/app response", bodyText);
     }
 
     await saveAccessToken(auth);
+    await saveRefreshToken(refreshToken);
 
     return (await res.json()) as LoginResponse;
 }
@@ -351,7 +429,7 @@ export async function checkLoginIdAvailability(
 
 // 로컬 로그인
 export async function loginWithLocal(input: LoginRequest): Promise<LoginResponse> {
-    const res = await fetch(buildUrl("/auth/login"), {
+    const res = await fetch(buildUrl("/auth/login/app"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -374,46 +452,83 @@ export async function loginWithLocal(input: LoginRequest): Promise<LoginResponse
     }
 
     const auth = res.headers.get("authorization") || res.headers.get("Authorization");
+    const refreshToken = res.headers.get("x-refresh-token") || res.headers.get("X-Refresh-Token");
+
     if (!auth) {
         const bodyText = await res.text().catch(() => "");
-        throw new ApiError(200, "No Authorization header in /auth/login response", bodyText);
+        throw new ApiError(200, "No Authorization header in /auth/login/app response", bodyText);
+    }
+
+    if (!refreshToken) {
+        const bodyText = await res.text().catch(() => "");
+        throw new ApiError(200, "No X-Refresh-Token header in /auth/login/app response", bodyText);
     }
 
     await saveAccessToken(auth);
+    await saveRefreshToken(refreshToken);
 
     return (await res.json()) as LoginResponse;
 }
 
 // 리프레시
 export async function refreshAccessToken(): Promise<string> {
-    const res = await fetch(buildUrl("/auth/refresh"), {
-        method: "POST",
-        credentials: "include",
-    });
-
-    if (!res.ok) {
-        const bodyText = await res.text().catch(() => "");
-        const parsed = parseErrorBody(bodyText);
-        throw new ApiError(
-            res.status,
-            parsed.message ?? `HTTP ${res.status}`,
-            bodyText,
-            parsed.code,
-            parsed.path
-        );
+    if (refreshPromise) {
+        return refreshPromise;
     }
 
-    const newAuth =
-        res.headers.get("authorization") ||
-        res.headers.get("Authorization");
+    refreshPromise = (async () => {
+        const refreshToken = await getRefreshToken();
 
-    if (!newAuth) {
-        const bodyText = await res.text().catch(() => "");
-        throw new ApiError(200, "No Authorization header in /auth/refresh response", bodyText);
+        if (!refreshToken) {
+            throw new ApiError(401, "No refresh token");
+        }
+
+        const res = await fetch(buildUrl("/auth/refresh/app"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                refreshToken,
+            }),
+        });
+
+        if (!res.ok) {
+            const bodyText = await res.text().catch(() => "");
+            const parsed = parseErrorBody(bodyText);
+
+            throw new ApiError(
+                res.status,
+                parsed.message ?? `HTTP ${res.status}`,
+                bodyText,
+                parsed.code,
+                parsed.path
+            );
+        }
+
+        const newAuth = res.headers.get("authorization") || res.headers.get("Authorization");
+        const newRefreshToken = res.headers.get("x-refresh-token") || res.headers.get("X-Refresh-Token");
+
+        if (!newAuth) {
+            const bodyText = await res.text().catch(() => "");
+            throw new ApiError(200, "No Authorization header in /auth/refresh/app response", bodyText);
+        }
+
+        await saveAccessToken(newAuth);
+
+        if (newRefreshToken) {
+            await saveRefreshToken(newRefreshToken);
+        }
+
+        return newAuth;
+    })();
+
+    try {
+        return await refreshPromise;
+    } finally {
+        refreshPromise = null;
     }
-
-    await saveAccessToken(newAuth);
-    return newAuth;
 }
 
 // 아이디 찾기용 이메일 전송
@@ -601,7 +716,7 @@ export async function logout(): Promise<void> {
         },
     }).catch(() => {});
 
-    await clearAccessToken().catch(() => {});
+    await clearTokens().catch(() => {});
 }
 
 /** 회원 탈퇴(삭제) */
@@ -613,7 +728,7 @@ export async function withdraw(input: WithdrawRequest): Promise<void> {
             detail: input.detail ?? "",
         }),
     });
-    await clearAccessToken().catch(() => {});
+    await clearTokens().catch(() => {});
 }
 
 export function routeAfterLoginFromLogin(
@@ -754,10 +869,12 @@ export type PasswordResetVerifyResponse = {
     message: string;
     resetToken: string;
 };
+
 type JwtPayload = {
     userId?: number | string;
     id?: number | string;
     sub?: number | string;
+    exp?: number;
     type?: "access" | "refresh" | string;
 };
 

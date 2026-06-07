@@ -1,0 +1,80 @@
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+    topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
+    appTitle: { fontSize: 16, fontWeight: "700", color: "#000", lineHeight: 20 },
+    headerLeftSpace: { width: 24, height: 24 }, 
+
+    scroll: { flex: 1 },
+    content: { paddingHorizontal: 27, paddingTop: 11, paddingBottom: 160 },
+    section: { marginBottom: 34 },
+    sectionTitle: { marginBottom: 20, marginLeft: 10, fontSize: 20, fontWeight: "700", color: "#000", lineHeight: 24 },
+
+    companyLoadingBox: { minHeight: 54, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+    companyEmptyBox: { minHeight: 54, borderRadius: 10, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+    companyEmptyText: { fontSize: 16, fontWeight: "700", color: "#5F5F5F", lineHeight: 22 },
+    companyDropdownWrap: { position: "relative" },
+    companyDropdownButton: { minHeight: 54, paddingHorizontal: 24, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    companyDropdownButtonActive: { borderColor: "#0166FF" },
+    companyDropdownText: { flex: 1, marginRight: 12, fontSize: 16, fontWeight: "500", color: "#5F5F5F", lineHeight: 20 },
+    companyDropdownTextSelected: { color: "#000" },
+    companyDropdownList: { marginTop: 10, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", overflow: "hidden" },
+    companyDropdownItem: { minHeight: 54, paddingHorizontal: 24, justifyContent: "center", borderBottomWidth: 1, borderBottomColor: "#E2E2E2" },
+    companyDropdownItemActive: { backgroundColor: "#BDD8FF" },
+    companyDropdownItemText: { fontSize: 16, fontWeight: "700", color: "#5F5F5F", lineHeight: 20 },
+    companyDropdownItemTextActive: { color: "#0166FF" },
+
+    nameInput: { height: 54, paddingHorizontal: 23, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", fontSize: 16, fontWeight: "400", color: "#000" },
+    periodBox: { height: 64, paddingHorizontal: 23, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    dateChip: { minWidth: 96, height: 36, paddingHorizontal: 16, borderRadius: 18, backgroundColor: "#F1F1F1", alignItems: "center", justifyContent: "center" },
+    dateChipText: { fontSize: 16, fontWeight: "500", color: "#808080", lineHeight: 20 },
+    periodDash: { fontSize: 16, fontWeight: "500", color: "#808080", lineHeight: 20 },
+    
+    introCard: { padding: 10, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 14, backgroundColor: "#FFFFFF" },
+    introTopRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
+    videoThumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: "#E6E6E6", alignItems: "center", justifyContent: "center" },
+    introTextWrap: { flex: 1, minWidth: 0, marginLeft: 14, opacity: 0.69, },
+    introLabel: { fontSize: 16, fontWeight: "700", color: "#4F4F4F", lineHeight: 20 },
+    introDuration: { marginTop: 7, fontSize: 24, fontWeight: "700", color: "#000", lineHeight: 28 },
+    recordButton: { height: 48, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
+    recordButtonText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
+    
+    bottomBar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 32, paddingTop: 18, paddingBottom: 50, backgroundColor: "#F4F8FF" },
+    saveButton: { height: 60, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
+    saveButtonActive: { backgroundColor: "#0166FF" },
+    saveButtonText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 28 },
+    saveButtonTextActive: { color: "#FFFFFF" },
+    
+    modalBackdrop: { flex: 1, alignItems: "center", justifyContent: "center" },
+    modalDim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+    calendarSheet: { width: "76%", paddingHorizontal: 26, paddingTop: 20, paddingBottom: 30, borderRadius: 20, backgroundColor: "#FFFFFF" },
+    calendarHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
+    calendarTitle: { flex: 1, fontSize: 16, fontWeight: "700", color: "#000", lineHeight: 24, },
+    calendarCloseButton: { width: 24, height: 44, alignItems: "center", justifyContent: "center" },
+    
+    monthRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 17 },
+    monthArrowButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+    monthText: { minWidth: 36, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000", lineHeight: 24 },
+    weekRow: { flexDirection: "row", marginBottom: 4 },
+    weekText: { width: `${100 / 7}%`, textAlign: "center", fontSize: 14, fontWeight: "800", color: "#000", lineHeight: 24 },
+    
+    dayGrid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 42 },
+    dayCell: { width: `${100 / 7}%`, height: 36, alignItems: "center", justifyContent: "center", position: "relative", overflow: "visible" },
+
+    rangeFill: { position: "absolute", top: 2, bottom: 2, backgroundColor: "#BDD8FF" },
+    rangeFillMiddle: { left: -1, right: -1 },
+    rangeFillStart: { left: "50%", right: -1 },
+    rangeFillEnd: { left: -1, right: "50%" },
+    rangeFillRowStart: { left: -1, right: -1, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 },
+    rangeFillRowEnd: { left: -1, right: -1, borderTopRightRadius: 16, borderBottomRightRadius: 16 },
+    rangeFillSingle: { display: "none" },
+
+    dayCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", zIndex: 1, overflow: "hidden" },
+    dayCircleActive: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#0166FF" },
+    dayText: { fontSize: 14, fontWeight: "700", color: "#000", lineHeight: 26 },
+    dayTextActive: { color: "#FFFFFF" },
+    dayTextInRange: { color: "#000" },
+
+    calendarConfirmButton: { height: 72, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
+    calendarConfirmText: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", lineHeight: 28 },
+});
