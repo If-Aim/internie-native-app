@@ -103,26 +103,28 @@ export default function EcaStudentApp({
                 {children}
             </View>
 
-            <SafeAreaView style={styles.bottomNavSafe} edges={["bottom"]}>
-                <View style={styles.bottomNav}>
-                    {bottomNavItems.map((item) => {
-                        const active = activeTab === item.key;
-                        const color = active ? "#0166FF" : "#808080";
+            <View style={styles.bottomNavWrap}>
+                <SafeAreaView style={styles.bottomNavSafe} edges={["bottom"]}>
+                    <View style={styles.bottomNav}>
+                        {bottomNavItems.map((item) => {
+                            const active = activeTab === item.key;
+                            const color = active ? "#0166FF" : "#808080";
 
-                        return (
-                            <Pressable key={item.key} style={styles.bottomNavItem} onPress={() => handlePress(item)}>
-                                <View style={[styles.bottomNavIcon, active ? styles.bottomNavIconActive : null]}>
-                                    <BottomNavIcon type={item.key} color={color} />
-                                </View>
+                            return (
+                                <Pressable key={item.key} style={styles.bottomNavItem} onPress={() => handlePress(item)}>
+                                    <View style={[styles.bottomNavIcon, active ? styles.bottomNavIconActive : null]}>
+                                        <BottomNavIcon type={item.key} color={color} />
+                                    </View>
 
-                                <AppText style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
-                                    {item.label}
-                                </AppText>
-                            </Pressable>
-                        );
-                    })}
-                </View>
-            </SafeAreaView>
+                                    <AppText style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
+                                        {item.label}
+                                    </AppText>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </SafeAreaView>
+            </View>
             {overlay}
         </View>
     );
