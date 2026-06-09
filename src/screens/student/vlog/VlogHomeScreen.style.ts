@@ -6,8 +6,10 @@ export const styles = StyleSheet.create({
     list: { flex: 1 },
     content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
     loadingWrap: { minHeight: 360, alignItems: "center", justifyContent: "center" },
+    
     card: { marginBottom: 18 },
     thumbnail: { width: "100%", aspectRatio: 1.48, borderRadius: 20, overflow: "hidden", backgroundColor: "rgba(189, 216, 255, 0.50)", alignItems: "center", justifyContent: "center" },
+    thumbnailImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%", borderRadius: 20 },
     playCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
     playTriangle: { width: 0, height: 0, marginLeft: 5, borderTopWidth: 14, borderBottomWidth: 14, borderLeftWidth: 22, borderTopColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "#FFFFFF" },
     timeRow: { position: "absolute", left: 30, right: 30, bottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },

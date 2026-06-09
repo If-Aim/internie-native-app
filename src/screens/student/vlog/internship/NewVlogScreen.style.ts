@@ -9,6 +9,8 @@ export const styles = StyleSheet.create({
     content: { paddingHorizontal: 27, paddingTop: 11, paddingBottom: 160 },
     section: { marginBottom: 34 },
     sectionTitle: { marginBottom: 20, marginLeft: 10, fontSize: 20, fontWeight: "700", color: "#000", lineHeight: 24 },
+    sectionDescription: { marginLeft: 10, marginBottom: 27, fontSize: 16, fontWeight: "700", color: "#5F5F5F", lineHeight: 22 },
+    fixedPeriodText: { marginTop: 26, marginLeft: 23, fontSize: 16, fontWeight: "500", color: "#5F5F5F", lineHeight: 22 },
 
     companyLoadingBox: { minHeight: 54, borderWidth: 1, borderColor: "#E2E2E2", borderRadius: 10, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
     companyEmptyBox: { minHeight: 54, borderRadius: 10, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
@@ -33,12 +35,15 @@ export const styles = StyleSheet.create({
     introCard: { padding: 10, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 14, backgroundColor: "#FFFFFF" },
     introTopRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
     videoThumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: "#E6E6E6", alignItems: "center", justifyContent: "center" },
+    videoThumbActive: { backgroundColor: "#BDD8FF" },
     introTextWrap: { flex: 1, minWidth: 0, marginLeft: 14, opacity: 0.69, },
     introLabel: { fontSize: 16, fontWeight: "700", color: "#4F4F4F", lineHeight: 20 },
     introDuration: { marginTop: 7, fontSize: 24, fontWeight: "700", color: "#000", lineHeight: 28 },
+    
     recordButton: { height: 48, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
     recordButtonText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
-    
+    recordButtonActive: { backgroundColor: "#0166FF" },
+    recordButtonTextActive: { color: "#FFFFFF" },
     bottomBar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 32, paddingTop: 18, paddingBottom: 50, backgroundColor: "#F4F8FF" },
     saveButton: { height: 60, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
     saveButtonActive: { backgroundColor: "#0166FF" },
@@ -77,4 +82,40 @@ export const styles = StyleSheet.create({
 
     calendarConfirmButton: { height: 72, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     calendarConfirmText: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", lineHeight: 28 },
+
+    cameraRoot: { flex: 1, backgroundColor: "#4A4A4A" },
+    cameraPreview: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
+    cameraOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+
+    cameraCloseButton: { position: "absolute", width: 44, height: 44, alignItems: "center", justifyContent: "center", zIndex: 20 },
+    cameraCloseButtonPortrait: { top: 74, right: 35 },
+    cameraCloseButtonLandscape: { top: 24, left: 108 },
+
+    cameraMissionCard: { position: "absolute", borderWidth: 1, borderColor: "#FFFFFF", borderRadius: 20, backgroundColor: "rgba(255, 255, 255, 0.18)" },
+    cameraMissionCardPortrait: { top: 113, left: 38, right: 38, minHeight: 94, paddingHorizontal: 25, paddingVertical: 20 },
+    cameraMissionCardLandscape: { top: 96, left: 162, width: "37%", minHeight: 320, paddingHorizontal: 34, paddingVertical: 34 },
+
+    cameraMissionTitle: { fontSize: 16, fontWeight: "700", color: "#D9D9D9", lineHeight: 22 },
+    cameraMissionTitleLandscape: { fontSize: 24, lineHeight: 30 },
+    cameraMissionDuration: { marginTop: 10, fontSize: 28, fontWeight: "800", color: "#FFFFFF", lineHeight: 34 },
+    cameraMissionDurationLandscape: { marginTop: 14, fontSize: 50, lineHeight: 58 },
+
+    cameraGuideWrap: { marginTop: 26 },
+    cameraGuideRow: { flexDirection: "row", alignItems: "center", marginTop: 18 },
+    cameraGuideBadge: { minWidth: 98, height: 46, paddingHorizontal: 20, borderRadius: 23, backgroundColor: "rgba(255, 255, 255, 0.18)", alignItems: "center", justifyContent: "center", marginRight: 22 },
+    cameraGuideBadgeText: { fontSize: 18, fontWeight: "700", color: "#FFFFFF", lineHeight: 22 },
+    cameraGuideText: { flex: 1, fontSize: 18, fontWeight: "600", color: "#CFCFCF", lineHeight: 24 },
+
+    cameraFoldButton: { position: "absolute", width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255, 255, 255, 0.18)", alignItems: "center", justifyContent: "center", zIndex: 20 },
+    cameraFoldButtonPortraitOpen: { alignSelf: "center", top: 230 },
+    cameraFoldButtonPortraitClosed: { alignSelf: "center", top: 113 },
+    cameraFoldButtonLandscapeOpen: { left: "48%", top: "50%", marginTop: -32 },
+    cameraFoldButtonLandscapeClosed: { left: 174, top: "50%", marginTop: -32 },
+
+    cameraRecordArea: { position: "absolute", alignItems: "center", justifyContent: "center" },
+    cameraRecordAreaPortrait: { left: 0, right: 0, bottom: 63 },
+    cameraRecordAreaLandscape: { right: 126, top: "50%", marginTop: -53 },
+
+    recordCircleOuter: { width: 106, height: 106, borderRadius: 53, borderWidth: 5, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+    recordCircleInner: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#FF3131" },
 });

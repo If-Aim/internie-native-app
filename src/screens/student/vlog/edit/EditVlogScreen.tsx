@@ -1,11 +1,18 @@
 import React from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, PermissionsAndroid, Platform, Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Video from "react-native-video";
+import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from "react-native-draggable-flatlist";
+import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import { launchImageLibrary, type Asset } from "react-native-image-picker";
+import RNFS from "react-native-fs";
+import { CameraRoll } from "@react-native-camera-roll/camera-roll";
 
 import AppText from "../../../../../AppText";
-import { completeVlogExport, getVlogEditing, updateVlogEditClip, type VlogClipResponse } from "../../../../api/vlog";
+import { uploadFileToPresignedUrl } from "../../../../api/client";
+import { addVlogExtraClip, completeVlogExport, createVlogUploadUrl, excludeVlogEditClip, getVlogClipPlayUrl, getVlogEditing, updateVlogEditClip, waitVlogFinalVideoDone, type VlogClipCompleteInput, type VlogClipResponse, } from "../../../../api/vlog";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./EditVlogScreen.style";
@@ -50,16 +57,107 @@ function formatDuration(seconds?: number | null): string {
     return `${String(minutes).padStart(2, "0")}:${String(remainSeconds).padStart(2, "0")}`;
 }
 
+function getRecordWeeksText(subText: string): string {
+    const matched = subText.match(/\d+/);
+    const week = matched?.[0] ?? "8";
+
+    return `${week}주 간의 기록이에요`;
+}
+
 function getClipTitle(clip: VlogClipResponse): string {
-    return clip.customTitle ?? clip.originalTitle ?? "브이로그 클립";
+    return clip.customTitle ?? clip.displayTitle ?? clip.originalTitle ?? "브이로그 클립";
 }
 
 function getWeekText(clip: VlogClipResponse): string {
     if (clip.type === "EXTRA") return "추가 영상";
-    if (clip.type === "FREE_RECORD") return "자유기록";
+    if (clip.type === "FREE_RECORD") return "자율 촬영";
     if (clip.week) return `${clip.week}주차`;
 
     return "";
+}
+
+function toVideoAssetInput(asset: Asset): Omit<VlogClipCompleteInput, "fileKey"> | null {
+    if (!asset.uri) return null;
+
+    return {
+        originalName: asset.fileName ?? `extra_${Date.now()}.mp4`,
+        contentType: asset.type ?? "video/mp4",
+        sizeBytes: asset.fileSize ?? null,
+        durationSeconds: Math.ceil(asset.duration ?? 0),
+        thumbnailKey: null,
+        customTitle: asset.fileName?.replace(/\.[^/.]+$/, "") ?? "추가 영상",
+    };
+}
+
+function sanitizeFileName(fileName: string): string {
+    return fileName.replace(/[\\/:*?"<>|]/g, "_");
+}
+
+async function requestSaveVideoPermission(): Promise<boolean> {
+    if (Platform.OS !== "android") {
+        return true;
+    }
+
+    const androidVersion = typeof Platform.Version === "number" ? Platform.Version : Number(Platform.Version);
+
+    if (androidVersion >= 33) {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO);
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+
+    if (androidVersion >= 29) {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+
+    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+}
+
+// 만약 위에서 READ_MEDIA_VIDEO 타입 오류가 나면 RN 타입 버전이 낮은 경우임. 그때는 아래처럼 문자열로 처리
+// async function requestSaveVideoPermission(): Promise<boolean> {
+//     if (Platform.OS !== "android") {
+//         return true;
+//     }
+
+//     const androidVersion = typeof Platform.Version === "number" ? Platform.Version : Number(Platform.Version);
+
+//     if (androidVersion >= 33) {
+//         const granted = await PermissionsAndroid.request("android.permission.READ_MEDIA_VIDEO" as never);
+//         return granted === PermissionsAndroid.RESULTS.GRANTED;
+//     }
+
+//     if (androidVersion >= 29) {
+//         const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+//         return granted === PermissionsAndroid.RESULTS.GRANTED;
+//     }
+
+//     const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+//     return granted === PermissionsAndroid.RESULTS.GRANTED;
+// }
+
+async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Promise<void> {
+    const hasPermission = await requestSaveVideoPermission();
+
+    if (!hasPermission) {
+        throw new Error("영상 저장 권한이 필요합니다.");
+    }
+
+    const safeFileName = sanitizeFileName(fileName.endsWith(".mp4") ? fileName : `${fileName}.mp4`);
+    const localPath = `${RNFS.CachesDirectoryPath}/${safeFileName}`;
+
+    const result = await RNFS.downloadFile({
+        fromUrl: downloadUrl,
+        toFile: localPath,
+    }).promise;
+
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+        throw new Error(`영상 다운로드 실패: ${result.statusCode}`);
+    }
+
+    await CameraRoll.save(`file://${localPath}`, {
+        type: "video",
+    });
 }
 
 export default function EditVlogScreen({ navigation, route }: Props): React.ReactElement {
@@ -70,6 +168,17 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     const [loading, setLoading] = React.useState(false);
     const [exporting, setExporting] = React.useState(false);
 
+    const [previewClipIndex, setPreviewClipIndex] = React.useState(0);
+    const [previewVideoUrl, setPreviewVideoUrl] = React.useState<string | null>(null);
+    const [previewPlaying, setPreviewPlaying] = React.useState(false);
+    const [previewCurrentSeconds, setPreviewCurrentSeconds] = React.useState(0);
+    const [previewDurationSeconds, setPreviewDurationSeconds] = React.useState(0);
+    const [addingClip, setAddingClip] = React.useState(false);
+    const [editingClipId, setEditingClipId] = React.useState<number | null>(null);
+    const [editingTitle, setEditingTitle] = React.useState("");
+
+    const [exportStep, setExportStep] = React.useState<"IDLE" | "LOADING" | "DONE">("IDLE");
+    
     React.useEffect(() => {
         void loadEditing();
     }, [projectId]);
@@ -91,6 +200,83 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         }
     }
 
+    async function handlePressPreview(): Promise<void> {
+        const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+        const clip = visibleClips[previewClipIndex];
+
+        if (!clip?.clipId) {
+            Alert.alert("재생할 영상이 없습니다.", "편집에 포함된 클립이 없습니다.");
+            return;
+        }
+
+        if (previewPlaying) {
+            setPreviewPlaying(false);
+            return;
+        }
+
+        try {
+            const response = await getVlogClipPlayUrl(projectId, clip.clipId);
+
+            if (!response.url) {
+                Alert.alert("재생 실패", "영상 재생 URL을 불러오지 못했습니다.");
+                return;
+            }
+
+            setPreviewVideoUrl(response.url);
+            setPreviewDurationSeconds(clip.durationSeconds ?? 0);
+            setPreviewPlaying(true);
+        } catch (error) {
+            console.error("[EDIT_VLOG] play url error:", error);
+            Alert.alert("재생 실패", "영상 재생 URL을 불러오지 못했습니다.");
+        }
+    }
+
+    function handlePreviewEnd(): void {
+        const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+        const nextIndex = previewClipIndex + 1;
+
+        if (nextIndex >= visibleClips.length) {
+            setPreviewPlaying(false);
+            setPreviewCurrentSeconds(0);
+            return;
+        }
+
+        setPreviewClipIndex(nextIndex);
+        setPreviewVideoUrl(null);
+        setPreviewCurrentSeconds(0);
+        setPreviewPlaying(false);
+    }
+
+    async function handleExcludeClip(clip: VlogClipResponse): Promise<void> {
+        if (!clip.clipId) return;
+
+        try {
+            await excludeVlogEditClip(projectId, clip.clipId);
+            setClips((prev) => prev.filter((item) => item.clipId !== clip.clipId));
+        } catch (error) {
+            console.error("[EDIT_VLOG] exclude clip error:", error);
+            Alert.alert("삭제 실패", "클립을 편집 목록에서 제외하지 못했습니다.");
+        }
+    }
+
+    async function handleDragEnd(data: VlogClipResponse[]): Promise<void> {
+        setClips(data);
+
+        try {
+            await Promise.all(data.map((clip, index) => {
+                if (!clip.clipId) return Promise.resolve();
+
+                return updateVlogEditClip(projectId, clip.clipId, {
+                    displayOrder: index + 1,
+                });
+            }));
+        } catch (error) {
+            console.error("[EDIT_VLOG] reorder error:", error);
+            Alert.alert("정렬 저장 실패", "클립 순서를 저장하지 못했습니다.");
+            await loadEditing();
+        }
+    }
+
     async function handleToggleClip(clip: VlogClipResponse): Promise<void> {
         if (clip.clipId == null) return;
 
@@ -105,23 +291,39 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         }
     }
 
-    async function handleChangeCaption(clip: VlogClipResponse, caption: string): Promise<void> {
-        if (clip.clipId == null) return;
+    function startInlineTitleEdit(clip: VlogClipResponse): void {
+        if (!clip.clipId) return;
 
-        setClips((prev) => prev.map((item) => item.clipId === clip.clipId ? { ...item, caption } : item));
+        setEditingClipId(clip.clipId);
+        setEditingTitle(getClipTitle(clip));
     }
 
-    async function handleSubmitCaption(clip: VlogClipResponse): Promise<void> {
-        if (clip.clipId == null) return;
+    function cancelInlineTitleEdit(): void {
+        setEditingClipId(null);
+        setEditingTitle("");
+    }
+
+    async function submitInlineTitleEdit(clip: VlogClipResponse): Promise<void> {
+        if (!clip.clipId) return;
+
+        const trimmedTitle = editingTitle.trim();
+
+        if (!trimmedTitle) {
+            cancelInlineTitleEdit();
+            return;
+        }
 
         try {
             const updated = await updateVlogEditClip(projectId, clip.clipId, {
-                caption: clip.caption ?? "",
+                customTitle: trimmedTitle,
             });
 
             setClips((prev) => prev.map((item) => item.clipId === clip.clipId ? updated : item));
         } catch (error) {
-            Alert.alert("자막 저장 실패", "자막을 저장하지 못했습니다.");
+            console.error("[EDIT_VLOG] title edit error:", error);
+            Alert.alert("수정 실패", "클립 제목을 수정하지 못했습니다.");
+        } finally {
+            cancelInlineTitleEdit();
         }
     }
 
@@ -130,121 +332,298 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
         try {
             setExporting(true);
+            setExportStep("LOADING");
 
-            await completeVlogExport(projectId, {
+            const response = await completeVlogExport(projectId, {
                 portfolioShared: false,
-                finalVideoFileKey: null,
-                finalVideoThumbnailKey: null,
-                finalVideoDurationSeconds: clips.reduce((sum, clip) => sum + (clip.includedInFinal === false ? 0 : clip.durationSeconds ?? 0), 0),
             });
 
-            Alert.alert("내보내기 완료", "브이로그가 비공개로 저장되었습니다.", [
-                {
-                    text: "확인",
-                    onPress: () => navigation.goBack(),
-                },
-            ]);
+            const finalVideoId = response.finalVideoId;
+
+            if (!finalVideoId) {
+                throw new Error("최종 영상 ID를 받지 못했습니다.");
+            }
+
+            const downloadResponse = await waitVlogFinalVideoDone(projectId, finalVideoId, {
+                intervalMs: 3000,
+                maxTryCount: 60,
+            });
+
+            if (!downloadResponse.url) {
+                throw new Error("최종 영상 다운로드 URL을 받지 못했습니다.");
+            }
+
+            await saveVideoUrlToDevice(
+                downloadResponse.url,
+                downloadResponse.fileName ?? response.finalVideoTitle ?? `${title} 브이로그.mp4`
+            );
+
+            setExportStep("DONE");
         } catch (error) {
             console.error("[EDIT_VLOG] export error:", error);
-            Alert.alert("내보내기 실패", "브이로그를 내보내지 못했습니다.");
+            setExportStep("IDLE");
+            Alert.alert(
+                "내보내기 실패",
+                error instanceof Error ? error.message : "브이로그를 내보내지 못했습니다."
+            );
         } finally {
             setExporting(false);
         }
     }
 
-    function handlePressAddClip(): void {
-        navigation.navigate("SelectClip", {
-            projectId,
-            title,
-        });
+    async function handlePressAddClip(): Promise<void> {
+        if (addingClip) return;
+
+        try {
+            setAddingClip(true);
+
+            const result = await launchImageLibrary({
+                mediaType: "video",
+                selectionLimit: 1,
+                includeExtra: false,
+            });
+
+            const asset = result.assets?.[0];
+
+            if (!asset?.uri) {
+                return;
+            }
+
+            const inputBase = toVideoAssetInput(asset);
+
+            if (!inputBase || !inputBase.contentType?.startsWith("video/")) {
+                Alert.alert("파일 오류", "영상 파일만 추가할 수 있습니다.");
+                return;
+            }
+
+            const upload = await createVlogUploadUrl({
+                projectId,
+                fileName: inputBase.originalName,
+                contentType: inputBase.contentType,
+                type: "VIDEO",
+            });
+
+            if (!upload.uploadUrl || !upload.fileKey) {
+                Alert.alert("업로드 실패", "영상 업로드 URL을 발급받지 못했습니다.");
+                return;
+            }
+
+            await uploadFileToPresignedUrl(upload.uploadUrl, asset.uri, inputBase.contentType);
+
+            const created = await addVlogExtraClip(projectId, {
+                ...inputBase,
+                fileKey: upload.fileKey,
+            });
+
+            setClips((prev) => [...prev, created]);
+        } catch (error) {
+            console.error("[EDIT_VLOG] add clip error:", error);
+            Alert.alert("추가 실패", "영상을 추가하지 못했습니다.");
+        } finally {
+            setAddingClip(false);
+        }
     }
 
-    function renderClip(clip: VlogClipResponse): React.ReactElement {
-        const disabled = clip.includedInFinal === false;
+    function renderPreviewProgressBars(visibleClips: VlogClipResponse[]): React.ReactElement {
+        return (
+            <View style={styles.previewProgressRow}>
+                {visibleClips.slice(0, 6).map((clip, index) => {
+                    const isActive = index === previewClipIndex;
+                    const progress = isActive && previewDurationSeconds > 0 ? Math.min(1, previewCurrentSeconds / previewDurationSeconds) : index < previewClipIndex ? 1 : 0;
+
+                    return (
+                        <View key={`${clip.clipId}-${index}`} style={styles.previewProgressTrack}>
+                            <View style={[styles.previewProgressFill, { width: `${progress * 100}%` }]} />
+                        </View>
+                    );
+                })}
+            </View>
+        );
+    }
+
+    function renderClipItem({ item, drag, isActive }: RenderItemParams<VlogClipResponse>): React.ReactElement {
+        return (
+            <ScaleDecorator>
+                <ReanimatedSwipeable renderRightActions={() => renderRightActions(item)}>
+                    <View style={[styles.clipCard, isActive ? styles.clipCardDragging : null]}>
+                        <View style={styles.clipThumb}>
+                            {item.thumbnailUrl ? (
+                                <Image source={{ uri: item.thumbnailUrl }} style={styles.clipThumbImage} resizeMode="cover" />
+                            ) : null}
+                        </View>
+
+                        <View style={styles.clipTextWrap}>
+                            {editingClipId === item.clipId ? (
+                                <TextInput
+                                    style={styles.clipTitleInput}
+                                    value={editingTitle}
+                                    onChangeText={setEditingTitle}
+                                    autoFocus
+                                    maxLength={50}
+                                    returnKeyType="done"
+                                    onSubmitEditing={() => {
+                                        submitInlineTitleEdit(item).catch(console.error);
+                                    }}
+                                    onBlur={() => {
+                                        submitInlineTitleEdit(item).catch(console.error);
+                                    }}
+                                />
+                            ) : (
+                                <Pressable onPress={() => startInlineTitleEdit(item)}>
+                                    <AppText style={styles.clipTitle} numberOfLines={1}>{getClipTitle(item)}</AppText>
+                                </Pressable>
+                            )}
+
+                            <AppText style={styles.clipWeek}>{getWeekText(item)}</AppText>
+                        </View>
+
+                        <AppText style={styles.clipDuration}>{Math.max(0, item.durationSeconds ?? 0)}초</AppText>
+
+                        <Pressable style={styles.dragHandle} onLongPress={drag} delayLongPress={120}>
+                            <DragHandleIcon />
+                        </Pressable>
+                    </View>
+                </ReanimatedSwipeable>
+            </ScaleDecorator>
+        );
+    }
+
+    function renderRightActions(clip: VlogClipResponse): React.ReactElement {
+        return (
+            <Pressable style={styles.deleteActionButton} onPress={() => { handleExcludeClip(clip).catch(console.error); }}>
+                <AppText style={styles.deleteActionText}>삭제</AppText>
+            </Pressable>
+        );
+    }
+
+    function renderExportOverlay(): React.ReactElement | null {
+        if (exportStep === "IDLE") return null;
+
+        if (exportStep === "LOADING") {
+            return (
+                <View style={styles.exportOverlay}>
+                    <View style={styles.exportLoadingCenter}>
+                        <View style={styles.exportDotRow}>
+                            <View style={styles.exportDotActive} />
+                            <View style={styles.exportDot} />
+                            <View style={styles.exportDot} />
+                        </View>
+
+                        <AppText style={styles.exportLoadingText}>브이로그 저장중</AppText>
+                    </View>
+                </View>
+            );
+        }
 
         return (
-            <View key={String(clip.clipId)} style={[styles.clipCard, disabled ? styles.clipCardDisabled : null]}>
-                <Pressable style={styles.clipThumb} onPress={() => handleToggleClip(clip)} />
+            <View style={styles.exportOverlay}>
+                <View style={styles.exportDoneCenter}>
+                    <Image source={require("../../../../assets/images/internie_mascot_normal.png")} style={styles.exportMascot} resizeMode="contain" />
 
-                <View style={styles.clipTextWrap}>
-                    <AppText style={styles.clipTitle}>{getClipTitle(clip)}</AppText>
-                    <AppText style={styles.clipWeek}>{getWeekText(clip)}</AppText>
-
-                    <TextInput
-                        style={styles.captionInput}
-                        value={clip.caption ?? ""}
-                        onChangeText={(value) => handleChangeCaption(clip, value)}
-                        onBlur={() => handleSubmitCaption(clip)}
-                        placeholder="자막 입력"
-                        placeholderTextColor="#9A9A9A"
-                        maxLength={50}
-                    />
+                    <AppText style={styles.exportDoneTitle}>브이로그가{"\n"}저장되었어요</AppText>
+                    <AppText style={styles.exportDoneSubText}>{title} {getRecordWeeksText(subText)}</AppText>
                 </View>
 
-                <AppText style={styles.clipDuration}>{formatDuration(clip.durationSeconds)}</AppText>
-
-                <View style={styles.dragHandle}>
-                    <DragHandleIcon />
+                <View style={styles.exportDoneBottomBar}>
+                    <Pressable
+                        style={styles.exportDoneButton}
+                        onPress={() => {
+                            setExportStep("IDLE");
+                            navigation.navigate("RecordVlog", {
+                                projectId,
+                                title,
+                                subText,
+                            });
+                        }}
+                    >
+                        <AppText style={styles.exportDoneButtonText}>확인</AppText>
+                    </Pressable>
                 </View>
             </View>
         );
     }
 
-    const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
-    const totalDurationText = formatDuration(visibleClips.reduce((sum, clip) => sum + (clip.durationSeconds ?? 0), 0));
-    const firstClip = visibleClips[0];
-
     return (
         <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="뒤로가기">
-                    <BackIcon />
-                </Pressable>
+            <DraggableFlatList
+                data={clips.filter((clip) => clip.includedInFinal !== false)}
+                keyExtractor={(item, index) => String(item.clipId ?? `clip-${index}`)}
+                renderItem={renderClipItem}
+                onDragEnd={({ data }) => {
+                    handleDragEnd(data).catch(console.error);
+                }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.content}
+                ListHeaderComponent={() => {
+                    const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+                    const currentClip = visibleClips[previewClipIndex];
+                    const totalDurationText = formatDuration(visibleClips.reduce((sum, clip) => sum + (clip.durationSeconds ?? 0), 0));
 
-                <View style={styles.titleWrap}>
-                    <AppText style={styles.subText}>{subText}</AppText>
-                    <AppText style={styles.title}>{title}</AppText>
-                </View>
+                    return (
+                        <>
+                            <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="뒤로가기">
+                                <BackIcon />
+                            </Pressable>
 
-                <View style={styles.previewCard}>
-                    <View style={styles.previewProgressRow}>
-                        {visibleClips.slice(0, 6).map((clip, index) => (
-                            <View key={`${clip.clipId}-${index}`} style={[styles.previewProgress, index === 0 ? styles.previewProgressActive : null]} />
-                        ))}
+                            <View style={styles.titleWrap}>
+                                <AppText style={styles.subText}>{subText}</AppText>
+                                <AppText style={styles.title}>{title}</AppText>
+                            </View>
+
+                            <Pressable style={styles.previewCard} onPress={handlePressPreview}>
+                                {previewVideoUrl ? (
+                                    <Video
+                                        source={{ uri: previewVideoUrl }}
+                                        style={styles.previewVideo}
+                                        paused={!previewPlaying}
+                                        resizeMode="cover"
+                                        muted={false}
+                                        onProgress={(data) => setPreviewCurrentSeconds(data.currentTime)}
+                                        onLoad={(data) => setPreviewDurationSeconds(data.duration)}
+                                        onEnd={handlePreviewEnd}
+                                    />
+                                ) : null}
+
+                                {!previewPlaying ? renderPreviewProgressBars(visibleClips) : null}
+
+                                <View style={styles.previewCenter}>
+                                    <PlayIcon />
+                                    <AppText style={styles.previewWeek}>{currentClip ? getWeekText(currentClip) : "브이로그"}</AppText>
+                                    <AppText style={styles.previewTitle}>{currentClip ? getClipTitle(currentClip) : "클립 없음"}</AppText>
+                                </View>
+
+                                <View style={styles.previewTimeRow}>
+                                    <AppText style={styles.previewTime}>{formatDuration(Math.floor(previewCurrentSeconds))}</AppText>
+                                    <AppText style={styles.previewTime}>{totalDurationText}</AppText>
+                                </View>
+                            </Pressable>
+                        </>
+                    );
+                }}
+                ListEmptyComponent={() => (
+                    <View style={styles.loadingWrap}>
+                        {loading ? <ActivityIndicator /> : <AppText style={styles.emptyText}>편집할 클립이 없습니다.</AppText>}
                     </View>
-
-                    <View style={styles.previewCenter}>
-                        <PlayIcon />
-                        <AppText style={styles.previewWeek}>{firstClip ? getWeekText(firstClip) : "브이로그"}</AppText>
-                        <AppText style={styles.previewTitle}>{firstClip ? getClipTitle(firstClip) : "클립 없음"}</AppText>
-                    </View>
-
-                    <View style={styles.previewTimeRow}>
-                        <AppText style={styles.previewTime}>00:00</AppText>
-                        <AppText style={styles.previewTime}>{totalDurationText}</AppText>
-                    </View>
-                </View>
-
-                <View style={styles.clipList}>
-                    {loading ? (
-                        <View style={styles.loadingWrap}>
-                            <ActivityIndicator />
-                        </View>
-                    ) : (
-                        clips.map(renderClip)
-                    )}
-
-                    <Pressable style={styles.addClipButton} onPress={handlePressAddClip}>
-                        <AppText style={styles.addClipText}>촬영 추가하기</AppText>
+                )}
+                ListFooterComponent={() => (
+                    <Pressable style={styles.addClipButton} onPress={() => { handlePressAddClip().catch(console.error); }} disabled={addingClip}>
+                        <AppText style={styles.addClipText}>{addingClip ? "추가 중..." : "촬영 추가하기"}</AppText>
                     </Pressable>
-                </View>
-            </ScrollView>
+                )}
+            />
 
             <View style={styles.bottomBar}>
-                <Pressable style={[styles.exportButton, exporting ? styles.exportButtonDisabled : null]} onPress={handlePressExport}>
+                <Pressable
+                    style={[styles.exportButton, exporting ? styles.exportButtonDisabled : null]}
+                    disabled={exporting}
+                    onPress={() => {
+                        handlePressExport().catch(console.error);
+                    }}
+                >
                     <AppText style={styles.exportButtonText}>{exporting ? "내보내는 중" : "내보내기"}</AppText>
                 </Pressable>
             </View>
+            {renderExportOverlay()}
         </SafeAreaView>
     );
 }

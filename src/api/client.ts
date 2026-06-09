@@ -261,6 +261,28 @@ export async function apiUpload<T = unknown>(
     return (await res.text()) as unknown as T;
 }
 
+export async function uploadFileToPresignedUrl(
+    uploadUrl: string,
+    fileUri: string,
+    contentType: string
+): Promise<void> {
+    const fileResponse = await fetch(fileUri);
+    const blob = await fileResponse.blob();
+
+    const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": contentType,
+        },
+        body: blob,
+    });
+
+    if (!uploadResponse.ok) {
+        const bodyText = await uploadResponse.text().catch(() => "");
+        throw new Error(`S3 업로드 실패: ${uploadResponse.status} ${bodyText}`);
+    }
+}
+
 // android 카카오 로그인
 export async function exchangeKakaoToken(accessToken: string): Promise<LoginResponse> {
     const res = await fetch(buildUrl("/auth/kakao/android"), {

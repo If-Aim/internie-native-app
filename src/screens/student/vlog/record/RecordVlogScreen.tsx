@@ -1,12 +1,11 @@
 import React from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
-import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import AppText from "../../../../../AppText";
-import { completeMissionClip, getVlogProjectDetail, replaceMissionClip, startVlogEditing, type VlogClipCompleteInput, type VlogResponse } from "../../../../api/vlog";
+import { completeMissionClip, createFreeClip, deleteVlogProject, getVlogProjectDetail, replaceMissionClip, type VlogClipCompleteInput, type VlogResponse } from "../../../../api/vlog";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./RecordVlogScreen.style";
@@ -22,6 +21,14 @@ type MissionItem = {
     completed: boolean;
     locked: boolean;
     clipId: number | null;
+    thumbnailUrl: string | null;
+};
+
+type FreeCaptureItem = {
+    id: string;
+    title: string;
+    durationText: string;
+    thumbnailUrl: string | null;
 };
 
 type WeekItem = {
@@ -33,6 +40,44 @@ type WeekItem = {
     description: string;
     missions: MissionItem[];
 };
+
+// 날짜 표시
+function startOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseApiDate(value?: string | null): Date | null {
+    if (!value) return null;
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date;
+}
+
+function formatTodayText(): string {
+    const today = new Date();
+
+    return `${today.getMonth() + 1}월 ${today.getDate()}일`;
+}
+
+function getCurrentWeekText(startDate?: string | null): string { // 오늘날 기준week 계산
+    const start = parseApiDate(startDate);
+
+    if (!start) {
+        return `1주차, ${formatTodayText()}`;
+    }
+
+    const today = startOfDay(new Date());
+    const startDay = startOfDay(start);
+    const diffDays = Math.max(0, Math.floor((today.getTime() - startDay.getTime()) / 86400000));
+    const week = Math.floor(diffDays / 7) + 1;
+
+    return `${week}주차, ${formatTodayText()}`;
+}
 
 function formatMissionDuration(seconds?: number | null): string {
     const safeSeconds = Number.isFinite(seconds ?? NaN) ? Math.max(0, seconds ?? 0) : 0;
@@ -69,6 +114,7 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
                         completed: missionStatus === "COMPLETED",
                         locked: missionStatus === "LOCKED",
                         clipId: mission.lastClipId ?? null,
+                        thumbnailUrl: mission.lastClipThumbnailUrl ?? mission.thumbnailUrl ?? null,
                     };
                 });
                 const completedCount = missionItems.filter((mission) => mission.completed).length;
@@ -76,7 +122,7 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
                 return {
                     id: `week-${week}`,
                     week,
-                    dateText: "",
+                    dateText: formatTodayText(),
                     completedCount,
                     totalCount: missionItems.length,
                     description: `${week}주차에 진행할 브이로그 미션입니다.`,
@@ -119,12 +165,23 @@ function VideoIcon(): React.ReactElement {
     );
 }
 
+function ThreeDotIcon(): React.ReactElement {
+    return (
+        <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+            <Path d="M7.5 4.5C6.67157 4.5 6 3.82843 6 3C6 2.17157 6.67157 1.5 7.5 1.5C8.32843 1.5 9 2.17157 9 3C9 3.82843 8.32843 4.5 7.5 4.5Z" fill="black"/>
+            <Path d="M7.5 9C6.67157 9 6 8.32843 6 7.5C6 6.67157 6.67157 6 7.5 6C8.32843 6 9 6.67157 9 7.5C9 8.32843 8.32843 9 7.5 9Z" fill="black"/>
+            <Path d="M7.5 13.5C6.67157 13.5 6 12.8284 6 12C6 11.1716 6.67157 10.5 7.5 10.5C8.32843 10.5 9 11.1716 9 12C9 12.8284 8.32843 13.5 7.5 13.5Z" fill="black"/>
+        </Svg>
+    );
+}
+
 function Header({
     onBackClick,
+    onMenuClick,
 }: {
     onBackClick: () => void;
+    onMenuClick: () => void;
 }): React.ReactElement {
-    const { t } = useTranslation();
 
     return (
         <View style={styles.topbarRow}>
@@ -135,6 +192,9 @@ function Header({
             <AppText style={styles.appTitle} />
 
             <View style={styles.headerRightSpace} />
+            <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel="메뉴">
+                <ThreeDotIcon />
+            </Pressable>
         </View>
     );
 }
@@ -152,14 +212,27 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [openedWeekId, setOpenedWeekId] = React.useState<string | null>(null);
     const recordingCompleted = totalMissionCount > 0 && completedMissionCount >= totalMissionCount;
 
+    const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+    const [deleting, setDeleting] = React.useState(false);
+    const [heroThumbnailUrl, setHeroThumbnailUrl] = React.useState<string | null>(null);
+
+    const freeCaptureItem: FreeCaptureItem = {
+        id: "free-capture",
+        title: "나의 일상을 자유롭게 기록해볼까요?",
+        durationText: "6초",
+        thumbnailUrl: null,
+    };
+
     const [captureResult, setCaptureResult] = React.useState<{
         visible: boolean;
         mission: MissionItem | null;
+        type: "MISSION" | "FREE";
         thumbnailUri: string | null;
         isFinalMission: boolean;
     }>({
         visible: false,
         mission: null,
+        type: "MISSION",
         thumbnailUri: null,
         isFinalMission: false,
     });
@@ -176,19 +249,41 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             const missions = detail.missions ?? [];
 
             setTitle(detail.title ?? title);
+            setSubText(getCurrentWeekText(detail.startDate));
             setProgressPercent(detail.progressPercent ?? 0);
             setCompletedMissionCount(detail.completedMissionCount ?? 0);
             setTotalMissionCount(detail.totalMissionCount ?? 0);
+            setHeroThumbnailUrl(detail.lastClipThumbnailUrl ?? detail.thumbnailUrl ?? null);
             setWeeks(groupMissionsByWeek(missions));
-
-            if (detail.currentWeek) {
-                setSubText(`${detail.currentWeek}주차, `);
-            }
         } catch (error) {
             console.error("[RECORD_VLOG] load project error:", error);
             Alert.alert("불러오기 실패", "브이로그 정보를 불러오지 못했습니다.");
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleDeleteProject(): Promise<void> {
+        if (deleting) return;
+
+        try {
+            setDeleting(true);
+
+            await deleteVlogProject(projectId);
+
+            setDeleteModalOpen(false);
+
+            Alert.alert("삭제되었습니다.", "브이로그가 삭제되었습니다.", [
+                {
+                    text: "확인",
+                    onPress: () => navigation.goBack(),
+                },
+            ]);
+        } catch (error) {
+            console.error("[RECORD_VLOG] delete project error:", error);
+            Alert.alert("삭제 실패", "브이로그를 삭제하지 못했습니다.");
+        } finally {
+            setDeleting(false);
         }
     }
 
@@ -216,28 +311,46 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         setCaptureResult({
             visible: true,
             mission,
-            thumbnailUri: null,
+            type: "MISSION",
+            thumbnailUri: mission.thumbnailUrl,
             isFinalMission: finalMission,
         });
     }
 
     async function handleConfirmClip(): Promise<void> {
-        if (!captureResult.mission || savingClip) return;
+        if (savingClip) return;
 
         try {
             setSavingClip(true);
 
-            const input = createTempClipInput(captureResult.mission);
+            if (captureResult.type === "FREE") {
+                const input: VlogClipCompleteInput = {
+                    fileKey: `vlogs/temp/${projectId}/free-${Date.now()}.mp4`,
+                    originalName: `free-${Date.now()}.mp4`,
+                    contentType: "video/mp4",
+                    sizeBytes: 0,
+                    durationSeconds: 6,
+                    thumbnailKey: null,
+                    customTitle: "내 자리",
+                };
 
-            if (captureResult.mission.completed) {
-                await replaceMissionClip(projectId, captureResult.mission.id, input);
+                await createFreeClip(projectId, input);
             } else {
-                await completeMissionClip(projectId, captureResult.mission.id, input);
+                if (!captureResult.mission) return;
+
+                const input = createTempClipInput(captureResult.mission);
+
+                if (captureResult.mission.completed) {
+                    await replaceMissionClip(projectId, captureResult.mission.id, input);
+                } else {
+                    await completeMissionClip(projectId, captureResult.mission.id, input);
+                }
             }
 
             setCaptureResult({
                 visible: false,
                 mission: null,
+                type: "MISSION",
                 thumbnailUri: null,
                 isFinalMission: false,
             });
@@ -268,28 +381,30 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         handlePressRecord(nextMission);
     }
 
-    async function handlePressEdit(): Promise<void> {
-        if (!recordingCompleted) {
-            Alert.alert("촬영을 완료해주세요.", "모든 공식 미션 영상을 촬영한 뒤 편집을 시작할 수 있습니다.");
-            return;
-        }
-
-        try {
-            await startVlogEditing(projectId);
-
-            navigation.navigate("EditVlog", {
-                projectId,
-                title,
-                subText,
-            });
-        } catch (error) {
-            console.error("[RECORD_VLOG] start editing error:", error);
-            Alert.alert("편집 시작 실패", "편집을 시작하지 못했습니다.");
-        }
+    function handlePressEdit(): void {
+        navigation.navigate("EditVlog", {
+            projectId,
+            title,
+            subText,
+        });
     }
 
     function toggleWeek(weekId: string): void {
         setOpenedWeekId((prev) => (prev === weekId ? null : weekId));
+    }
+
+    function onboardingComplete(): boolean {
+        return weeks.some((week) => week.missions.some((mission) => mission.completed));
+    }
+
+    function handlePressFreeCapture(): void {
+        setCaptureResult({
+            visible: true,
+            mission: null,
+            type: "FREE",
+            thumbnailUri: null,
+            isFinalMission: false,
+        });
     }
 
     function renderMission(mission: MissionItem): React.ReactElement {
@@ -297,7 +412,11 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             <View key={mission.id} style={styles.missionCard}>
                 <View style={styles.missionTopRow}>
                     <View style={[styles.missionThumb, mission.completed ? styles.missionThumbDone : null]}>
-                        {!mission.completed && <VideoIcon />}
+                        {mission.thumbnailUrl ? (
+                            <Image source={{ uri: mission.thumbnailUrl }} style={styles.missionThumbImage} resizeMode="cover" />
+                        ) : (
+                            <VideoIcon />
+                        )}
                     </View>
 
                     <View style={styles.missionTitleWrap}>
@@ -398,9 +517,78 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         );
     }
 
+    function renderFreeCaptureCard(): React.ReactElement {
+        return (
+            <View style={styles.freeCaptureCard}>
+                <View style={styles.weekHeader}>
+                    <CheckCircleIcon active={onboardingComplete()} />
+
+                    <View style={styles.weekTitleWrap}>
+                        <AppText style={styles.weekTitle}>자율 촬영</AppText>
+                    </View>
+
+                    <ChevronIcon open={true} />
+                </View>
+
+                <View style={styles.weekBody}>
+                    <AppText style={styles.weekDesc}>나의 인턴십 과정을 자유롭게 촬영해보세요. 하루에 2번만 가능해요.</AppText>
+
+                    <View style={styles.missionCard}>
+                        <View style={styles.missionTopRow}>
+                            <View style={styles.missionThumb}>
+                                <VideoIcon />
+                            </View>
+
+                            <View style={styles.missionTitleWrap}>
+                                <AppText style={styles.missionTitle}>{freeCaptureItem.title}</AppText>
+                                <AppText style={styles.missionDuration}>{freeCaptureItem.durationText}</AppText>
+                            </View>
+                        </View>
+
+                        <Pressable style={styles.missionRecordButtonActive} onPress={handlePressFreeCapture}>
+                            <AppText style={styles.missionRecordTextActive}>촬영하기</AppText>
+                        </Pressable>
+                    </View>
+                </View>
+            </View>
+        );
+    }
+
+    function renderDeleteModal(): React.ReactElement {
+        return (
+            <Modal visible={deleteModalOpen} transparent animationType="fade" onRequestClose={() => setDeleteModalOpen(false)}>
+                <View style={styles.modalBackdrop}>
+                    <Pressable style={styles.modalDim} onPress={() => setDeleteModalOpen(false)} />
+
+                    <View style={styles.deleteModalBox}>
+                        <AppText style={styles.deleteModalTitle}>브이로그를 삭제할까요?</AppText>
+                        <AppText style={styles.deleteModalDesc}>삭제한 브이로그는 목록에서 사라집니다.</AppText>
+
+                        <View style={styles.deleteModalButtonRow}>
+                            <Pressable style={styles.deleteCancelButton} onPress={() => setDeleteModalOpen(false)} disabled={deleting}>
+                                <AppText style={styles.deleteCancelText}>취소</AppText>
+                            </Pressable>
+
+                            <Pressable
+                                style={styles.deleteConfirmButton}
+                                disabled={deleting}
+                                onPress={() => {
+                                    handleDeleteProject().catch(console.error);
+                                }}
+                            >
+                                <AppText style={styles.deleteConfirmText}>{deleting ? "삭제 중..." : "삭제하기"}</AppText>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    }
+
     return (
         <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
-            <Header onBackClick={() => navigation.goBack()} />
+            <Header onBackClick={() => navigation.goBack()} onMenuClick={() => setDeleteModalOpen(true)} />
+
             <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.titleRow}>
                     <View style={styles.titleTextWrap}>
@@ -414,8 +602,12 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
 
                 <View style={styles.heroCard}>
-                    <Pressable style={styles.heroRecordButton} onPress={handlePressHeroRecord}>
-                        <AppText style={styles.heroRecordText}>지금 촬영하기</AppText>
+                    {heroThumbnailUrl ? (
+                        <Image source={{ uri: heroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
+                    ) : null}
+
+                    <Pressable style={styles.heroPlayButton} onPress={handlePressHeroRecord}>
+                        <View style={styles.heroPlayTriangle} />
                     </Pressable>
                 </View>
 
@@ -427,20 +619,22 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             <ActivityIndicator />
                         </View>
                     ) : (
-                        weeks.map(renderWeek)
+                        <>
+                            {weeks.map(renderWeek)}
+                            {renderFreeCaptureCard()}
+                        </>
                     )}
                 </View>
             </ScrollView>
 
-            {recordingCompleted && (
-                <View style={styles.bottomBar}>
-                    <Pressable style={styles.editButton} onPress={handlePressEdit}>
-                        <AppText style={styles.editButtonText}>편집하기</AppText>
-                    </Pressable>
-                </View>
-            )}
+            <View style={styles.bottomBar}>
+                <Pressable style={styles.editButton} onPress={handlePressEdit}>
+                    <AppText style={styles.editButtonText}>편집하기</AppText>
+                </Pressable>
+            </View>
 
             {renderCaptureResultLayer()}
+            {renderDeleteModal()}
         </SafeAreaView>
     );
 }

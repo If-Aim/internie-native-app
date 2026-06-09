@@ -1,21 +1,27 @@
 import React from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
 
-import { getVlogCompanies, startVlogProject, type VlogClipCompleteInput, type VlogCompanyResponse } from "../../../../api/vlog";
-
+import { uploadFileToPresignedUrl } from "../../../../api/client";
+import { createVlogPreProjectUploadUrl, getVlogCompanies, startVlogProject, type VlogClipCompleteInput, type VlogCompanyResponse, } from "../../../../api/vlog";
 import AppText from "../../../../../AppText";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./NewVlogScreen.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "NewVlog">;
+type Step = 1 | 2;
 
-type DateTarget = "start" | "end";
+function toFileUri(path: string): string {
+    return path.startsWith("file://") ? path : `file://${path}`;
+}
 
-const WEEK_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const FIXED_START_DATE = "2026-06-29";
+const FIXED_END_DATE = "2026-08-07";
+const FIXED_PERIOD_TEXT = "2026.06.29. ~ 2026.08.07.";
 
 function CloseIcon(): React.ReactElement {
     return (
@@ -25,13 +31,10 @@ function CloseIcon(): React.ReactElement {
     );
 }
 
-function ClockIcon(): React.ReactElement {
+function CameraCloseIcon(): React.ReactElement {
     return (
-        <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-            <Path
-                d="M13.3 14.7L14.7 13.3L11 9.6V5H9V10.4L13.3 14.7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2167 18 14.1042 17.2208 15.6625 15.6625C17.2208 14.1042 18 12.2167 18 10C18 7.78333 17.2208 5.89583 15.6625 4.3375C14.1042 2.77917 12.2167 2 10 2C7.78333 2 5.89583 2.77917 4.3375 4.3375C2.77917 5.89583 2 7.78333 2 10C2 12.2167 2.77917 14.1042 4.3375 15.6625C5.89583 17.2208 7.78333 18 10 18Z"
-                fill="#000000"
-            />
+        <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+            <Path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
         </Svg>
     );
 }
@@ -40,16 +43,6 @@ function VideoIcon({ color = "#808080" }: { color?: string }): React.ReactElemen
     return (
         <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
             <Path d="M12.1056 8.83333H9.35556M15.8753 14.3867L20.5252 16.6771C21.0072 16.9705 21.5131 16.7976 21.5001 16.1856L21.4675 8.09104C21.4263 7.42667 21.0342 7.24539 20.4569 7.55242L15.8622 9.64057M5.25006 18.5H13.6056C14.8482 18.5 15.8556 17.5051 15.8556 16.2778L15.8753 13.4275L15.8556 7.72222C15.8556 6.49492 14.8482 5.5 13.6056 5.5H5.25006C4.00742 5.5 3.00006 6.49492 3.00006 7.72222V16.2778C3.00006 17.5051 4.00742 18.5 5.25006 18.5Z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
-
-function ChevronIcon({ direction }: { direction: "left" | "right" }): React.ReactElement {
-    const path = direction === "left" ? "M15 18L9 12L15 6" : "M9 18L15 12L9 6";
-
-    return (
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d={path} stroke="#333333" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -64,79 +57,43 @@ function DropdownArrowIcon({ open }: { open: boolean }): React.ReactElement {
     );
 }
 
-function formatKoreanDate(date: Date): string {
-    return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+function UpIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M6 15L12 9L18 15" stroke="#FFFFFF" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
 }
 
-function sameDate(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function DownIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M6 9L12 15L18 9" stroke="#FFFFFF" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
 }
 
-function isAfterDate(a: Date, b: Date): boolean {
-    return startOfDay(a).getTime() > startOfDay(b).getTime();
+function LeftIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 18L9 12L15 6" stroke="#FFFFFF" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
 }
 
-function isBeforeDate(a: Date, b: Date): boolean {
-    return startOfDay(a).getTime() < startOfDay(b).getTime();
+function RightIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M9 18L15 12L9 6" stroke="#FFFFFF" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
 }
 
-function isBetweenDate(date: Date, start: Date, end: Date): boolean {
-    const targetTime = startOfDay(date).getTime();
-    const startTime = startOfDay(start).getTime();
-    const endTime = startOfDay(end).getTime();
-
-    return targetTime > startTime && targetTime < endTime;
-}
-
-function isInRangeInclusive(date: Date, start: Date, end: Date): boolean {
-    const targetTime = startOfDay(date).getTime();
-    const startTime = startOfDay(start).getTime();
-    const endTime = startOfDay(end).getTime();
-
-    return targetTime >= startTime && targetTime <= endTime;
-}
-
-function startOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function getMonthDays(year: number, month: number): Array<Date | null> {
-    const firstDate = new Date(year, month, 1);
-    const lastDate = new Date(year, month + 1, 0);
-    const firstDay = (firstDate.getDay() + 6) % 7;
-    const days: Array<Date | null> = [];
-
-    for (let i = 0; i < firstDay; i += 1) {
-        days.push(null);
-    }
-
-    for (let day = 1; day <= lastDate.getDate(); day += 1) {
-        days.push(new Date(year, month, day));
-    }
-
-    while (days.length % 7 !== 0) {
-        days.push(null);
-    }
-
-    return days;
-}
-
-function formatApiDate(date: Date): string {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function Header({
-    onClose,
-}: {
-    onClose: () => void;
-}): React.ReactElement {
-
+function Header({ onClose }: { onClose: () => void }): React.ReactElement {
     return (
         <View style={styles.topbarRow}>
             <View style={styles.headerLeftSpace} />
-
             <AppText style={styles.appTitle}>인턴십 추가하기</AppText>
-
             <View style={commonStyles.iconbtn}>
                 <Pressable style={commonStyles.iconbtn} onPress={onClose} accessibilityLabel="닫기">
                     <CloseIcon />
@@ -147,32 +104,37 @@ function Header({
 }
 
 export default function NewVlogScreen({ navigation }: Props): React.ReactElement {
-    const today = React.useMemo(() => startOfDay(new Date()), []);
-    const [name, setName] = React.useState("");
-    const [startDate, setStartDate] = React.useState<Date | null>(null);
-    const [endDate, setEndDate] = React.useState<Date | null>(null);
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+
+    const cameraDevice = useCameraDevice("back");
+    const videoOutput = useVideoOutput({ enableAudio: true, fileType: "mp4" });
+    const recorderRef = React.useRef<any>(null);
+    const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+    const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+
+    const [step, setStep] = React.useState<Step>(1);
     const [companies, setCompanies] = React.useState<VlogCompanyResponse[]>([]);
     const [companyLoading, setCompanyLoading] = React.useState(false);
     const [selectedCompanyCode, setSelectedCompanyCode] = React.useState<string | null>(null);
     const [companyDropdownOpen, setCompanyDropdownOpen] = React.useState(false);
+    const [onboardingClip, setOnboardingClip] = React.useState<VlogClipCompleteInput | null>(null);
     const [saving, setSaving] = React.useState(false);
+    const [recording, setRecording] = React.useState(false);
+    const [cameraOpen, setCameraOpen] = React.useState(false);
+    const [recordSeconds, setRecordSeconds] = React.useState(0);
+    const [cameraInfoOpen, setCameraInfoOpen] = React.useState(true);
 
-    const [introClip, setIntroClip] = React.useState<VlogClipCompleteInput | null>(null);
-
-    const [calendarOpen, setCalendarOpen] = React.useState(false);
-    const [calendarTarget, setCalendarTarget] = React.useState<DateTarget>("start");
-    const [visibleMonth, setVisibleMonth] = React.useState(new Date(today.getFullYear(), today.getMonth(), 1));
-    const [tempDate, setTempDate] = React.useState<Date | null>(null);
     const selectedCompany = companies.find((company) => company.code === selectedCompanyCode) ?? null;
-    const canSave = name.trim().length > 0 && startDate !== null && endDate !== null && selectedCompanyCode !== null && introClip !== null && !saving;
-    
+    const canNext = selectedCompanyCode !== null;
+    const canSave = selectedCompanyCode !== null && onboardingClip !== null && !saving && !recording;
+
     React.useEffect(() => {
         void loadCompanies();
     }, []);
 
     async function loadCompanies(): Promise<void> {
         try {
-
             setCompanyLoading(true);
 
             const data = await getVlogCompanies();
@@ -189,63 +151,139 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         }
     }
 
-    function openCalendar(target: DateTarget): void {
-        const baseDate = target === "start" ? startDate : endDate;
-
-        setCalendarTarget(target);
-        setTempDate(baseDate ?? today);
-        setVisibleMonth(new Date((baseDate ?? today).getFullYear(), (baseDate ?? today).getMonth(), 1));
-        setCalendarOpen(true);
-    }
-
-    function closeCalendar(): void {
-        setCalendarOpen(false);
-    }
-
-    function moveMonth(amount: number): void {
-        setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
-    }
-
-    function confirmDate(): void {
-        if (!tempDate) {
-            closeCalendar();
+    React.useEffect(() => {
+        if (!recording) {
+            setRecordSeconds(0);
             return;
         }
 
-        if (calendarTarget === "start") {
-            setStartDate(tempDate);
+        const timer = setInterval(() => {
+            setRecordSeconds((prev) => {
+                if (prev >= 6) return prev;
+                return prev + 1;
+            });
+        }, 1000);
 
-            if (endDate && tempDate > endDate) {
-                setEndDate(null);
-            }
-        } else {
-            if (startDate && tempDate < startDate) {
-                Alert.alert("기간을 확인해주세요.", "종료일은 시작일보다 빠를 수 없습니다.");
+        return () => clearInterval(timer);
+    }, [recording]);
+
+    function handleNext(): void {
+        if (!canNext) {
+            Alert.alert("회사를 선택해주세요.", "인턴십을 진행하는 회사를 먼저 선택해주세요.");
+            return;
+        }
+
+        setStep(2);
+    }
+
+    async function handlePressRecord(): Promise<void> {
+        if (recording) return;
+
+        const cameraGranted = hasCameraPermission || await requestCameraPermission();
+        const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
+
+        if (!cameraGranted || !microphoneGranted) {
+            Alert.alert("권한이 필요합니다.", "브이로그 촬영을 위해 카메라와 마이크 권한이 필요합니다.");
+            return;
+        }
+
+        if (!cameraDevice) {
+            Alert.alert("카메라 오류", "사용 가능한 카메라를 찾지 못했습니다.");
+            return;
+        }
+
+        setCameraInfoOpen(true);
+        setCameraOpen(true);
+    }
+
+    async function startCameraRecording(): Promise<void> {
+        if (recording) return;
+
+        try {
+            setRecording(true);
+            setRecordSeconds(0);
+
+            const recorder = await videoOutput.createRecorder({
+                maxDuration: 6,
+            });
+
+            recorderRef.current = recorder;
+
+            await recorder.startRecording(
+                (path: string) => {
+                    recorderRef.current = null;
+                    void handleRecordedVideo(path);
+                },
+                (error: unknown) => {
+                    console.error("[NEW_VLOG] recording error:", error);
+                    recorderRef.current = null;
+                    setRecording(false);
+                    Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+                }
+            );
+        } catch (error) {
+            console.error("[NEW_VLOG] start recording error:", error);
+            recorderRef.current = null;
+            setRecording(false);
+            Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+        }
+    }
+
+    async function stopCameraRecording(): Promise<void> {
+        if (!recorderRef.current || !recording) return;
+
+        try {
+            await recorderRef.current.stopRecording();
+        } catch (error) {
+            console.error("[NEW_VLOG] stop recording error:", error);
+        }
+    }
+
+    async function handleRecordedVideo(path: string): Promise<void> {
+        try {
+            const fileUri = toFileUri(path);
+            const fileName = `onboarding_${Date.now()}.mp4`;
+            const contentType = "video/mp4";
+            const durationSeconds = 6; // 인턴십 영상 최대 길이 (s)
+
+            setRecording(false);
+            setCameraOpen(false);
+
+            const upload = await createVlogPreProjectUploadUrl({
+                fileName,
+                contentType,
+                type: "VIDEO",
+            });
+
+            if (!upload.uploadUrl || !upload.fileKey) {
+                Alert.alert("업로드 실패", "영상 업로드 URL을 발급받지 못했습니다.");
                 return;
             }
 
-            setEndDate(tempDate);
+            await uploadFileToPresignedUrl(upload.uploadUrl, fileUri, contentType);
+
+            setOnboardingClip({
+                fileKey: upload.fileKey,
+                originalName: fileName,
+                contentType,
+                sizeBytes: null,
+                durationSeconds,
+                thumbnailKey: null,
+                customTitle: "인턴십 온보딩 현장 촬영하기",
+            });
+
+            Alert.alert("촬영 완료", "온보딩 현장 영상이 등록되었습니다.");
+        } catch (error) {
+            console.error("[NEW_VLOG] upload recorded video error:", error);
+            Alert.alert("업로드 실패", "온보딩 현장 영상을 업로드하지 못했습니다.");
+        } finally {
+            setRecording(false);
         }
-
-        closeCalendar();
-    }
-
-    function handlePressRecord(): void {
-        setIntroClip({
-            fileKey: `vlogs/temp/intro-${Date.now()}.mp4`,
-            originalName: "intro.mp4",
-            contentType: "video/mp4",
-            sizeBytes: 0,
-            durationSeconds: 30,
-            thumbnailKey: null,
-        });
-
-        Alert.alert("촬영 완료", "자기소개 영상이 임시로 등록되었습니다.");
     }
 
     async function handleSave(): Promise<void> {
-        if (!canSave || !selectedCompanyCode || !startDate || !endDate || !introClip) {
-            Alert.alert("입력값을 확인해주세요.", "인턴십 이름, 기간, 회사, 자기소개 영상을 모두 입력해주세요.");
+        if (!canSave || !selectedCompanyCode || !selectedCompany || !onboardingClip) {
+            Alert.alert("입력값을 확인해주세요.", "회사 선택과 온보딩 현장 촬영을 완료해주세요.");
             return;
         }
 
@@ -256,10 +294,10 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
             await startVlogProject({
                 companyCode: selectedCompanyCode,
-                title: name.trim(),
-                startDate: formatApiDate(startDate),
-                endDate: formatApiDate(endDate),
-                introClip,
+                title: `${selectedCompany.name} 인턴십`,
+                startDate: FIXED_START_DATE,
+                endDate: FIXED_END_DATE,
+                onboardingClip,
             });
 
             Alert.alert("저장되었습니다.", "브이로그 인턴십이 추가되었습니다.", [
@@ -276,129 +314,11 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         }
     }
 
-    function renderCalendarModal(): React.ReactElement {
-        const days = getMonthDays(visibleMonth.getFullYear(), visibleMonth.getMonth());
-        const selected = tempDate;
-        const previewStartDate = calendarTarget === "start" ? selected : startDate;
-        const previewEndDate = calendarTarget === "end" ? selected : endDate;
-        const hasPreviewRange = !!previewStartDate && !!previewEndDate && !isAfterDate(previewStartDate, previewEndDate);
-        const rangeStart = calendarTarget === "end" ? startDate : null;
-
+    function renderCompanyStep(): React.ReactElement {
         return (
-            <Modal visible={calendarOpen} transparent animationType="fade" onRequestClose={closeCalendar}>
-                <View style={styles.modalBackdrop}>
-                    <Pressable style={styles.modalDim} onPress={closeCalendar} />
-
-                    <View style={styles.calendarSheet}>
-                        <View style={styles.calendarHeader}>
-                            <AppText style={styles.calendarTitle}>{calendarTarget === "start" ? "시작일을 설정하세요" : "종료일을 설정하세요"}</AppText>
-                            <Pressable style={styles.calendarCloseButton} onPress={closeCalendar}>
-                                <CloseIcon />
-                            </Pressable>
-                        </View>
-
-                        <View style={styles.monthRow}>
-                            <Pressable style={styles.monthArrowButton} onPress={() => moveMonth(-1)}>
-                                <ChevronIcon direction="left" />
-                            </Pressable>
-
-                            <AppText style={styles.monthText}>{visibleMonth.getMonth() + 1}월</AppText>
-
-                            <Pressable style={styles.monthArrowButton} onPress={() => moveMonth(1)}>
-                                <ChevronIcon direction="right" />
-                            </Pressable>
-                        </View>
-
-                        <View style={styles.weekRow}>
-                            {WEEK_LABELS.map((label) => (
-                                <AppText key={label} style={styles.weekText}>{label}</AppText>
-                            ))}
-                        </View>
-
-                        <View style={styles.dayGrid}>
-                            {days.map((date, index) => {
-                                const disabled = !date || (rangeStart !== null && isBeforeDate(date, rangeStart));
-                                const isStart = !!date && !!previewStartDate && sameDate(date, previewStartDate);
-                                const isEnd = !!date && !!previewEndDate && sameDate(date, previewEndDate);
-                                const isBetween = !!date && !!previewStartDate && !!previewEndDate && hasPreviewRange && isBetweenDate(date, previewStartDate, previewEndDate);
-                                const isRangeEdge = isStart || isEnd;
-                                const isRangeSelected = isRangeEdge || isBetween;
-
-                                const isFirstColumn = index % 7 === 0;
-                                const isLastColumn = index % 7 === 6;
-                                const prevDate = !isFirstColumn ? days[index - 1] : null;
-                                const nextDate = !isLastColumn ? days[index + 1] : null;
-
-                                const hasLeftConnection = !!prevDate && !!previewStartDate && !!previewEndDate && hasPreviewRange && isInRangeInclusive(prevDate, previewStartDate, previewEndDate);
-                                const hasRightConnection = !!nextDate && !!previewStartDate && !!previewEndDate && hasPreviewRange && isInRangeInclusive(nextDate, previewStartDate, previewEndDate);
-
-                                const rangeFillStyle = (() => {
-                                    if (!isRangeSelected || !hasPreviewRange) return null;
-                                    if (isStart && isEnd) return styles.rangeFillSingle;
-
-                                    if (!hasLeftConnection && !hasRightConnection) {
-                                        if (isStart && !isEnd) return styles.rangeFillRowEnd;
-                                        if (!isStart && isEnd) return styles.rangeFillRowStart;
-                                        return styles.rangeFillSingle;
-                                    }
-
-                                    if (!hasLeftConnection && hasRightConnection) {
-                                        if (isStart) return styles.rangeFillStart;
-                                        return styles.rangeFillRowStart;
-                                    }
-
-                                    if (hasLeftConnection && !hasRightConnection) {
-                                        if (isEnd) return styles.rangeFillEnd;
-                                        return styles.rangeFillRowEnd;
-                                    }
-
-                                    return styles.rangeFillMiddle;
-                                })();
-
-                                return (
-                                    <Pressable
-                                        key={`${index}-${date?.toISOString() ?? "empty"}`}
-                                        style={styles.dayCell}
-                                        disabled={disabled}
-                                        onPress={() => date && setTempDate(date)}
-                                    >
-                                        {date && (
-                                            <>
-                                                {isRangeSelected && hasPreviewRange && rangeFillStyle && (
-                                                    <View
-                                                        pointerEvents="none"
-                                                        style={[styles.rangeFill, rangeFillStyle]}
-                                                    />
-                                                )}
-
-                                                <View style={[styles.dayCircle, isRangeEdge ? styles.dayCircleActive : null]}>
-                                                    <AppText style={[styles.dayText, isRangeEdge ? styles.dayTextActive : null, isBetween ? styles.dayTextInRange : null]}>
-                                                        {date.getDate()}
-                                                    </AppText>
-                                                </View>
-                                            </>
-                                        )}
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-
-                        <Pressable style={styles.calendarConfirmButton} onPress={confirmDate}>
-                            <AppText style={styles.calendarConfirmText}>확인</AppText>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
-        );
-    }
-
-    return (
-        <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
-            <Header onClose={() => navigation.goBack()} />
-
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.content}>
                 <View style={styles.section}>
-                    <AppText style={styles.sectionTitle}>인턴십 회사</AppText>
+                    <AppText style={styles.sectionTitle}>나의 회사</AppText>
 
                     {companyLoading ? (
                         <View style={styles.companyLoadingBox}>
@@ -415,7 +335,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                                 onPress={() => setCompanyDropdownOpen((prev) => !prev)}
                             >
                                 <AppText style={[styles.companyDropdownText, selectedCompany ? styles.companyDropdownTextSelected : null]}>
-                                    {selectedCompany ? selectedCompany.name : "인턴십을 진행하는 회사를 선택해주세요"}
+                                    {selectedCompany ? selectedCompany.name : "회사를 선택하세요"}
                                 </AppText>
 
                                 <DropdownArrowIcon open={companyDropdownOpen} />
@@ -445,66 +365,188 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                             )}
                         </View>
                     )}
+
+                    {selectedCompany ? (
+                        <AppText style={styles.fixedPeriodText}>{FIXED_PERIOD_TEXT}</AppText>
+                    ) : null}
                 </View>
-                <View style={styles.section}>
-                    <AppText style={styles.sectionTitle}>인턴십 이름</AppText>
+            </View>
+        );
+    }
 
-                    <TextInput
-                        style={styles.nameInput}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="이름을 입력하세요"
-                        placeholderTextColor="#7E7E7E"
-                    />
-                </View>
-
-                <View style={styles.section}>
-                    <AppText style={styles.sectionTitle}>인턴십 기간</AppText>
-
-                    <View style={styles.periodBox}>
-                        <ClockIcon />
-
-                        <Pressable style={styles.dateChip} onPress={() => openCalendar("start")}>
-                            <AppText style={styles.dateChipText}>{startDate ? formatKoreanDate(startDate) : "시작일"}</AppText>
-                        </Pressable>
-
-                        <AppText style={styles.periodDash}>-</AppText>
-
-                        <Pressable style={styles.dateChip} onPress={() => openCalendar("end")}>
-                            <AppText style={styles.dateChipText}>{endDate ? formatKoreanDate(endDate) : "종료일"}</AppText>
-                        </Pressable>
-                    </View>
-                </View>
-
+    function renderOnboardingStep(): React.ReactElement {
+        return (
+            <View style={styles.content}>
                 <View style={styles.section}>
                     <AppText style={styles.sectionTitle}>인턴십 소개</AppText>
+                    <AppText style={styles.sectionDescription}>나의 인턴 브이로그에 들어갈 첫 번째 장면이에요.</AppText>
 
                     <View style={styles.introCard}>
                         <View style={styles.introTopRow}>
-                            <View style={styles.videoThumb}>
-                                <VideoIcon />
+                            <View style={[styles.videoThumb, onboardingClip ? styles.videoThumbActive : null]}>
+                                <VideoIcon color={onboardingClip ? "#0166FF" : "#808080"} />
                             </View>
 
                             <View style={styles.introTextWrap}>
-                                <AppText style={styles.introLabel}>{introClip ? "자기소개 영상 등록 완료" : "나를 소개해볼까요?"}</AppText>
-                                <AppText style={styles.introDuration}>{introClip?.durationSeconds ? `${introClip.durationSeconds}초` : "30초"}</AppText>
+                                <AppText style={styles.introLabel}>{onboardingClip ? "온보딩 현장 촬영 완료" : "인턴십 온보딩 현장 촬영하기"}</AppText>
+                                <AppText style={styles.introDuration}>{onboardingClip?.durationSeconds ? `${onboardingClip.durationSeconds}초` : "6초"}</AppText>
                             </View>
                         </View>
 
-                        <Pressable style={styles.recordButton} onPress={handlePressRecord}>
-                            <AppText style={styles.recordButtonText}>{introClip ? "재촬영하기" : "촬영하기"}</AppText>
+                        <Pressable
+                            style={[styles.recordButton, onboardingClip ? styles.recordButtonActive : null]}
+                            disabled={recording}
+                            onPress={() => {
+                                handlePressRecord().catch(console.error);
+                            }}
+                        >
+                            <AppText style={[styles.recordButtonText, onboardingClip ? styles.recordButtonTextActive : null]}>
+                                {recording ? "업로드 중..." : onboardingClip ? "재촬영하기" : "촬영하기"}
+                            </AppText>
                         </Pressable>
                     </View>
                 </View>
-            </ScrollView>
+            </View>
+        );
+    }
+
+    function renderCameraModal(): React.ReactElement {
+        return (
+            <Modal visible={cameraOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={() => setCameraOpen(false)}>
+                <View style={styles.cameraRoot}>
+                    {cameraDevice ? (
+                        <Camera
+                            style={styles.cameraPreview}
+                            device={cameraDevice}
+                            isActive={cameraOpen}
+                            outputs={[videoOutput]}
+                        />
+                    ) : null}
+
+                    <View style={styles.cameraOverlay}>
+                        <Pressable
+                            style={[
+                                styles.cameraCloseButton,
+                                isLandscape ? styles.cameraCloseButtonLandscape : styles.cameraCloseButtonPortrait,
+                            ]}
+                            onPress={() => setCameraOpen(false)}
+                        >
+                            <CameraCloseIcon />
+                        </Pressable>
+
+                        {cameraInfoOpen ? (
+                            <View
+                                style={[
+                                    styles.cameraMissionCard,
+                                    isLandscape ? styles.cameraMissionCardLandscape : styles.cameraMissionCardPortrait,
+                                ]}
+                            >
+                                <AppText
+                                    style={[
+                                        styles.cameraMissionTitle,
+                                        isLandscape ? styles.cameraMissionTitleLandscape : null,
+                                    ]}
+                                >
+                                    인턴십 온보딩 현장 촬영하기
+                                </AppText>
+
+                                <AppText
+                                    style={[
+                                        styles.cameraMissionDuration,
+                                        isLandscape ? styles.cameraMissionDurationLandscape : null,
+                                    ]}
+                                >
+                                    6초
+                                </AppText>
+
+                                {isLandscape ? (
+                                    <View style={styles.cameraGuideWrap}>
+                                        <View style={styles.cameraGuideRow}>
+                                            <View style={styles.cameraGuideBadge}>
+                                                <AppText style={styles.cameraGuideBadgeText}>배경</AppText>
+                                            </View>
+                                            <AppText style={styles.cameraGuideText}>책상 세팅과 사원증</AppText>
+                                        </View>
+
+                                        <View style={styles.cameraGuideRow}>
+                                            <View style={styles.cameraGuideBadge}>
+                                                <AppText style={styles.cameraGuideBadgeText}>구도</AppText>
+                                            </View>
+                                            <AppText style={styles.cameraGuideText}>떨리는 표정, 셀카로 충분해요.</AppText>
+                                        </View>
+                                    </View>
+                                ) : null}
+                            </View>
+                        ) : null}
+
+                        <Pressable
+                            style={[
+                                styles.cameraFoldButton,
+                                isLandscape
+                                    ? (cameraInfoOpen ? styles.cameraFoldButtonLandscapeOpen : styles.cameraFoldButtonLandscapeClosed)
+                                    : (cameraInfoOpen ? styles.cameraFoldButtonPortraitOpen : styles.cameraFoldButtonPortraitClosed),
+                            ]}
+                            onPress={() => setCameraInfoOpen((prev) => !prev)}
+                        >
+                            {isLandscape ? (
+                                cameraInfoOpen ? <LeftIcon /> : <RightIcon />
+                            ) : (
+                                cameraInfoOpen ? <UpIcon /> : <DownIcon />
+                            )}
+                        </Pressable>
+
+                        <View
+                            style={[
+                                styles.cameraRecordArea,
+                                isLandscape ? styles.cameraRecordAreaLandscape : styles.cameraRecordAreaPortrait,
+                            ]}
+                        >
+                            <Pressable
+                                style={styles.recordCircleOuter}
+                                onPress={() => {
+                                    if (recording) {
+                                        stopCameraRecording().catch(console.error);
+                                        return;
+                                    }
+
+                                    startCameraRecording().catch(console.error);
+                                }}
+                            >
+                                <View style={styles.recordCircleInner} />
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    }
+
+    return (
+        <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
+            <Header onClose={() => navigation.goBack()} />
+
+            {step === 1 ? renderCompanyStep() : renderOnboardingStep()}
 
             <View style={styles.bottomBar}>
-                <Pressable style={[styles.saveButton, canSave ? styles.saveButtonActive : null]} onPress={handleSave}>
-                    <AppText style={[styles.saveButtonText, canSave ? styles.saveButtonTextActive : null]}>{saving ? "저장 중..." : "저장하기"}</AppText>
-                </Pressable>
+                {step === 1 ? (
+                    <Pressable style={[styles.saveButton, canNext ? styles.saveButtonActive : null]} onPress={handleNext}>
+                        <AppText style={[styles.saveButtonText, canNext ? styles.saveButtonTextActive : null]}>다음으로</AppText>
+                    </Pressable>
+                ) : (
+                    <Pressable
+                        style={[styles.saveButton, canSave ? styles.saveButtonActive : null]}
+                        disabled={!canSave}
+                        onPress={() => {
+                            handleSave().catch(console.error);
+                        }}
+                    >
+                        <AppText style={[styles.saveButtonText, canSave ? styles.saveButtonTextActive : null]}>
+                            {saving ? "저장 중..." : "저장하기"}
+                        </AppText>
+                    </Pressable>
+                )}
             </View>
-
-            {renderCalendarModal()}
+            {renderCameraModal()}
         </SafeAreaView>
     );
 }

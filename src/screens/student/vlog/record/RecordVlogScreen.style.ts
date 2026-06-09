@@ -13,9 +13,12 @@ export const styles = StyleSheet.create({
     title: { fontSize: 24, fontWeight: "700", color: "#000", lineHeight: 44 },
     progressBadge: { minWidth: 64, height: 36, marginLeft: 16, paddingHorizontal: 8, borderRadius: 18, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
     progressText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
-    heroCard: { height: 240, marginBottom: 43, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 10, backgroundColor: "#FFFFFF", justifyContent: "flex-end", paddingHorizontal: 27, paddingBottom: 21 },
+    heroCard: { height: 240, marginBottom: 43, borderRadius: 10, backgroundColor: "#DCEAFF", alignItems: "center", justifyContent: "center", overflow: "hidden" },
     heroRecordButton: { height: 48, borderRadius: 10, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
     heroRecordText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
+    heroThumbnailImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
+    heroPlayButton: { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(189, 216, 255, 0.85)", alignItems: "center", justifyContent: "center" },
+    heroPlayTriangle: { width: 0, height: 0, marginLeft: 5, borderTopWidth: 14, borderBottomWidth: 14, borderLeftWidth: 20, borderTopColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "#FFFFFF" },
     sectionTitle: { marginBottom: 17, fontSize: 20, fontWeight: "700", color: "#000", lineHeight: 24 },
     
     loadingWrap: { minHeight: 240, alignItems: "center", justifyContent: "center" },
@@ -34,9 +37,10 @@ export const styles = StyleSheet.create({
     
     missionCard: { padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 12, backgroundColor: "#FFFFFF" },
     missionTopRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
-    missionThumb: { width: 64, height: 64, borderRadius: 8, backgroundColor: "#E6E6E6", alignItems: "center", justifyContent: "center", marginRight: 13 },
+    missionThumb: { width: 64, height: 64, borderRadius: 8, backgroundColor: "#E6E6E6", alignItems: "center", justifyContent: "center", marginRight: 13, overflow: "hidden" },
     missionThumbDone: { backgroundColor: "#BDD8FF" },
     missionTitleWrap: { flex: 1, minWidth: 0, opacity: 0.69, },
+    missionThumbImage: { width: "100%", height: "100%" },
     missionTitle: { fontSize: 16, fontWeight: "700", color: "#4F4F4F", lineHeight: 20 },
     missionDuration: { marginTop: 6, fontSize: 24, fontWeight: "700", color: "#000", lineHeight: 28 },
     missionInfoRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
@@ -48,6 +52,8 @@ export const styles = StyleSheet.create({
     missionRecordText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
     missionRecordTextActive: { color: "#FFFFFF" },
     
+    freeCaptureCard: { borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 10, backgroundColor: "#FFFFFF", overflow: "hidden", paddingBottom: 18 },
+
     captureOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#444444", zIndex: 20 },
     captureThumbnail: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" },
     captureFallback: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#444444" },
@@ -67,4 +73,16 @@ export const styles = StyleSheet.create({
     laterButtonText: { fontSize: 24, fontWeight: "700", color: "#000", lineHeight: 30 },
     editButton: { height: 88, borderRadius: 12, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     editButtonText: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", lineHeight: 30 },
+
+    modalBackdrop: { flex: 1, alignItems: "center", justifyContent: "center" },
+    modalDim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0, 0, 0, 0.35)" },
+    deleteModalBox: { width: "82%", paddingHorizontal: 22, paddingTop: 24, paddingBottom: 18, borderRadius: 16, backgroundColor: "#FFFFFF" },
+    deleteModalTitle: { fontSize: 18, fontWeight: "800", color: "#000000", lineHeight: 24 },
+    deleteModalDesc: { marginTop: 10, fontSize: 14, fontWeight: "500", color: "#808080", lineHeight: 20 },
+    deleteModalButtonRow: { flexDirection: "row", gap: 10, marginTop: 24 },
+    deleteCancelButton: { flex: 1, height: 48, borderRadius: 10, backgroundColor: "#E6E6E6", alignItems: "center", justifyContent: "center" },
+    deleteCancelText: { fontSize: 15, fontWeight: "700", color: "#555555", lineHeight: 20 },
+    deleteConfirmButton: { flex: 1, height: 48, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
+    deleteConfirmText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
+
 });

@@ -28,6 +28,8 @@ type VlogHomeCard = {
     projectId: number;
     title: string;
     subText: string;
+    thumbnailUrl: string | null;
+    lastClipId: number | null;
     progressPercent: number | null;
     completedMissionCount: number | null;
     totalMissionCount: number | null;
@@ -38,7 +40,11 @@ type VlogHomeCard = {
 };
 
 function formatDuration(seconds?: number | null): string {
-    const safeSeconds = Number.isFinite(seconds ?? NaN) ? Math.max(0, seconds ?? 0) : 77;
+    if (!Number.isFinite(seconds ?? NaN)) {
+        return "00:00";
+    }
+
+    const safeSeconds = Math.max(0, seconds ?? 0);
     const minutes = Math.floor(safeSeconds / 60);
     const remainSeconds = safeSeconds % 60;
 
@@ -69,6 +75,8 @@ function toVlogCard(item: VlogResponse): VlogHomeCard | null {
         projectId: item.vlogProjectId,
         title: item.title ?? item.companyCode ?? "인턴십",
         subText: subText || "브이로그",
+        thumbnailUrl: item.thumbnailUrl ?? item.lastClipThumbnailUrl ?? null,
+        lastClipId: item.lastClipId ?? null,
         progressPercent: item.progressPercent ?? null,
         completedMissionCount: item.completedMissionCount ?? null,
         totalMissionCount: item.totalMissionCount ?? null,
@@ -77,14 +85,6 @@ function toVlogCard(item: VlogResponse): VlogHomeCard | null {
         locked: item.locked === true,
         durationText: formatDuration(item.finalVideoDurationSeconds ?? item.durationSec),
     };
-}
-
-function isEditStarted(item: VlogHomeCard): boolean {
-    if (item.projectStatus === "EDITING") return true;
-    if (item.projectStatus === "COMPLETED") return true;
-    if (item.locked) return true;
-
-    return false;
 }
 
 function isVlogCompleted(item: VlogHomeCard): boolean {
@@ -332,7 +332,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
     function handlePressCard(item: VlogHomeCard): void {
         requireAuth(() => {
-            if (isVlogCompleted(item) || isEditStarted(item)) {
+            if (isVlogCompleted(item)) {
                 navigation.navigate("EditVlog", {
                     projectId: item.projectId,
                     title: `${item.title} 브이로그`,
@@ -358,6 +358,10 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     function renderVideoThumbnail(item: VlogHomeCard): React.ReactElement {
         return (
             <View style={styles.thumbnail}>
+                {item.thumbnailUrl ? (
+                    <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnailImage} resizeMode="cover" />
+                ) : null}
+
                 <View style={styles.playCircle}>
                     <View style={styles.playTriangle} />
                 </View>
