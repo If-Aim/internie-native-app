@@ -36,7 +36,7 @@ function Header({
     onCloseClick: () => void,
 }) {
     return (
-        <View style={[commonStyles.topbarMain, commonStyles.topbarRow]}>
+        <View style={commonStyles.topbarRow}>
             <View style={commonStyles.icon40} />
             <Pressable style={commonStyles.iconbtn} onPress={onCloseClick} >
                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} />

@@ -1,12 +1,12 @@
 import React from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, Pressable, View, useWindowDimensions } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { createThumbnail } from "react-native-create-thumbnail";
 import Svg, { Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
 
-import { uploadFileToPresignedUrl } from "../../../../api/client";
-import { createVlogPreProjectUploadUrl, getVlogCompanies, startVlogProject, type VlogClipCompleteInput, type VlogCompanyResponse, } from "../../../../api/vlog";
+import { getVlogCompanies, startVlogProject, type VlogCompanyResponse } from "../../../../api/vlog";
 import AppText from "../../../../../AppText";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
@@ -15,8 +15,9 @@ import { styles } from "./NewVlogScreen.style";
 type Props = NativeStackScreenProps<StudentStackParamList, "NewVlog">;
 type Step = 1 | 2;
 
-function toFileUri(path: string): string {
-    return path.startsWith("file://") ? path : `file://${path}`;
+function toLocalUri(path: string): string {
+    if (path.startsWith("file://") || path.startsWith("content://") || path.startsWith("ph://") || path.startsWith("assets-library://")) return path;
+    return `file://${path}`;
 }
 
 const FIXED_START_DATE = "2026-06-29";
@@ -33,7 +34,7 @@ function CloseIcon(): React.ReactElement {
 
 function CameraCloseIcon(): React.ReactElement {
     return (
-        <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
             <Path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
         </Svg>
     );
@@ -47,12 +48,10 @@ function VideoIcon({ color = "#808080" }: { color?: string }): React.ReactElemen
     );
 }
 
-function DropdownArrowIcon({ open }: { open: boolean }): React.ReactElement {
-    const path = open ? "M6 15L12 9L18 15" : "M6 9L12 15L18 9";
-
+function DropdownArrowIcon(): React.ReactElement {
     return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d={path} stroke="#5F5F5F" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M6 9L12 15L18 9" stroke="#9A9A9A" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -103,8 +102,19 @@ function Header({ onClose }: { onClose: () => void }): React.ReactElement {
     );
 }
 
+function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: number; right?: number; onClose: () => void }): React.ReactElement {
+    return (
+        <View style={[styles.cameraCloseButtonWrap, { top, left, right }]}>
+            <Pressable style={styles.cameraCloseIconBox} onPress={onClose} accessibilityLabel="카메라 닫기">
+                <CameraCloseIcon />
+            </Pressable>
+        </View>
+    );
+}
+
 export default function NewVlogScreen({ navigation }: Props): React.ReactElement {
     const { width, height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const isLandscape = width > height;
 
     const cameraDevice = useCameraDevice("back");
@@ -118,16 +128,24 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
     const [companyLoading, setCompanyLoading] = React.useState(false);
     const [selectedCompanyCode, setSelectedCompanyCode] = React.useState<string | null>(null);
     const [companyDropdownOpen, setCompanyDropdownOpen] = React.useState(false);
-    const [onboardingClip, setOnboardingClip] = React.useState<VlogClipCompleteInput | null>(null);
+    const [companyDropdownVisible, setCompanyDropdownVisible] = React.useState(false);
+    const companyDropdownAnim = React.useRef(new Animated.Value(0)).current;
+    const [onboardingRecorded, setOnboardingRecorded] = React.useState(false);
+    const [onboardingThumbnailUri, setOnboardingThumbnailUri] = React.useState<string | null>(null);
+    const [onboardingThumbnailRenderKey, setOnboardingThumbnailRenderKey] = React.useState(0);
+
     const [saving, setSaving] = React.useState(false);
     const [recording, setRecording] = React.useState(false);
     const [cameraOpen, setCameraOpen] = React.useState(false);
     const [recordSeconds, setRecordSeconds] = React.useState(0);
     const [cameraInfoOpen, setCameraInfoOpen] = React.useState(true);
+    const [cameraInfoVisible, setCameraInfoVisible] = React.useState(true);
+    const cameraInfoAnim = React.useRef(new Animated.Value(1)).current;
+    const [cameraLayout, setCameraLayout] = React.useState({ width: 0, height: 0 });
 
     const selectedCompany = companies.find((company) => company.code === selectedCompanyCode) ?? null;
     const canNext = selectedCompanyCode !== null;
-    const canSave = selectedCompanyCode !== null && onboardingClip !== null && !saving && !recording;
+    const canSave = Boolean(selectedCompanyCode) && !saving && !recording;
 
     React.useEffect(() => {
         void loadCompanies();
@@ -167,6 +185,33 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         return () => clearInterval(timer);
     }, [recording]);
 
+    function toggleCompanyDropdown(): void {
+        if (companyDropdownOpen) {
+            setCompanyDropdownOpen(false);
+
+            Animated.timing(companyDropdownAnim, {
+                toValue: 0,
+                duration: 180,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: false,
+            }).start(() => {
+                setCompanyDropdownVisible(false);
+            });
+
+            return;
+        }
+
+        setCompanyDropdownVisible(true);
+        setCompanyDropdownOpen(true);
+
+        Animated.timing(companyDropdownAnim, {
+            toValue: 1,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+        }).start();
+    }
+
     function handleNext(): void {
         if (!canNext) {
             Alert.alert("회사를 선택해주세요.", "인턴십을 진행하는 회사를 먼저 선택해주세요.");
@@ -192,7 +237,11 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             return;
         }
 
-        setCameraInfoOpen(true);
+        const initialCameraInfoOpen = !isLandscape;
+
+        setCameraInfoOpen(initialCameraInfoOpen);
+        setCameraInfoVisible(initialCameraInfoOpen);
+        cameraInfoAnim.setValue(initialCameraInfoOpen ? 1 : 0);
         setCameraOpen(true);
     }
 
@@ -212,6 +261,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             await recorder.startRecording(
                 (path: string) => {
                     recorderRef.current = null;
+                    setRecording(false);
                     void handleRecordedVideo(path);
                 },
                 (error: unknown) => {
@@ -241,49 +291,43 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
     async function handleRecordedVideo(path: string): Promise<void> {
         try {
-            const fileUri = toFileUri(path);
-            const fileName = `onboarding_${Date.now()}.mp4`;
-            const contentType = "video/mp4";
-            const durationSeconds = 6; // 인턴십 영상 최대 길이 (s)
-
             setRecording(false);
             setCameraOpen(false);
 
-            const upload = await createVlogPreProjectUploadUrl({
-                fileName,
-                contentType,
-                type: "VIDEO",
+            const fileUri = toLocalUri(path);
+
+            const thumbnail = await createThumbnail({
+                url: fileUri,
+                timeStamp: 1000,
             });
 
-            if (!upload.uploadUrl || !upload.fileKey) {
-                Alert.alert("업로드 실패", "영상 업로드 URL을 발급받지 못했습니다.");
-                return;
-            }
+            const thumbnailUri = toLocalUri(thumbnail.path);
 
-            await uploadFileToPresignedUrl(upload.uploadUrl, fileUri, contentType);
+            setOnboardingThumbnailUri(thumbnailUri);
+            setOnboardingThumbnailRenderKey((prev) => prev + 1);
+            setOnboardingRecorded(true);
 
-            setOnboardingClip({
-                fileKey: upload.fileKey,
-                originalName: fileName,
-                contentType,
-                sizeBytes: null,
-                durationSeconds,
-                thumbnailKey: null,
-                customTitle: "인턴십 온보딩 현장 촬영하기",
-            });
-
-            Alert.alert("촬영 완료", "온보딩 현장 영상이 등록되었습니다.");
+            Alert.alert("촬영 완료", "테스트 촬영이 완료되었습니다.");
         } catch (error) {
-            console.error("[NEW_VLOG] upload recorded video error:", error);
-            Alert.alert("업로드 실패", "온보딩 현장 영상을 업로드하지 못했습니다.");
+            console.error("[NEW_VLOG] create thumbnail error:", error);
+            Alert.alert("촬영 실패", "촬영한 영상의 썸네일을 만들지 못했습니다.");
         } finally {
             setRecording(false);
         }
     }
 
+    function handleCloseCamera(): void {
+        if (recording) {
+            Alert.alert("촬영 중입니다.", "촬영 중에는 카메라를 닫을 수 없습니다.");
+            return;
+        }
+
+        setCameraOpen(false);
+    }
+
     async function handleSave(): Promise<void> {
-        if (!canSave || !selectedCompanyCode || !selectedCompany || !onboardingClip) {
-            Alert.alert("입력값을 확인해주세요.", "회사 선택과 온보딩 현장 촬영을 완료해주세요.");
+        if (!canSave || !selectedCompanyCode || !selectedCompany) {
+            Alert.alert("입력값을 확인해주세요.", "회사를 선택해주세요.");
             return;
         }
 
@@ -297,7 +341,6 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                 title: `${selectedCompany.name} 인턴십`,
                 startDate: FIXED_START_DATE,
                 endDate: FIXED_END_DATE,
-                onboardingClip,
             });
 
             Alert.alert("저장되었습니다.", "브이로그 인턴십이 추가되었습니다.", [
@@ -315,6 +358,25 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
     }
 
     function renderCompanyStep(): React.ReactElement {
+        const dropdownRotate = companyDropdownAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: ["0deg", "180deg"],
+        });
+
+        const dropdownMaxHeight = companyDropdownAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, Math.min(companies.length * 56 + 15, 335)],
+        });
+
+        const dropdownOpacity = companyDropdownAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 1],
+        });
+
+        const dropdownTranslateY = companyDropdownAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [-8, 0],
+        });
         return (
             <View style={styles.content}>
                 <View style={styles.section}>
@@ -331,50 +393,74 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                     ) : (
                         <View style={styles.companyDropdownWrap}>
                             <Pressable
-                                style={[styles.companyDropdownButton, companyDropdownOpen ? styles.companyDropdownButtonActive : null]}
-                                onPress={() => setCompanyDropdownOpen((prev) => !prev)}
+                                style={[
+                                    styles.companyDropdownButton,
+                                    companyDropdownOpen ? styles.companyDropdownButtonOpen : null,
+                                ]}
+                                onPress={toggleCompanyDropdown}
                             >
-                                <AppText style={[styles.companyDropdownText, selectedCompany ? styles.companyDropdownTextSelected : null]}>
+                            <AppText style={[styles.companyDropdownText, selectedCompany ? styles.companyDropdownTextSelected : null]}>
                                     {selectedCompany ? selectedCompany.name : "회사를 선택하세요"}
                                 </AppText>
 
-                                <DropdownArrowIcon open={companyDropdownOpen} />
+                                <Animated.View style={{ transform: [{ rotate: dropdownRotate }] }}>
+                                    <DropdownArrowIcon />
+                                </Animated.View>
                             </Pressable>
 
-                            {companyDropdownOpen && (
-                                <View style={styles.companyDropdownList}>
-                                    {companies.map((company) => {
-                                        const selected = selectedCompanyCode === company.code;
+                            {companyDropdownVisible ? (
+                                <Animated.View
+                                    style={[
+                                        styles.companyDropdownList,
+                                        {
+                                            maxHeight: dropdownMaxHeight,
+                                            opacity: dropdownOpacity,
+                                            transform: [{ translateY: dropdownTranslateY }],
+                                        },
+                                    ]}
+                                >
+                                    <View style={styles.companyDropdownListInner}>
+                                        {companies.map((company) => {
+                                            const selected = selectedCompanyCode === company.code;
 
-                                        return (
-                                            <Pressable
-                                                key={company.code}
-                                                style={[styles.companyDropdownItem, selected ? styles.companyDropdownItemActive : null]}
-                                                onPress={() => {
-                                                    setSelectedCompanyCode(company.code);
-                                                    setCompanyDropdownOpen(false);
-                                                }}
-                                            >
-                                                <AppText style={[styles.companyDropdownItemText, selected ? styles.companyDropdownItemTextActive : null]}>
-                                                    {company.name}
-                                                </AppText>
-                                            </Pressable>
-                                        );
-                                    })}
-                                </View>
-                            )}
+                                            return (
+                                                <Pressable
+                                                    key={company.code}
+                                                    style={[
+                                                        styles.companyDropdownItem,
+                                                        selected ? styles.companyDropdownItemActive : null,
+                                                    ]}
+                                                    onPress={() => {
+                                                        setSelectedCompanyCode(company.code);
+                                                        toggleCompanyDropdown();
+                                                    }}
+                                                >
+                                                    <AppText
+                                                        style={[
+                                                            styles.companyDropdownItemText,
+                                                            selected ? styles.companyDropdownItemTextActive : null,
+                                                        ]}
+                                                    >
+                                                        {company.name}
+                                                    </AppText>
+                                                </Pressable>
+                                            );
+                                        })}
+                                    </View>
+                                </Animated.View>
+                            ) : null}
                         </View>
                     )}
 
-                    {selectedCompany ? (
-                        <AppText style={styles.fixedPeriodText}>{FIXED_PERIOD_TEXT}</AppText>
-                    ) : null}
+                    {selectedCompany ? (<AppText style={styles.fixedPeriodText}>{FIXED_PERIOD_TEXT}</AppText>) : null}
                 </View>
             </View>
         );
     }
 
     function renderOnboardingStep(): React.ReactElement {
+        const recordButtonActive = onboardingRecorded;
+        const recordButtonText = onboardingRecorded ? "다시 촬영하기" : "촬영하기";
         return (
             <View style={styles.content}>
                 <View style={styles.section}>
@@ -383,25 +469,37 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
                     <View style={styles.introCard}>
                         <View style={styles.introTopRow}>
-                            <View style={[styles.videoThumb, onboardingClip ? styles.videoThumbActive : null]}>
-                                <VideoIcon color={onboardingClip ? "#0166FF" : "#808080"} />
+                            <View style={[styles.videoThumb, onboardingRecorded ? styles.videoThumbActive : null]}>
+                                {onboardingThumbnailUri ? (
+                                    <Image
+                                        key={`onboarding-thumbnail-${onboardingThumbnailRenderKey}`}
+                                        style={styles.videoThumbImage}
+                                        source={{ uri: onboardingThumbnailUri }}
+                                        resizeMode="cover"
+                                        onError={(error) => {
+                                            console.log("[NEW_VLOG] thumbnail image error:", error.nativeEvent);
+                                        }}
+                                    />
+                                ) : (
+                                    <VideoIcon color={onboardingRecorded ? "#0166FF" : "#808080"} />
+                                )}
                             </View>
 
                             <View style={styles.introTextWrap}>
-                                <AppText style={styles.introLabel}>{onboardingClip ? "온보딩 현장 촬영 완료" : "인턴십 온보딩 현장 촬영하기"}</AppText>
-                                <AppText style={styles.introDuration}>{onboardingClip?.durationSeconds ? `${onboardingClip.durationSeconds}초` : "6초"}</AppText>
+                                <AppText style={styles.introLabel}>{onboardingRecorded ? "온보딩 현장 촬영 완료" : "인턴십 온보딩 현장 촬영하기"}</AppText>
+                                <AppText style={styles.introDuration}>6초</AppText>
                             </View>
                         </View>
 
                         <Pressable
-                            style={[styles.recordButton, onboardingClip ? styles.recordButtonActive : null]}
+                            style={[styles.recordButton, recordButtonActive ? styles.recordButtonActive : null]}
                             disabled={recording}
                             onPress={() => {
                                 handlePressRecord().catch(console.error);
                             }}
                         >
-                            <AppText style={[styles.recordButtonText, onboardingClip ? styles.recordButtonTextActive : null]}>
-                                {recording ? "업로드 중..." : onboardingClip ? "재촬영하기" : "촬영하기"}
+                            <AppText style={[styles.recordButtonText, recordButtonActive ? styles.recordButtonTextActive : null]}>
+                                {recordButtonText}
                             </AppText>
                         </Pressable>
                     </View>
@@ -410,10 +508,104 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         );
     }
 
+    function toggleCameraInfo(): void {
+        if (cameraInfoOpen) {
+            setCameraInfoOpen(false);
+
+            Animated.timing(cameraInfoAnim, {
+                toValue: 0,
+                duration: 180,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: false,
+            }).start(() => {
+                setCameraInfoVisible(false);
+            });
+
+            return;
+        }
+
+        setCameraInfoVisible(true);
+        setCameraInfoOpen(true);
+
+        Animated.timing(cameraInfoAnim, {
+            toValue: 1,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+        }).start();
+    }
+
     function renderCameraModal(): React.ReactElement {
+        const cameraCloseTop = insets.top + 11;
+        const cameraCloseLeft = isLandscape ? insets.left + 12 : undefined;
+        const cameraCloseRight = isLandscape ? undefined : 12;
+
+        const modalWidth = cameraLayout.width > 0 ? cameraLayout.width : width;
+        const modalHeight = cameraLayout.height > 0 ? cameraLayout.height : height;
+
+        const cameraMissionCardWidth = isLandscape ? modalWidth * 0.37 : modalWidth * 0.8;
+        const cameraMissionCardHeight = 96;
+
+        const portraitMissionCardTop = cameraCloseTop + 40 + 19;
+        const portraitMissionCardLeft = (modalWidth - cameraMissionCardWidth) / 2;
+
+        const landscapeMissionCardLeft = insets.left + 36;
+        const landscapeMissionCardTop = (modalHeight - cameraMissionCardHeight) / 2;
+
+        const cameraMissionCardTop = isLandscape ? landscapeMissionCardTop : portraitMissionCardTop;
+        const cameraMissionCardLeft = isLandscape ? landscapeMissionCardLeft : portraitMissionCardLeft;
+
+        const portraitFoldLeft = (modalWidth - 32) / 2;
+        const portraitFoldOpenTop = cameraMissionCardTop + cameraMissionCardHeight + 23;
+        const portraitFoldClosedTop = cameraMissionCardTop;
+
+        const landscapeFoldTop = cameraMissionCardTop + (cameraMissionCardHeight - 32) / 2;
+        const landscapeFoldClosedLeft = cameraMissionCardLeft;
+        const landscapeFoldOpenLeft = cameraMissionCardLeft + cameraMissionCardWidth + 14;
+
+        const cameraCardWidth = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: isLandscape ? [0, cameraMissionCardWidth] : [cameraMissionCardWidth, cameraMissionCardWidth],
+        });
+
+        const cameraCardHeight = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: isLandscape ? [cameraMissionCardHeight, cameraMissionCardHeight] : [0, cameraMissionCardHeight],
+        });
+
+        const cameraCardOpacity = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 1],
+        });
+
+        const cameraCardTranslateY = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: isLandscape ? [0, 0] : [-8, 0],
+        });
+
+        const cameraFoldButtonTop = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: isLandscape ? [landscapeFoldTop, landscapeFoldTop] : [portraitFoldClosedTop, portraitFoldOpenTop],
+        });
+
+        const cameraFoldButtonLeft = cameraInfoAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: isLandscape ? [landscapeFoldClosedLeft, landscapeFoldOpenLeft] : [portraitFoldLeft, portraitFoldLeft],
+        });
+
         return (
-            <Modal visible={cameraOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={() => setCameraOpen(false)}>
-                <View style={styles.cameraRoot}>
+            <Modal visible={cameraOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={handleCloseCamera}>
+                <View
+                    style={styles.cameraRoot}
+                    onLayout={(event) => {
+                        const { width: layoutWidth, height: layoutHeight } = event.nativeEvent.layout;
+
+                        setCameraLayout((prev) => {
+                            if (prev.width === layoutWidth && prev.height === layoutHeight) return prev;
+                            return { width: layoutWidth, height: layoutHeight };
+                        });
+                    }}
+                >
                     {cameraDevice ? (
                         <Camera
                             style={styles.cameraPreview}
@@ -424,76 +616,56 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                     ) : null}
 
                     <View style={styles.cameraOverlay}>
-                        <Pressable
-                            style={[
-                                styles.cameraCloseButton,
-                                isLandscape ? styles.cameraCloseButtonLandscape : styles.cameraCloseButtonPortrait,
-                            ]}
-                            onPress={() => setCameraOpen(false)}
-                        >
-                            <CameraCloseIcon />
-                        </Pressable>
+                        <CameraCloseButton
+                            top={cameraCloseTop}
+                            left={cameraCloseLeft}
+                            right={cameraCloseRight}
+                            onClose={handleCloseCamera}
+                        />
 
-                        {cameraInfoOpen ? (
-                            <View
+                        {cameraInfoVisible ? (
+                            <Animated.View
                                 style={[
                                     styles.cameraMissionCard,
                                     isLandscape ? styles.cameraMissionCardLandscape : styles.cameraMissionCardPortrait,
+                                    {
+                                        top: cameraMissionCardTop,
+                                        left: cameraMissionCardLeft,
+                                        width: cameraCardWidth,
+                                        height: cameraCardHeight,
+                                        opacity: cameraCardOpacity,
+                                        overflow: "hidden",
+                                        transform: [{ translateY: cameraCardTranslateY }],
+                                    },
                                 ]}
                             >
-                                <AppText
-                                    style={[
-                                        styles.cameraMissionTitle,
-                                        isLandscape ? styles.cameraMissionTitleLandscape : null,
-                                    ]}
-                                >
+                                <AppText style={styles.cameraMissionTitle}>
                                     인턴십 온보딩 현장 촬영하기
                                 </AppText>
 
-                                <AppText
-                                    style={[
-                                        styles.cameraMissionDuration,
-                                        isLandscape ? styles.cameraMissionDurationLandscape : null,
-                                    ]}
-                                >
+                                <AppText style={styles.cameraMissionDuration}>
                                     6초
                                 </AppText>
-
-                                {isLandscape ? (
-                                    <View style={styles.cameraGuideWrap}>
-                                        <View style={styles.cameraGuideRow}>
-                                            <View style={styles.cameraGuideBadge}>
-                                                <AppText style={styles.cameraGuideBadgeText}>배경</AppText>
-                                            </View>
-                                            <AppText style={styles.cameraGuideText}>책상 세팅과 사원증</AppText>
-                                        </View>
-
-                                        <View style={styles.cameraGuideRow}>
-                                            <View style={styles.cameraGuideBadge}>
-                                                <AppText style={styles.cameraGuideBadgeText}>구도</AppText>
-                                            </View>
-                                            <AppText style={styles.cameraGuideText}>떨리는 표정, 셀카로 충분해요.</AppText>
-                                        </View>
-                                    </View>
-                                ) : null}
-                            </View>
+                            </Animated.View>
                         ) : null}
 
-                        <Pressable
+                        <Animated.View
                             style={[
                                 styles.cameraFoldButton,
-                                isLandscape
-                                    ? (cameraInfoOpen ? styles.cameraFoldButtonLandscapeOpen : styles.cameraFoldButtonLandscapeClosed)
-                                    : (cameraInfoOpen ? styles.cameraFoldButtonPortraitOpen : styles.cameraFoldButtonPortraitClosed),
+                                {
+                                    left: cameraFoldButtonLeft,
+                                    top: cameraFoldButtonTop,
+                                },
                             ]}
-                            onPress={() => setCameraInfoOpen((prev) => !prev)}
                         >
-                            {isLandscape ? (
-                                cameraInfoOpen ? <LeftIcon /> : <RightIcon />
-                            ) : (
-                                cameraInfoOpen ? <UpIcon /> : <DownIcon />
-                            )}
-                        </Pressable>
+                            <Pressable style={styles.cameraFoldButtonInner} onPress={toggleCameraInfo}>
+                                {isLandscape ? (
+                                    cameraInfoOpen ? <LeftIcon /> : <RightIcon />
+                                ) : (
+                                    cameraInfoOpen ? <UpIcon /> : <DownIcon />
+                                )}
+                            </Pressable>
+                        </Animated.View>
 
                         <View
                             style={[
@@ -512,7 +684,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                                     startCameraRecording().catch(console.error);
                                 }}
                             >
-                                <View style={styles.recordCircleInner} />
+                                <View style={recording ? styles.recordStopInner : styles.recordCircleInner} />
                             </Pressable>
                         </View>
                     </View>
@@ -529,8 +701,8 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
             <View style={styles.bottomBar}>
                 {step === 1 ? (
-                    <Pressable style={[styles.saveButton, canNext ? styles.saveButtonActive : null]} onPress={handleNext}>
-                        <AppText style={[styles.saveButtonText, canNext ? styles.saveButtonTextActive : null]}>다음으로</AppText>
+                    <Pressable style={[styles.saveButton, canNext ? styles.nextButtonActive : null]} onPress={handleNext}>
+                        <AppText style={[styles.saveButtonText, canNext ? styles.nextButtonTextActive : null]}>다음으로</AppText>
                     </Pressable>
                 ) : (
                     <Pressable

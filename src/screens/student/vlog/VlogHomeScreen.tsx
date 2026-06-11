@@ -1,7 +1,9 @@
 import React from "react";
 import { API_BASE_URL } from "@env";
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, View } from "react-native";
+import type { GestureResponderEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import Video, { type VideoRef } from "react-native-video";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -10,7 +12,7 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-n
 import AppText from "../../../../AppText";
 import { getUserMe } from "../../../api/client";
 import { getMyParticipatingExternalActivities, type StudentExternalActivityResponse } from "../../../api/ea";
-import { getMyVlogProjects } from "../../../api/vlog";
+import { getMyVlogProjects, getVlogClipPlayUrl } from "../../../api/vlog";
 import type { VlogFinalVideoStatus, VlogProjectStatus, VlogResponse } from "../../../api/vlog";
 import { getAccessToken } from "../../../auth/tokenStorage";
 import type { RootStackParamList } from "../../../navigation/AppNavigator";
@@ -75,7 +77,7 @@ function toVlogCard(item: VlogResponse): VlogHomeCard | null {
         projectId: item.vlogProjectId,
         title: item.title ?? item.companyCode ?? "인턴십",
         subText: subText || "브이로그",
-        thumbnailUrl: item.thumbnailUrl ?? item.lastClipThumbnailUrl ?? null,
+        thumbnailUrl: item.lastClipThumbnailUrl ?? null,
         lastClipId: item.lastClipId ?? null,
         progressPercent: item.progressPercent ?? null,
         completedMissionCount: item.completedMissionCount ?? null,
@@ -148,8 +150,26 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     const [userProfileImg, setUserProfileImg] = React.useState<string | null>(null);
     const [userRoleSet, setUserRoleSet] = React.useState<string[]>([]);
 
+    const [inlinePlayingClipId, setInlinePlayingClipId] = React.useState<number | null>(null);
+    const [inlineVideoUrl, setInlineVideoUrl] = React.useState<string | null>(null);
+    const [inlineLoadingClipId, setInlineLoadingClipId] = React.useState<number | null>(null);
+    const [inlinePaused, setInlinePaused] = React.useState(true);
+    const [inlineCurrentTime, setInlineCurrentTime] = React.useState(0);
+    const [inlineDuration, setInlineDuration] = React.useState(0);
+
+    const videoRef = React.useRef<VideoRef>(null);
+    const controlsHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [inlineEnded, setInlineEnded] = React.useState(false);
+    const [inlineControlsVisible, setInlineControlsVisible] = React.useState(true);
+
     React.useEffect(() => {
         void checkAuth();
+    }, []);
+
+    React.useEffect(() => {
+        return () => {
+            clearInlineControlsTimer();
+        };
     }, []);
 
     useFocusEffect(
@@ -320,8 +340,120 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
     }
 
-    function handlePressVideo(): void {
-        Alert.alert("서비스 준비중입니다.");
+    function showLoginRequiredAlert(): void {
+        Alert.alert(
+            "로그인이 필요합니다.",
+            "로그인 후 이용할 수 있습니다.",
+            [
+                { text: "취소", style: "cancel" },
+                { text: "로그인", onPress: () => rootNavigation.navigate("Auth" as never) },
+            ]
+        );
+    }
+
+    function clearInlineControlsTimer(): void {
+        if (controlsHideTimerRef.current) {
+            clearTimeout(controlsHideTimerRef.current);
+            controlsHideTimerRef.current = null;
+        }
+    }
+
+    function showInlineControls(autoHide: boolean): void {
+        clearInlineControlsTimer();
+        setInlineControlsVisible(true);
+
+        if (!autoHide) {
+            return;
+        }
+
+        controlsHideTimerRef.current = setTimeout(() => {
+            setInlineControlsVisible(false);
+        }, 2000);
+    }
+
+    async function loadClipPlayUrl(item: VlogHomeCard): Promise<string | null> {
+        if (!isAuthed) {
+            showLoginRequiredAlert();
+            return null;
+        }
+
+        if (!item.lastClipId) {
+            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 클립이 없습니다.");
+            return null;
+        }
+
+        try {
+            const response = await getVlogClipPlayUrl(item.projectId, item.lastClipId);
+
+            if (!response.url) {
+                Alert.alert("재생할 영상이 없습니다.", "영상 URL을 불러오지 못했습니다.");
+                return null;
+            }
+
+            return response.url;
+        } catch (error) {
+            console.error("[VLOG_HOME] play url error:", error);
+            Alert.alert("영상을 불러오지 못했습니다.", "잠시 후 다시 시도해주세요.");
+            return null;
+        }
+    }
+
+    async function handlePressInlinePlay(event: GestureResponderEvent, item: VlogHomeCard): Promise<void> {
+        event.stopPropagation();
+
+        if (!item.lastClipId) {
+            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 클립이 없습니다.");
+            return;
+        }
+
+        if (inlinePlayingClipId === item.lastClipId && inlineVideoUrl) {
+            if (inlineEnded) {
+                videoRef.current?.seek(0);
+                setInlineCurrentTime(0);
+                setInlineEnded(false);
+                setInlinePaused(false);
+                showInlineControls(true);
+                return;
+            }
+
+            const nextPaused = !inlinePaused;
+
+            setInlinePaused(nextPaused);
+            showInlineControls(!nextPaused);
+
+            return;
+        }
+
+        setInlineLoadingClipId(item.lastClipId);
+
+        try {
+            const url = await loadClipPlayUrl(item);
+
+            if (!url) return;
+
+            setInlinePlayingClipId(item.lastClipId);
+            setInlineVideoUrl(url);
+            setInlinePaused(false);
+            setInlineEnded(false);
+            setInlineCurrentTime(0);
+            setInlineDuration(0);
+            showInlineControls(true);
+        } finally {
+            setInlineLoadingClipId(null);
+        }
+    }
+
+    async function handlePressThumbnail(event: GestureResponderEvent, item: VlogHomeCard): Promise<void> {
+        event.stopPropagation();
+
+        const isCurrentVideo = inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
+
+        if (isCurrentVideo && !inlinePaused && !inlineEnded) {
+            showInlineControls(true);
+            return;
+        }
+
+        await handlePressInlinePlay(event, item);
     }
 
     function handlePressAdd(): void {
@@ -356,19 +488,94 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     }
 
     function renderVideoThumbnail(item: VlogHomeCard): React.ReactElement {
+        const hasThumbnail = !!item.thumbnailUrl;
+        const isInlinePlaying = inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
+        const isInlineLoading = inlineLoadingClipId === item.lastClipId;
+        const safeCurrentTime = inlineDuration > 0 ? Math.min(inlineCurrentTime, inlineDuration) : inlineCurrentTime;
+        const progressPercent = inlineDuration > 0 ? Math.min(100, Math.max(0, (safeCurrentTime / inlineDuration) * 100)) : 0;
+        const currentTimeText = isInlinePlaying ? formatDuration(Math.floor(safeCurrentTime)) : "00:00";
+        const durationText = isInlinePlaying && inlineDuration > 0 ? formatDuration(Math.ceil(inlineDuration)) : item.durationText;
+        const shouldShowCenterButton = isInlineLoading || !isInlinePlaying || inlinePaused || inlineEnded || inlineControlsVisible;
+
+        if (!hasThumbnail && !isInlinePlaying) {
+            return (
+                <View style={[styles.thumbnail, styles.thumbnailEmpty]}>
+                    <AppText style={styles.thumbnailEmptyText}>아직 촬영한 영상이 없어요</AppText>
+                </View>
+            );
+        }
+
         return (
             <View style={styles.thumbnail}>
-                {item.thumbnailUrl ? (
-                    <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnailImage} resizeMode="cover" />
+                <Pressable style={styles.thumbnailPressArea} onPress={(event) => handlePressThumbnail(event, item)} disabled={isInlineLoading}>
+                    {isInlinePlaying ? (
+                        <Video
+                            ref={videoRef}
+                            source={{ uri: inlineVideoUrl }}
+                            style={styles.thumbnailVideo}
+                            resizeMode="cover"
+                            paused={inlinePaused}
+                            repeat={false}
+                            controls={false}
+                            onLoad={(data) => {
+                                setInlineDuration(data.duration ?? 0);
+                            }}
+                            onProgress={(data) => {
+                                setInlineCurrentTime(data.currentTime ?? 0);
+                            }}
+                            onEnd={() => {
+                                setInlinePaused(true);
+                                setInlineEnded(true);
+                                setInlineCurrentTime(inlineDuration);
+                                showInlineControls(false);
+                            }}
+                            onError={(error) => {
+                                console.error("[VLOG_HOME] inline video error:", error);
+                                Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                                setInlinePlayingClipId(null);
+                                setInlineVideoUrl(null);
+                                setInlinePaused(true);
+                                setInlineEnded(false);
+                                setInlineCurrentTime(0);
+                                setInlineDuration(0);
+                                showInlineControls(false);
+                            }}
+                        />
+                    ) : (
+                        <Image source={{ uri: item.thumbnailUrl as string }} style={styles.thumbnailImage} resizeMode="cover" />
+                    )}
+
+                    {isInlineLoading ? (
+                        <View style={styles.thumbnailLoadingOverlay}>
+                            <ActivityIndicator />
+                        </View>
+                    ) : null}
+                </Pressable>
+
+                {shouldShowCenterButton ? (
+                    <Pressable style={styles.playCircle} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
+                        {isInlineLoading ? (
+                            <ActivityIndicator />
+                        ) : inlinePaused || !isInlinePlaying || inlineEnded ? (
+                            <View style={styles.playTriangle} />
+                        ) : (
+                            <View style={styles.pauseIcon}>
+                                <View style={styles.pauseBar} />
+                                <View style={styles.pauseBar} />
+                            </View>
+                        )}
+                    </Pressable>
                 ) : null}
 
-                <View style={styles.playCircle}>
-                    <View style={styles.playTriangle} />
-                </View>
+                <View style={styles.videoControlBar}>
+                    <View style={styles.videoProgressTrack}>
+                        <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
+                    </View>
 
-                <View style={styles.timeRow}>
-                    <AppText style={styles.timeText}>00:00</AppText>
-                    <AppText style={styles.timeText}>{item.durationText}</AppText>
+                    <View style={styles.timeRow}>
+                        <AppText style={styles.timeText}>{currentTimeText}</AppText>
+                        <AppText style={styles.timeText}>{durationText}</AppText>
+                    </View>
                 </View>
             </View>
         );
@@ -376,10 +583,10 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
     function renderItem({ item }: { item: VlogHomeCard }): React.ReactElement {
         return (
-            <Pressable style={styles.card} onPress={() => handlePressCard(item)}>
+            <View style={styles.card}>
                 {renderVideoThumbnail(item)}
 
-                <View style={styles.cardInfoRow}>
+                <Pressable style={styles.cardInfoRow} onPress={() => handlePressCard(item)}>
                     <View style={styles.cardTextWrap}>
                         <AppText style={styles.cardTitle}>{item.title}</AppText>
                         <AppText style={styles.cardDate}>{item.subText}</AppText>
@@ -394,11 +601,12 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                             <AppText style={styles.progressText}>{item.progressPercent}%</AppText>
                         </View>
                     ) : null}
+
                     <View style={commonStyles.iconbtn}>
                         <ChevronIcon />
                     </View>
-                </View>
-            </Pressable>
+                </Pressable>
+            </View>
         );
     }
 

@@ -9,5 +9,6 @@ module.exports = {
         allowUndefined: false,
       },
     ],
+    "react-native-worklets/plugin",
   ],
 };

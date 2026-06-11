@@ -24,7 +24,6 @@ import VlogHomeScreen from "../screens/student/vlog/VlogHomeScreen";
 import NewVlogScreen from "../screens/student/vlog/internship/NewVlogScreen";
 import RecordVlogScreen from "../screens/student/vlog/record/RecordVlogScreen";
 import EditVlogScreen from "../screens/student/vlog/edit/EditVlogScreen";
-import SelectClipScreen from "../screens/student/vlog/edit/SelectClipScreen";
 
 export type StudentStackParamList = {
   StudentHome: undefined;
@@ -62,11 +61,6 @@ export type StudentStackParamList = {
       title?: string | null;
       subText?: string | null;
   };
-  SelectClip: {
-      projectId: number | string;
-      title?: string | null;
-  };
-
 };
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
@@ -95,7 +89,6 @@ export default function StudentNavigator() {
       <Stack.Screen name="NewVlog" component={NewVlogScreen} />
       <Stack.Screen name="RecordVlog" component={RecordVlogScreen} />
       <Stack.Screen name="EditVlog" component={EditVlogScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="SelectClip" component={SelectClipScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

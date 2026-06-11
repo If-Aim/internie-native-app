@@ -16,9 +16,9 @@ export const styles = StyleSheet.create({
     previewTitle: { marginTop: 4, fontSize: 34, fontWeight: "900", color: "#05070A", lineHeight: 42 },
     previewTimeRow: { position: "absolute", left: 30, right: 30, bottom: 29, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     previewTime: { fontSize: 24, fontWeight: "900", color: "#FFFFFF", lineHeight: 30 },
-previewVideo: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
-previewProgressTrack: { flex: 1, height: 12, borderRadius: 6, backgroundColor: "rgba(255, 255, 255, 0.55)", overflow: "hidden" },
-previewProgressFill: { height: "100%", borderRadius: 6, backgroundColor: "#FFFFFF" },
+    previewVideo: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
+    previewProgressTrack: { flex: 1, height: 12, borderRadius: 6, backgroundColor: "rgba(255, 255, 255, 0.55)", overflow: "hidden" },
+    previewProgressFill: { height: "100%", borderRadius: 6, backgroundColor: "#FFFFFF" },
 
     clipList: { gap: 16 },
     clipCard: { height: 128, borderWidth: 1, borderColor: "#E0E0E0", borderRadius: 14, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", paddingLeft: 14, paddingRight: 20 },

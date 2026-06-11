@@ -112,7 +112,6 @@ export type VlogStartInput = {
     title?: string | null;
     startDate?: string | null;
     endDate?: string | null;
-    onboardingClip?: VlogClipCompleteInput | null;
 };
 
 export type VlogEditClipInput = {
@@ -158,7 +157,6 @@ export async function startVlogProject(input: VlogStartInput): Promise<VlogRespo
             title: input.title ?? null,
             startDate: input.startDate ?? null,
             endDate: input.endDate ?? null,
-            onboardingClip: input.onboardingClip ?? null,
         }),
     });
 }
@@ -171,17 +169,17 @@ export async function deleteVlogProject(projectId: number | string): Promise<Vlo
     return api<VlogResponse>(`/vlogs/me/projects/${projectId}`, { method: "DELETE" });
 }
 
-export async function createVlogPreProjectUploadUrl(input: Omit<VlogUploadUrlInput, "projectId">): Promise<VlogUrlResponse> {
-    return api<VlogUrlResponse>("/vlogs/uploads/pre-project-presigned-url", {
-        method: "POST",
-        body: JSON.stringify({
-            projectId: null,
-            fileName: input.fileName ?? null,
-            contentType: input.contentType ?? null,
-            type: input.type ?? "VIDEO",
-        }),
-    });
-}
+// export async function createVlogPreProjectUploadUrl(input: Omit<VlogUploadUrlInput, "projectId">): Promise<VlogUrlResponse> {
+//     return api<VlogUrlResponse>("/vlogs/uploads/pre-project-presigned-url", {
+//         method: "POST",
+//         body: JSON.stringify({
+//             projectId: null,
+//             fileName: input.fileName ?? null,
+//             contentType: input.contentType ?? null,
+//             type: input.type ?? "VIDEO",
+//         }),
+//     });
+// }
 
 export async function createVlogUploadUrl(input: VlogUploadUrlInput): Promise<VlogUrlResponse> {
     return api<VlogUrlResponse>("/vlogs/uploads/presigned-url", {
