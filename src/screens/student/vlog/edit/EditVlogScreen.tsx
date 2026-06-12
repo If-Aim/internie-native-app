@@ -1,5 +1,7 @@
 import React from "react";
-import { ActivityIndicator, Alert, Image, PermissionsAndroid, Platform, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, PermissionsAndroid, PixelRatio, Platform, Pressable, TextInput, View, useWindowDimensions } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
+import { createThumbnail } from "react-native-create-thumbnail";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -49,6 +51,62 @@ function DragHandleIcon(): React.ReactElement {
     );
 }
 
+function ExportSavingDots(): React.ReactElement {
+    const dot1 = React.useRef(new Animated.Value(0)).current;
+    const dot2 = React.useRef(new Animated.Value(0)).current;
+    const dot3 = React.useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+        const createBounce = (value: Animated.Value, delayMs: number) => Animated.loop(
+            Animated.sequence([
+                Animated.delay(delayMs),
+                Animated.timing(value, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+                Animated.timing(value, { toValue: 0, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                Animated.delay(260),
+            ])
+        );
+
+        const animation1 = createBounce(dot1, 0);
+        const animation2 = createBounce(dot2, 120);
+        const animation3 = createBounce(dot3, 240);
+
+        animation1.start();
+        animation2.start();
+        animation3.start();
+
+        return () => {
+            animation1.stop();
+            animation2.stop();
+            animation3.stop();
+        };
+    }, [dot1, dot2, dot3]);
+
+    const getDotAnimatedStyle = (value: Animated.Value) => ({
+        transform: [
+            {
+                translateY: value.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -12],
+                }),
+            },
+            {
+                scale: value.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.12],
+                }),
+            },
+        ],
+    });
+
+    return (
+        <View style={styles.exportDotRow} accessibilityRole="progressbar">
+            <Animated.View style={[styles.exportDot, styles.exportDotActive, getDotAnimatedStyle(dot1)]} />
+            <Animated.View style={[styles.exportDot, getDotAnimatedStyle(dot2)]} />
+            <Animated.View style={[styles.exportDot, getDotAnimatedStyle(dot3)]} />
+        </View>
+    );
+}
+
 function formatDuration(seconds?: number | null): string {
     const safeSeconds = Number.isFinite(seconds ?? NaN) ? Math.max(0, seconds ?? 0) : 0;
     const minutes = Math.floor(safeSeconds / 60);
@@ -91,6 +149,47 @@ function toVideoAssetInput(asset: Asset): Omit<VlogClipCompleteInput, "fileKey">
 
 function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[\\/:*?"<>|]/g, "_");
+}
+
+function toLocalUri(path: string): string {
+    if (path.startsWith("file://") || path.startsWith("content://") || path.startsWith("ph://") || path.startsWith("assets-library://")) {
+        return path;
+    }
+
+    return `file://${path}`;
+}
+
+function getHighQualityThumbnailSize(width: number, height: number): { maxWidth: number; maxHeight: number } {
+    const pixelRatio = PixelRatio.get();
+    const rawWidth = Math.ceil(width * pixelRatio);
+    const rawHeight = Math.ceil(height * pixelRatio);
+    const longSide = Math.max(rawWidth, rawHeight);
+    const scale = longSide > 2560 ? 2560 / longSide : 1;
+
+    return {
+        maxWidth: Math.ceil(rawWidth * scale),
+        maxHeight: Math.ceil(rawHeight * scale),
+    };
+}
+
+async function createExtraClipThumbnail(videoUri: string, width: number, height: number): Promise<string | null> {
+    const { maxWidth, maxHeight } = getHighQualityThumbnailSize(width, height);
+
+    try {
+        const thumbnail = await createThumbnail({
+            url: videoUri,
+            timeStamp: 300,
+            maxWidth,
+            maxHeight,
+            format: "png",
+            cacheName: `extra_thumbnail_${Date.now()}`,
+        });
+
+        return toLocalUri(thumbnail.path);
+    } catch (error) {
+        console.error("[EDIT_VLOG] create extra thumbnail error:", error);
+        return null;
+    }
 }
 
 async function requestSaveVideoPermission(): Promise<boolean> {
@@ -161,6 +260,7 @@ async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Prom
 }
 
 export default function EditVlogScreen({ navigation, route }: Props): React.ReactElement {
+    const { width, height } = useWindowDimensions();
     const projectId = route.params.projectId;
     const [title, setTitle] = React.useState(route.params?.title ?? "인턴십 브이로그");
     const [subText, setSubText] = React.useState(route.params?.subText ?? "");
@@ -410,9 +510,28 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
             await uploadFileToPresignedUrl(upload.uploadUrl, asset.uri, inputBase.contentType);
 
+            const thumbnailUri = await createExtraClipThumbnail(asset.uri, asset.width ?? width, asset.height ?? height);
+            let thumbnailKey: string | null = null;
+
+            if (thumbnailUri) {
+                const thumbnailFileName = `extra_thumbnail_${Date.now()}.png`;
+                const thumbnailUpload = await createVlogUploadUrl({
+                    projectId,
+                    fileName: thumbnailFileName,
+                    contentType: "image/png",
+                    type: "THUMBNAIL",
+                });
+
+                if (thumbnailUpload.uploadUrl && thumbnailUpload.fileKey) {
+                    await uploadFileToPresignedUrl(thumbnailUpload.uploadUrl, thumbnailUri, "image/png");
+                    thumbnailKey = thumbnailUpload.fileKey;
+                }
+            }
+
             const created = await addVlogExtraClip(projectId, {
                 ...inputBase,
                 fileKey: upload.fileKey,
+                thumbnailKey,
             });
 
             setClips((prev) => [...prev, created]);
@@ -503,12 +622,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             return (
                 <View style={styles.exportOverlay}>
                     <View style={styles.exportLoadingCenter}>
-                        <View style={styles.exportDotRow}>
-                            <View style={styles.exportDotActive} />
-                            <View style={styles.exportDot} />
-                            <View style={styles.exportDot} />
-                        </View>
-
+                        <ExportSavingDots />
                         <AppText style={styles.exportLoadingText}>브이로그 저장중</AppText>
                     </View>
                 </View>
@@ -577,6 +691,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                                         style={styles.previewVideo}
                                         paused={!previewPlaying}
                                         resizeMode="cover"
+                                        maxBitRate={0}
                                         muted={false}
                                         onProgress={(data) => setPreviewCurrentSeconds(data.currentTime)}
                                         onLoad={(data) => setPreviewDurationSeconds(data.duration)}
@@ -612,7 +727,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 )}
             />
 
-            <View style={styles.bottomBar}>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
                 <Pressable
                     style={[styles.exportButton, exporting ? styles.exportButtonDisabled : null]}
                     disabled={exporting}
@@ -622,7 +737,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 >
                     <AppText style={styles.exportButtonText}>{exporting ? "내보내는 중" : "내보내기"}</AppText>
                 </Pressable>
-            </View>
+            </LinearGradient>
             {renderExportOverlay()}
         </SafeAreaView>
     );

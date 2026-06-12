@@ -1,6 +1,7 @@
 import React from "react";
 import { API_BASE_URL } from "@env";
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, FlatList, Image, Pressable, RefreshControl, View } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import type { GestureResponderEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import Video, { type VideoRef } from "react-native-video";
@@ -161,6 +162,10 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     const controlsHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const [inlineEnded, setInlineEnded] = React.useState(false);
     const [inlineControlsVisible, setInlineControlsVisible] = React.useState(true);
+    const [inlineProgressWidth, setInlineProgressWidth] = React.useState(0);
+    const inlineControlsOpacity = React.useRef(new Animated.Value(1)).current;
+
+    const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     React.useEffect(() => {
         void checkAuth();
@@ -362,13 +367,41 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         clearInlineControlsTimer();
         setInlineControlsVisible(true);
 
+        Animated.timing(inlineControlsOpacity, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+        }).start();
+
         if (!autoHide) {
             return;
         }
 
         controlsHideTimerRef.current = setTimeout(() => {
-            setInlineControlsVisible(false);
+            Animated.timing(inlineControlsOpacity, {
+                toValue: 0,
+                duration: 220,
+                useNativeDriver: true,
+            }).start(({ finished }) => {
+                if (finished) {
+                    setInlineControlsVisible(false);
+                }
+            });
         }, 2000);
+    }
+
+    function hideInlineControls(): void {
+        clearInlineControlsTimer();
+
+        Animated.timing(inlineControlsOpacity, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: true,
+        }).start(({ finished }) => {
+            if (finished) {
+                setInlineControlsVisible(false);
+            }
+        });
     }
 
     async function loadClipPlayUrl(item: VlogHomeCard): Promise<string | null> {
@@ -448,12 +481,33 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
         const isCurrentVideo = inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
 
-        if (isCurrentVideo && !inlinePaused && !inlineEnded) {
-            showInlineControls(true);
+        if (!isCurrentVideo) {
+            await handlePressInlinePlay(event, item);
             return;
         }
 
-        await handlePressInlinePlay(event, item);
+        if (!inlineControlsVisible) {
+            showInlineControls(!inlinePaused && !inlineEnded);
+            return;
+        }
+
+        hideInlineControls();
+    }
+
+    function handlePressInlineProgress(event: GestureResponderEvent): void {
+        event.stopPropagation();
+
+        if (inlineDuration <= 0 || inlineProgressWidth <= 0) {
+            return;
+        }
+
+        const locationX = Math.max(0, Math.min(event.nativeEvent.locationX, inlineProgressWidth));
+        const nextTime = (locationX / inlineProgressWidth) * inlineDuration;
+
+        videoRef.current?.seek(nextTime);
+        setInlineCurrentTime(nextTime);
+        setInlineEnded(false);
+        showInlineControls(!inlinePaused);
     }
 
     function handlePressAdd(): void {
@@ -553,7 +607,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                 </Pressable>
 
                 {shouldShowCenterButton ? (
-                    <Pressable style={styles.playCircle} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
+                    <AnimatedPressable style={[styles.playCircle, { opacity: inlineControlsOpacity }]} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
                         {isInlineLoading ? (
                             <ActivityIndicator />
                         ) : inlinePaused || !isInlinePlaying || inlineEnded ? (
@@ -564,19 +618,27 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                                 <View style={styles.pauseBar} />
                             </View>
                         )}
-                    </Pressable>
+                    </AnimatedPressable>
                 ) : null}
 
-                <View style={styles.videoControlBar}>
-                    <View style={styles.videoProgressTrack}>
-                        <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
-                    </View>
+                <Animated.View style={[styles.videoControlBar, { opacity: inlineControlsOpacity }]}>
+                    <Pressable
+                        style={styles.videoProgressHitArea}
+                        onPress={handlePressInlineProgress}
+                        onLayout={(event) => {
+                            setInlineProgressWidth(event.nativeEvent.layout.width);
+                        }}
+                    >
+                        <View style={styles.videoProgressTrack}>
+                            <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
+                        </View>
+                    </Pressable>
 
                     <View style={styles.timeRow}>
                         <AppText style={styles.timeText}>{currentTimeText}</AppText>
                         <AppText style={styles.timeText}>{durationText}</AppText>
                     </View>
-                </View>
+                </Animated.View>
             </View>
         );
     }
@@ -637,9 +699,11 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
             />
 
-            <Pressable style={styles.addButton} onPress={handlePressAdd}>
-                <AppText style={styles.addButtonText}>인턴십 추가하기</AppText>
-            </Pressable>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
+                <Pressable style={styles.addButton} onPress={handlePressAdd}>
+                    <AppText style={styles.addButtonText}>인턴십 추가하기</AppText>
+                </Pressable>
+            </LinearGradient>
 
             <StudentMobileSideMenu
                 isOpen={menuOpen}

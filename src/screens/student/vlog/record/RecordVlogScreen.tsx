@@ -1,17 +1,18 @@
 import React from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, PixelRatio, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { GestureResponderEvent } from "react-native";
+import LinearGradient from "react-native-linear-gradient";
 import Video, { type VideoRef } from "react-native-video";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { createThumbnail } from "react-native-create-thumbnail";
 import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { BlurView } from "@react-native-community/blur";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import AppText from "../../../../../AppText";
 import { uploadFileToPresignedUrl } from "../../../../api/client";
-import { completeMissionClip, createFreeClip, createVlogUploadUrl, deleteVlogProject, getVlogClipPlayUrl, getVlogProjectDetail, replaceMissionClip, type VlogClipCompleteInput, type VlogResponse } from "../../../../api/vlog";
+import { completeMissionClip, createFreeClip, createVlogUploadUrl, deleteVlogProject, getVlogClipPlayUrl, getVlogProjectDetail, replaceMissionClip, type VlogClipCompleteInput, type VlogClipResponse, type VlogResponse } from "../../../../api/vlog";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./RecordVlogScreen.style";
@@ -32,6 +33,7 @@ type MissionItem = {
 
 type FreeCaptureItem = {
     id: string;
+    clipId: number | null;
     title: string;
     durationText: string;
     thumbnailUrl: string | null;
@@ -46,6 +48,8 @@ type WeekItem = {
     description: string;
     missions: MissionItem[];
 };
+
+type CaptureResultMode = "READY" | "SAVING" | "DONE";
 
 // 날짜 표시
 function startOfDay(date: Date): Date {
@@ -118,7 +122,7 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
                         background: mission.description ?? "미션 설명이 없습니다.",
                         composition: mission.tip ?? "자유롭게 촬영해주세요.",
                         completed: missionStatus === "COMPLETED",
-                        locked: missionStatus === "LOCKED",
+                        locked: false,
                         clipId: mission.lastClipId ?? null,
                         thumbnailUrl: mission.lastClipThumbnailUrl ?? mission.thumbnailUrl ?? null,
                     };
@@ -135,6 +139,18 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
                     missions: missionItems,
                 };
             });
+}
+
+function toFreeCaptureItems(clips?: VlogClipResponse[] | null): FreeCaptureItem[] {
+    return (clips ?? [])
+            .filter((clip) => clip.type === "FREE_RECORD")
+            .map((clip, index) => ({
+                id: `free-${clip.clipId ?? index}`,
+                clipId: clip.clipId ?? null,
+                title: clip.displayTitle ?? clip.customTitle ?? `자유미션 ${index + 1}`,
+                durationText: formatMissionDuration(clip.durationSeconds),
+                thumbnailUrl: clip.thumbnailUrl ?? null,
+            }));
 }
 
 function toLocalUri(path: string): string {
@@ -154,6 +170,14 @@ function CameraCloseIcon(): React.ReactElement {
     );
 }
 
+function CaptureCheckIcon(): React.ReactElement {
+    return (
+        <Svg width={64} height={64} viewBox="0 0 64 64" fill="none" style={styles.captureCheckIcon}>
+            <Circle cx={32} cy={32} r={32} fill="#0166FF" />
+            <Path d="M18 31.9999L28 42L47.9999 22" stroke="#FFFFFF" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
 
 function UpIcon(): React.ReactElement {
     return (
@@ -261,6 +285,62 @@ function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: 
     );
 }
 
+function CaptureSavingDots(): React.ReactElement {
+    const dot1 = React.useRef(new Animated.Value(0)).current;
+    const dot2 = React.useRef(new Animated.Value(0)).current;
+    const dot3 = React.useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+        const createBounce = (value: Animated.Value, delayMs: number) => Animated.loop(
+            Animated.sequence([
+                Animated.delay(delayMs),
+                Animated.timing(value, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+                Animated.timing(value, { toValue: 0, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                Animated.delay(260),
+            ])
+        );
+
+        const animation1 = createBounce(dot1, 0);
+        const animation2 = createBounce(dot2, 120);
+        const animation3 = createBounce(dot3, 240);
+
+        animation1.start();
+        animation2.start();
+        animation3.start();
+
+        return () => {
+            animation1.stop();
+            animation2.stop();
+            animation3.stop();
+        };
+    }, [dot1, dot2, dot3]);
+
+    const getDotAnimatedStyle = (value: Animated.Value) => ({
+        transform: [
+            {
+                translateY: value.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -12],
+                }),
+            },
+            {
+                scale: value.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.12],
+                }),
+            },
+        ],
+    });
+
+    return (
+        <View style={styles.captureSavingDotRow} accessibilityRole="progressbar">
+            <Animated.View style={[styles.captureSavingDot, styles.captureSavingDotActive, getDotAnimatedStyle(dot1)]} />
+            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(dot2)]} />
+            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(dot3)]} />
+        </View>
+    );
+}
+
 export default function RecordVlogScreen({ navigation, route }: Props): React.ReactElement {
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
@@ -282,7 +362,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [loading, setLoading] = React.useState(false);
     const [savingClip, setSavingClip] = React.useState(false);
     const [openedWeekId, setOpenedWeekId] = React.useState<string | null>(null);
-    const recordingCompleted = totalMissionCount > 0 && completedMissionCount >= totalMissionCount;
 
     const [menuModalOpen, setMenuModalOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -290,18 +369,20 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [deleting, setDeleting] = React.useState(false);
     const [heroThumbnailUrl, setHeroThumbnailUrl] = React.useState<string | null>(null);
     const [heroThumbnailOverrideUri, setHeroThumbnailOverrideUri] = React.useState<string | null>(null);
+    const [heroLastClipId, setHeroLastClipId] = React.useState<number | null>(null);
+    const heroVideoRef = React.useRef<VideoRef>(null);
+    const heroControlsHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [heroVideoUrl, setHeroVideoUrl] = React.useState<string | null>(null);
+    const [heroVideoLoading, setHeroVideoLoading] = React.useState(false);
+    const [heroPaused, setHeroPaused] = React.useState(true);
+    const [heroEnded, setHeroEnded] = React.useState(false);
+    const [heroControlsVisible, setHeroControlsVisible] = React.useState(true);
+    const [heroProgressWidth, setHeroProgressWidth] = React.useState(0);
+    const heroControlsOpacity = React.useRef(new Animated.Value(1)).current;
+    const [heroCurrentTime, setHeroCurrentTime] = React.useState(0);
+    const [heroDuration, setHeroDuration] = React.useState(0);
     const [missionThumbnailOverrides, setMissionThumbnailOverrides] = React.useState<Record<string, string>>({});
-    const [freeThumbnailUri, setFreeThumbnailUri] = React.useState<string | null>(null);
-
-    const captureVideoRef = React.useRef<VideoRef>(null);
-    const captureControlsHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [captureVideoUrl, setCaptureVideoUrl] = React.useState<string | null>(null);
-    const [captureVideoLoading, setCaptureVideoLoading] = React.useState(false);
-    const [capturePaused, setCapturePaused] = React.useState(true);
-    const [captureEnded, setCaptureEnded] = React.useState(false);
-    const [captureControlsVisible, setCaptureControlsVisible] = React.useState(true);
-    const [captureCurrentTime, setCaptureCurrentTime] = React.useState(0);
-    const [captureDuration, setCaptureDuration] = React.useState(0);
+    const [freeClips, setFreeClips] = React.useState<FreeCaptureItem[]>([]);
 
     const [recording, setRecording] = React.useState(false);
     const [cameraOpen, setCameraOpen] = React.useState(false);
@@ -314,38 +395,31 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [captureTarget, setCaptureTarget] = React.useState<{
         type: "MISSION" | "FREE";
         mission: MissionItem | null;
-        isFinalMission: boolean;
     } | null>(null);
-    const [uploadingCaptureClip, setUploadingCaptureClip] = React.useState(false);
-
-    const freeCaptureItem: FreeCaptureItem = {
-        id: "free-capture",
-        title: "나의 일상을 자유롭게 기록해볼까요?",
-        durationText: "6초",
-        thumbnailUrl: null,
-    };
 
     const [captureResult, setCaptureResult] = React.useState<{
         visible: boolean;
+        mode: CaptureResultMode;
         mission: MissionItem | null;
         type: "MISSION" | "FREE";
         thumbnailUri: string | null;
         videoUri: string | null;
-        clipInput: VlogClipCompleteInput | null;
-        isFinalMission: boolean;
+        isEditReady: boolean;
     }>({
         visible: false,
+        mode: "READY",
         mission: null,
         type: "MISSION",
         thumbnailUri: null,
         videoUri: null,
-        clipInput: null,
-        isFinalMission: false,
+        isEditReady: false,
     });
+
+    const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     React.useEffect(() => {
         return () => {
-            clearCaptureControlsTimer();
+            clearHeroControlsTimer();
         };
     }, []);
 
@@ -386,8 +460,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             setProgressPercent(detail.progressPercent ?? 0);
             setCompletedMissionCount(detail.completedMissionCount ?? 0);
             setTotalMissionCount(detail.totalMissionCount ?? 0);
-            setHeroThumbnailUrl(detail.lastClipThumbnailUrl ?? detail.thumbnailUrl ?? null);
+            setHeroThumbnailUrl(detail.lastClipThumbnailUrl ?? null);
+            setHeroLastClipId(detail.lastClipId ?? null);
             setWeeks(groupMissionsByWeek(missions));
+            setFreeClips(toFreeCaptureItems(detail.clips));
         } catch (error) {
             console.error("[RECORD_VLOG] load project error:", error);
             Alert.alert("불러오기 실패", "브이로그 정보를 불러오지 못했습니다.");
@@ -404,61 +480,73 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return `${String(minutes).padStart(2, "0")}:${String(remainSeconds).padStart(2, "0")}`;
     }
  
-    function formatMissionDurationToPlayerTime(value?: string | null): string {
-        const seconds = Number(String(value ?? "").replace(/[^0-9]/g, ""));
-
-        if (!Number.isFinite(seconds) || seconds <= 0) {
-            return "00:00";
-        }
-
-        return formatPlayerTime(seconds);
-    }
-
-    function clearCaptureControlsTimer(): void {
-        if (captureControlsHideTimerRef.current) {
-            clearTimeout(captureControlsHideTimerRef.current);
-            captureControlsHideTimerRef.current = null;
+    function clearHeroControlsTimer(): void {
+        if (heroControlsHideTimerRef.current) {
+            clearTimeout(heroControlsHideTimerRef.current);
+            heroControlsHideTimerRef.current = null;
         }
     }
 
-    function showCaptureControls(autoHide: boolean): void {
-        clearCaptureControlsTimer();
-        setCaptureControlsVisible(true);
+    function showHeroControls(autoHide: boolean): void {
+        clearHeroControlsTimer();
+        setHeroControlsVisible(true);
+
+        Animated.timing(heroControlsOpacity, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+        }).start();
 
         if (!autoHide) {
             return;
         }
 
-        captureControlsHideTimerRef.current = setTimeout(() => {
-            setCaptureControlsVisible(false);
+        heroControlsHideTimerRef.current = setTimeout(() => {
+            Animated.timing(heroControlsOpacity, {
+                toValue: 0,
+                duration: 220,
+                useNativeDriver: true,
+            }).start(({ finished }) => {
+                if (finished) {
+                    setHeroControlsVisible(false);
+                }
+            });
         }, 2000);
     }
 
-    function resetCapturePlayer(): void {
-        clearCaptureControlsTimer();
-        setCaptureVideoUrl(null);
-        setCaptureVideoLoading(false);
-        setCapturePaused(true);
-        setCaptureEnded(false);
-        setCaptureControlsVisible(true);
-        setCaptureCurrentTime(0);
-        setCaptureDuration(0);
+    function hideHeroControls(): void {
+        clearHeroControlsTimer();
+
+        Animated.timing(heroControlsOpacity, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: true,
+        }).start(({ finished }) => {
+            if (finished) {
+                setHeroControlsVisible(false);
+            }
+        });
     }
 
-    async function loadCaptureVideoUrl(): Promise<string | null> {
-        if (captureResult.videoUri) {
-            return captureResult.videoUri;
-        }
+    function resetHeroPlayer(): void {
+        clearHeroControlsTimer();
+        setHeroVideoUrl(null);
+        setHeroVideoLoading(false);
+        setHeroPaused(true);
+        setHeroEnded(false);
+        setHeroControlsVisible(true);
+        setHeroCurrentTime(0);
+        setHeroDuration(0);
+    }
 
-        const clipId = captureResult.mission?.clipId;
-
-        if (!clipId) {
-            Alert.alert("재생할 영상이 없습니다.", "아직 저장된 영상이 없거나 촬영 영상 주소가 없습니다.");
+    async function loadHeroVideoUrl(): Promise<string | null> {
+        if (!heroLastClipId) {
+            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 영상이 없습니다.");
             return null;
         }
 
         try {
-            const response = await getVlogClipPlayUrl(projectId, clipId);
+            const response = await getVlogClipPlayUrl(projectId, heroLastClipId);
 
             if (!response.url) {
                 Alert.alert("재생할 영상이 없습니다.", "영상 URL을 불러오지 못했습니다.");
@@ -467,56 +555,85 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
             return response.url;
         } catch (error) {
-            console.error("[RECORD_VLOG] capture play url error:", error);
+            console.error("[RECORD_VLOG] hero play url error:", error);
             Alert.alert("영상을 불러오지 못했습니다.", "잠시 후 다시 시도해주세요.");
             return null;
         }
     }
 
-    async function handlePressCapturePlay(event: GestureResponderEvent): Promise<void> {
+    async function handlePressHeroPlay(event: GestureResponderEvent): Promise<void> {
         event.stopPropagation();
 
-        if (captureVideoUrl) {
-            if (captureEnded) {
-                captureVideoRef.current?.seek(0);
-                setCaptureCurrentTime(0);
-                setCaptureEnded(false);
-                setCapturePaused(false);
-                showCaptureControls(true);
-                return;
-            }
-
-            const nextPaused = !capturePaused;
-
-            setCapturePaused(nextPaused);
-            showCaptureControls(!nextPaused);
+        if (!heroLastClipId) {
+            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 영상이 없습니다.");
             return;
         }
 
-        setCaptureVideoLoading(true);
+        if (heroVideoUrl) {
+            if (heroEnded) {
+                heroVideoRef.current?.seek(0);
+                setHeroCurrentTime(0);
+                setHeroEnded(false);
+                setHeroPaused(false);
+                showHeroControls(true);
+                return;
+            }
+
+            const nextPaused = !heroPaused;
+
+            setHeroPaused(nextPaused);
+            showHeroControls(!nextPaused);
+            return;
+        }
+
+        setHeroVideoLoading(true);
 
         try {
-            const url = await loadCaptureVideoUrl();
+            const url = await loadHeroVideoUrl();
 
             if (!url) return;
 
-            setCaptureVideoUrl(url);
-            setCapturePaused(false);
-            setCaptureEnded(false);
-            setCaptureCurrentTime(0);
-            setCaptureDuration(0);
-            showCaptureControls(true);
+            setHeroVideoUrl(url);
+            setHeroPaused(false);
+            setHeroEnded(false);
+            setHeroCurrentTime(0);
+            setHeroDuration(0);
+            showHeroControls(true);
         } finally {
-            setCaptureVideoLoading(false);
+            setHeroVideoLoading(false);
         }
     }
 
-    function handlePressCaptureBackground(event: GestureResponderEvent): void {
+    function handlePressHeroBackground(event: GestureResponderEvent): void {
         event.stopPropagation();
 
-        if (captureVideoUrl && !capturePaused && !captureEnded) {
-            showCaptureControls(true);
+        if (!heroVideoUrl) {
+            handlePressHeroPlay(event).catch(console.error);
+            return;
         }
+
+        if (!heroControlsVisible) {
+            showHeroControls(!heroPaused && !heroEnded);
+            return;
+        }
+
+        hideHeroControls();
+    }
+
+    function handlePressHeroProgress(event: GestureResponderEvent): void {
+        event.stopPropagation();
+
+        if (heroDuration <= 0 || heroProgressWidth <= 0) {
+            return;
+        }
+
+        const locationX = Math.max(0, Math.min(event.nativeEvent.locationX, heroProgressWidth));
+        const nextTime = (locationX / heroProgressWidth) * heroDuration;
+
+        heroVideoRef.current?.seek(nextTime);
+        setHeroCurrentTime(nextTime);
+        setHeroEnded(false);
+        showHeroControls(!heroPaused);
     }
 
     async function handleDeleteProject(): Promise<void> {
@@ -537,24 +654,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         }
     }
 
-    function createTempClipInput(mission: MissionItem): VlogClipCompleteInput {
-        return {
-            fileKey: `vlogs/temp/${projectId}/${mission.id}-${Date.now()}.mp4`,
-            originalName: `${mission.id}.mp4`,
-            contentType: "video/mp4",
-            sizeBytes: 0,
-            durationSeconds: Number(mission.durationText.replace(/[^0-9]/g, "")) || 0,
-            thumbnailKey: null,
-        };
-    }
-
-    function isFinalMission(missionId: string): boolean {
-        const allMissions = weeks.flatMap((week) => week.missions);
-        const lastMission = allMissions[allMissions.length - 1];
-
-        return lastMission?.id === missionId;
-    }
-
     function parseDurationText(value?: string | null): number {
         const seconds = Number(String(value ?? "").replace(/[^0-9]/g, ""));
 
@@ -565,16 +664,55 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return seconds;
     }
 
-    function getCaptureMaxDurationSeconds(): number {
-        if (captureTarget?.type === "FREE") {
+    function getCaptureDurationSecondsByTarget(target: { type: "MISSION" | "FREE"; mission: MissionItem | null } | null): number {
+        if (target?.type === "FREE") {
             return 6;
         }
 
-        return parseDurationText(captureTarget?.mission?.durationText);
+        return parseDurationText(target?.mission?.durationText);
     }
 
-    async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null; isFinalMission: boolean }): Promise<void> {
-        if (recording || uploadingCaptureClip) return;
+    function getCaptureThumbnailMaxSize(): { maxWidth: number; maxHeight: number } {
+        const pixelRatio = PixelRatio.get();
+        const rawWidth = Math.ceil(width * pixelRatio);
+        const rawHeight = Math.ceil(height * pixelRatio);
+        const longSide = Math.max(rawWidth, rawHeight);
+        const scale = longSide > 2560 ? 2560 / longSide : 1;
+
+        return {
+            maxWidth: Math.ceil(rawWidth * scale),
+            maxHeight: Math.ceil(rawHeight * scale),
+        };
+    }
+
+    async function createCapturePreviewThumbnail(fileUri: string, target: { type: "MISSION" | "FREE"; mission: MissionItem | null } | null): Promise<string | null> {
+        const durationSeconds = getCaptureDurationSecondsByTarget(target);
+        const thumbnailTimestamp = Math.max(0, durationSeconds * 1000 - 300);
+        const { maxWidth, maxHeight } = getCaptureThumbnailMaxSize();
+
+        try {
+            const thumbnail = await createThumbnail({
+                url: fileUri,
+                timeStamp: thumbnailTimestamp,
+                maxWidth,
+                maxHeight,
+                format: "png",
+                cacheName: `capture_preview_${Date.now()}`,
+            });
+
+            return toLocalUri(thumbnail.path);
+        } catch (error) {
+            console.error("[RECORD_VLOG] create preview thumbnail error:", error);
+            return null;
+        }
+    }
+
+    function getCaptureMaxDurationSeconds(): number {
+        return getCaptureDurationSecondsByTarget(captureTarget);
+    }
+
+    async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null }): Promise<void> {
+        if (recording || savingClip) return;
 
         const cameraGranted = hasCameraPermission || await requestCameraPermission();
         const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
@@ -589,7 +727,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             return;
         }
 
-        resetCapturePlayer();
         setCaptureTarget(target);
 
         const initialCameraInfoOpen = !isLandscape;
@@ -654,152 +791,214 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     }
 
     function handlePressRecord(mission: MissionItem): void {
-        const finalMission = isFinalMission(mission.id);
-
         openCaptureCamera({
             type: "MISSION",
             mission,
-            isFinalMission: finalMission,
         }).catch(console.error);
     }
 
     async function handleRecordedVideo(path: string): Promise<void> {
         if (!captureTarget) return;
 
-        try {
-            setRecording(false);
-            setUploadingCaptureClip(true);
-            setCameraOpen(false);
+        const fileUri = toLocalUri(path);
+        const currentTarget = captureTarget;
 
-            const fileUri = toLocalUri(path);
-            const now = Date.now();
-            const prefix = captureTarget.type === "FREE" ? "free" : captureTarget.mission?.id ?? "mission";
-            const fileName = `${prefix}_${now}.mp4`;
-            const contentType = "video/mp4";
-            const thumbnailFileName = `${prefix}_thumbnail_${now}.jpg`;
-            const thumbnailContentType = "image/jpeg";
-            const durationSeconds = getCaptureMaxDurationSeconds();
+        setRecording(false);
 
-            const thumbnail = await createThumbnail({
-                url: fileUri,
-                timeStamp: 1000,
+        const thumbnailUri = await createCapturePreviewThumbnail(fileUri, currentTarget);
+
+        setCaptureResult({
+            visible: true,
+            mode: "READY",
+            mission: currentTarget.mission,
+            type: currentTarget.type,
+            thumbnailUri,
+            videoUri: fileUri,
+            isEditReady: false,
+        });
+
+        setCameraOpen(false);
+        setCaptureTarget(null);
+    }
+
+    function willAllMissionsBeCompletedAfterSave(type: "MISSION" | "FREE", mission: MissionItem | null): boolean {
+        const allMissions = weeks.flatMap((week) => week.missions);
+
+        if (allMissions.length === 0) {
+            return false;
+        }
+
+        if (type !== "MISSION" || !mission) {
+            return allMissions.every((item) => item.completed);
+        }
+
+        return allMissions.every((item) => item.completed || item.id === mission.id);
+    }
+
+    async function uploadCaptureResultVideo(result: typeof captureResult): Promise<{ clipInput: VlogClipCompleteInput; thumbnailUri: string | null }> {
+        if (!result.videoUri) {
+            throw new Error("촬영 영상 주소가 없습니다.");
+        }
+
+        const now = Date.now();
+        const prefix = result.type === "FREE" ? "free" : result.mission?.id ?? "mission";
+        const fileName = `${prefix}_${now}.mp4`;
+        const contentType = "video/mp4";
+        const thumbnailFileName = `${prefix}_thumbnail_${now}.png`;
+        const thumbnailContentType = "image/png";
+        const durationSeconds = result.type === "FREE" ? 6 : parseDurationText(result.mission?.durationText);
+
+        let thumbnailUri = result.thumbnailUri;
+
+        if (!thumbnailUri) {
+            thumbnailUri = await createCapturePreviewThumbnail(result.videoUri, {
+                type: result.type,
+                mission: result.mission,
             });
+        }
 
-            const thumbnailUri = toLocalUri(thumbnail.path);
+        if (!thumbnailUri) {
+            throw new Error("썸네일을 생성하지 못했습니다.");
+        }
 
-            const upload = await createVlogUploadUrl({
-                projectId,
-                fileName,
-                contentType,
-                type: "VIDEO",
-            });
+        const upload = await createVlogUploadUrl({
+            projectId,
+            fileName,
+            contentType,
+            type: "VIDEO",
+        });
 
-            if (!upload.uploadUrl || !upload.fileKey) {
-                Alert.alert("업로드 실패", "영상 업로드 URL을 발급받지 못했습니다.");
-                return;
-            }
+        if (!upload.uploadUrl || !upload.fileKey) {
+            throw new Error("영상 업로드 URL을 발급받지 못했습니다.");
+        }
 
-            await uploadFileToPresignedUrl(upload.uploadUrl, fileUri, contentType);
+        await uploadFileToPresignedUrl(upload.uploadUrl, result.videoUri, contentType);
 
-            const thumbnailUpload = await createVlogUploadUrl({
-                projectId,
-                fileName: thumbnailFileName,
-                contentType: thumbnailContentType,
-                type: "THUMBNAIL",
-            });
+        const thumbnailUpload = await createVlogUploadUrl({
+            projectId,
+            fileName: thumbnailFileName,
+            contentType: thumbnailContentType,
+            type: "THUMBNAIL",
+        });
 
-            if (!thumbnailUpload.uploadUrl || !thumbnailUpload.fileKey) {
-                Alert.alert("업로드 실패", "썸네일 업로드 URL을 발급받지 못했습니다.");
-                return;
-            }
+        if (!thumbnailUpload.uploadUrl || !thumbnailUpload.fileKey) {
+            throw new Error("썸네일 업로드 URL을 발급받지 못했습니다.");
+        }
 
-            await uploadFileToPresignedUrl(thumbnailUpload.uploadUrl, thumbnailUri, thumbnailContentType);
+        await uploadFileToPresignedUrl(thumbnailUpload.uploadUrl, thumbnailUri, thumbnailContentType);
 
-            const clipInput: VlogClipCompleteInput = {
+        return {
+            thumbnailUri,
+            clipInput: {
                 fileKey: upload.fileKey,
                 originalName: fileName,
                 contentType,
                 sizeBytes: null,
                 durationSeconds,
                 thumbnailKey: thumbnailUpload.fileKey,
-                customTitle: captureTarget.type === "FREE" ? "내 자리" : null,
-            };
-
-            setCaptureResult({
-                visible: true,
-                mission: captureTarget.mission,
-                type: captureTarget.type,
-                thumbnailUri,
-                videoUri: fileUri,
-                clipInput,
-                isFinalMission: captureTarget.isFinalMission,
-            });
-
-            if (captureTarget.mission) {
-                setMissionThumbnailOverrides((prev) => ({
-                    ...prev,
-                    [captureTarget.mission?.id ?? ""]: thumbnailUri,
-                }));
-            }
-
-            if (captureTarget.type === "FREE") {
-                setFreeThumbnailUri(thumbnailUri);
-            }
-
-            setHeroThumbnailOverrideUri(thumbnailUri);
-        } catch (error) {
-            console.error("[RECORD_VLOG] upload recorded video error:", error);
-            Alert.alert("업로드 실패", "촬영한 영상을 업로드하지 못했습니다.");
-        } finally {
-            setRecording(false);
-            setUploadingCaptureClip(false);
-        }
+                customTitle: result.type === "FREE" ? "내 자리" : null,
+            },
+        };
     }
 
     async function handleConfirmClip(): Promise<void> {
         if (savingClip) return;
 
-        if (!captureResult.clipInput) {
+        const currentResult = captureResult;
+
+        if (!currentResult.videoUri) {
             Alert.alert("저장 실패", "촬영한 영상 정보가 없습니다.");
             return;
         }
 
+        const nextEditReady = willAllMissionsBeCompletedAfterSave(currentResult.type, currentResult.mission);
+
         try {
             setSavingClip(true);
+            setCaptureResult((prev) => ({ ...prev, mode: "SAVING" }));
 
-            if (captureResult.type === "FREE") {
+            const { clipInput, thumbnailUri } = await uploadCaptureResultVideo(currentResult);
+
+            if (currentResult.type === "FREE") {
                 await createFreeClip(projectId, {
-                    ...captureResult.clipInput,
+                    ...clipInput,
                     customTitle: "내 자리",
                 });
             } else {
-                if (!captureResult.mission) return;
+                if (!currentResult.mission) return;
 
-                if (captureResult.mission.completed) {
-                    await replaceMissionClip(projectId, captureResult.mission.id, captureResult.clipInput);
+                if (currentResult.mission.completed) {
+                    await replaceMissionClip(projectId, currentResult.mission.id, clipInput);
                 } else {
-                    await completeMissionClip(projectId, captureResult.mission.id, captureResult.clipInput);
+                    await completeMissionClip(projectId, currentResult.mission.id, clipInput);
+                }
+
+                if (thumbnailUri) {
+                    setMissionThumbnailOverrides((prev) => ({
+                        ...prev,
+                        [currentResult.mission?.id ?? ""]: thumbnailUri,
+                    }));
                 }
             }
 
-            setCaptureResult({
-                visible: false,
-                mission: null,
-                type: "MISSION",
-                thumbnailUri: null,
-                videoUri: null,
-                clipInput: null,
-                isFinalMission: false,
-            });
+            if (thumbnailUri) {
+                setHeroThumbnailOverrideUri(thumbnailUri);
+            }
 
-            resetCapturePlayer();
             await loadProjectDetail();
+
+            setCaptureResult((prev) => ({
+                ...prev,
+                mode: "DONE",
+                isEditReady: nextEditReady,
+            }));
         } catch (error) {
             console.error("[RECORD_VLOG] save clip error:", error);
+            setCaptureResult((prev) => ({ ...prev, mode: "READY" }));
             Alert.alert("저장 실패", "촬영한 영상을 저장하지 못했습니다.");
         } finally {
             setSavingClip(false);
         }
+    }
+
+    function resetCaptureResult(): void {
+        setCaptureResult({
+            visible: false,
+            mode: "READY",
+            mission: null,
+            type: "MISSION",
+            thumbnailUri: null,
+            videoUri: null,
+            isEditReady: false,
+        });
+    }
+
+    function handleRetryCapture(): void {
+        const nextTarget = {
+            type: captureResult.type,
+            mission: captureResult.mission,
+        };
+
+        resetCaptureResult();
+        openCaptureCamera(nextTarget).catch(console.error);
+    }
+
+    function handlePressCaptureHome(): void {
+        resetCaptureResult();
+    }
+
+    function handlePressCaptureDonePrimary(): void {
+        if (captureResult.isEditReady) {
+            resetCaptureResult();
+            navigation.navigate("EditVlog", {
+                projectId,
+                title,
+                subText,
+            });
+            return;
+        }
+
+        resetCaptureResult();
     }
 
     function toggleCameraInfo(): void {
@@ -829,23 +1028,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         }).start();
     }
 
-    function getNextMission(): MissionItem | null {
-        const allMissions = weeks.flatMap((week) => week.missions);
-
-        return allMissions.find((mission) => !mission.completed && !mission.locked) ?? allMissions[allMissions.length - 1] ?? null;
-    }
-
-    function handlePressHeroRecord(): void {
-        const nextMission = getNextMission();
-
-        if (!nextMission) {
-            Alert.alert("촬영할 미션이 없습니다.", "등록된 미션이 없습니다.");
-            return;
-        }
-
-        handlePressRecord(nextMission);
-    }
-
     function handlePressEdit(): void {
         navigation.navigate("EditVlog", {
             projectId,
@@ -858,15 +1040,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         setOpenedWeekId((prev) => (prev === weekId ? null : weekId));
     }
 
-    function onboardingComplete(): boolean {
-        return weeks.some((week) => week.missions.some((mission) => mission.completed));
-    }
-
     function handlePressFreeCapture(): void {
         openCaptureCamera({
             type: "FREE",
             mission: null,
-            isFinalMission: false,
         }).catch(console.error);
     }
 
@@ -906,11 +1083,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
                 <Pressable
                     style={[styles.missionRecordButton, mission.completed ? styles.missionRecordButtonActive : null]}
-                    disabled={mission.locked}
                     onPress={() => handlePressRecord(mission)}
                 >
                     <AppText style={[styles.missionRecordText, mission.completed ? styles.missionRecordTextActive : null]}>
-                        {mission.locked ? "이전 미션을 먼저 완료해주세요" : mission.completed ? "재촬영하기" : "촬영하기"}
+                        {mission.completed ? "재촬영하기" : "촬영하기"}
                     </AppText>
                 </Pressable>
             </View>
@@ -944,120 +1120,76 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         );
     }
 
+    function renderCaptureBackground(): React.ReactElement {
+        if (captureResult.thumbnailUri) {
+            return (
+                <Image source={{ uri: captureResult.thumbnailUri }} style={styles.captureBackgroundImage} resizeMode="cover" />
+            );
+        }
+
+        return <View style={styles.captureBackgroundFallback} />;
+    }
+
     function renderCaptureResultLayer(): React.ReactElement | null {
         if (!captureResult.visible) return null;
 
-        const hasThumbnail = !!captureResult.thumbnailUri;
-        const hasPlayerSource = !!captureVideoUrl;
-        const safeCurrentTime = captureDuration > 0 ? Math.min(captureCurrentTime, captureDuration) : captureCurrentTime;
-        const progressPercent = captureDuration > 0 ? Math.min(100, Math.max(0, (safeCurrentTime / captureDuration) * 100)) : 0;
-        const currentTimeText = hasPlayerSource ? formatPlayerTime(safeCurrentTime) : "00:00";
-        const durationText = captureDuration > 0 ? formatPlayerTime(Math.ceil(captureDuration)) : formatMissionDurationToPlayerTime(captureResult.mission?.durationText);
-        const shouldShowCenterButton = captureVideoLoading || !hasPlayerSource || capturePaused || captureEnded || captureControlsVisible;
+        if (captureResult.mode === "SAVING") {
+            return (
+                <View style={[styles.captureOverlay, styles.captureOverlayLight]}>
+                    <View style={styles.captureBody}>
+                        <CaptureSavingDots />
+                        <AppText style={styles.captureSavingTitle}>브이로그 저장중</AppText>
+                    </View>
+                </View>
+            );
+        }
+
+        if (captureResult.mode === "DONE") {
+            const subTitle = captureResult.isEditReady ? "편집해볼까요?" : "다른 미션도 해볼까요?";
+            const primaryText = captureResult.isEditReady ? "편집하기" : "다른 미션하기";
+
+            return (
+                <View style={[styles.captureOverlay, styles.captureOverlayLight]}>
+                    <View style={styles.captureBody}>
+                        <Image source={require("../../../../assets/images/internie_mascot_normal.png")} style={styles.captureSuccessImg} resizeMode="contain" />
+                        <AppText style={styles.captureSuccessTitle}>브이로그가{"\n"}생성되었어요</AppText>
+                        <AppText style={styles.captureSuccessSubTitle}>{subTitle}</AppText>
+                    </View>
+
+                    <View style={styles.captureActionArea}>
+                        <Pressable style={styles.captureAgainButton} onPress={handlePressCaptureHome}>
+                            <AppText style={styles.captureAgainText}>처음으로</AppText>
+                        </Pressable>
+
+                        <Pressable style={styles.captureNextButton} onPress={handlePressCaptureDonePrimary}>
+                            <AppText style={styles.captureNextText}>{primaryText}</AppText>
+                        </Pressable>
+                    </View>
+                </View>
+            );
+        }
 
         return (
             <View style={styles.captureOverlay}>
-                <Pressable style={styles.capturePlayerArea} onPress={handlePressCaptureBackground}>
-                    {hasPlayerSource ? (
-                        <Video
-                            ref={captureVideoRef}
-                            source={{ uri: captureVideoUrl }}
-                            style={styles.captureVideo}
-                            resizeMode="cover"
-                            paused={capturePaused}
-                            repeat={false}
-                            controls={false}
-                            onLoad={(data) => {
-                                setCaptureDuration(data.duration ?? 0);
-                            }}
-                            onProgress={(data) => {
-                                setCaptureCurrentTime(data.currentTime ?? 0);
-                            }}
-                            onEnd={() => {
-                                setCapturePaused(true);
-                                setCaptureEnded(true);
-                                setCaptureCurrentTime(captureDuration);
-                                showCaptureControls(false);
-                            }}
-                            onError={(error) => {
-                                console.error("[RECORD_VLOG] capture video error:", error);
-                                Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
-                                resetCapturePlayer();
-                            }}
-                        />
-                    ) : hasThumbnail ? (
-                        <Image source={{ uri: captureResult.thumbnailUri as string }} style={styles.captureThumbnail} resizeMode="cover" />
-                    ) : (
-                        <View style={styles.captureFallback} />
-                    )}
+                {renderCaptureBackground()}
+                <View style={styles.captureBackgroundDim} />
 
-                    {captureVideoLoading ? (
-                        <View style={styles.captureLoadingOverlay}>
-                            <ActivityIndicator />
-                        </View>
-                    ) : null}
+                <Pressable style={styles.captureCloseButton} onPress={resetCaptureResult}>
+                    <CameraCloseIcon />
                 </Pressable>
 
-                <Pressable
-                    style={styles.captureCloseButton}
-                    onPress={() => {
-                        resetCapturePlayer();
-                        setCaptureResult((prev) => ({ ...prev, visible: false }));
-                    }}
-                >
-                    <AppText style={styles.captureCloseText}>×</AppText>
-                </Pressable>
-
-                {!hasPlayerSource ? (
-                    <View style={styles.captureCenter}>
-                        <View style={styles.captureCheckCircle}>
-                            <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
-                                <Path d="M7 12L10.2 15.2L17 8.4" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-                            </Svg>
-                        </View>
-                        <AppText style={styles.captureTitle}>촬영완료!</AppText>
-                    </View>
-                ) : null}
-
-                {shouldShowCenterButton ? (
-                    <Pressable style={styles.capturePlayCircle} onPress={handlePressCapturePlay} disabled={captureVideoLoading}>
-                        {captureVideoLoading ? (
-                            <ActivityIndicator />
-                        ) : capturePaused || !hasPlayerSource || captureEnded ? (
-                            <View style={styles.capturePlayTriangle} />
-                        ) : (
-                            <View style={styles.capturePauseIcon}>
-                                <View style={styles.capturePauseBar} />
-                                <View style={styles.capturePauseBar} />
-                            </View>
-                        )}
-                    </Pressable>
-                ) : null}
-
-                <View style={styles.captureVideoControlBar}>
-                    <View style={styles.captureVideoProgressTrack}>
-                        <View style={[styles.captureVideoProgressFill, { width: `${progressPercent}%` }]} />
-                    </View>
-
-                    <View style={styles.captureTimeRow}>
-                        <AppText style={styles.captureTimeText}>{currentTimeText}</AppText>
-                        <AppText style={styles.captureTimeText}>{durationText}</AppText>
-                    </View>
+                <View style={styles.captureBody}>
+                    <CaptureCheckIcon />
+                    <AppText style={styles.captureTitle}>촬영완료!</AppText>
                 </View>
 
-                <View style={styles.captureBottom}>
-                    <Pressable
-                        style={styles.captureAgainButton}
-                        onPress={() => {
-                            resetCapturePlayer();
-                            setCaptureResult((prev) => ({ ...prev, visible: false }));
-                        }}
-                    >
+                <View style={styles.captureActionArea}>
+                    <Pressable style={styles.captureAgainButton} onPress={handleRetryCapture}>
                         <AppText style={styles.captureAgainText}>다시 촬영하기</AppText>
                     </Pressable>
 
                     <Pressable style={styles.captureNextButton} onPress={handleConfirmClip} disabled={savingClip}>
-                        <AppText style={styles.captureNextText}>{savingClip ? "저장 중..." : captureResult.isFinalMission ? "저장 후 편집하기" : "완료하기"}</AppText>
+                        <AppText style={styles.captureNextText}>다음으로</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -1257,7 +1389,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return (
             <View style={styles.freeCaptureCard}>
                 <View style={styles.weekHeader}>
-                    <CheckCircleIcon active={onboardingComplete()} />
+                    <CheckCircleIcon active={freeClips.length > 0} />
 
                     <View style={styles.weekTitleWrap}>
                         <AppText style={styles.weekTitle}>자율 촬영</AppText>
@@ -1269,27 +1401,50 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 <View style={styles.weekBody}>
                     <AppText style={styles.weekDesc}>나의 인턴십 과정을 자유롭게 촬영해보세요. 하루에 2번만 가능해요.</AppText>
 
+                    {freeClips.map((clip) => renderFreeClip(clip))}
+
                     <View style={styles.missionCard}>
                         <View style={styles.missionTopRow}>
-                            <View style={[styles.missionThumb, freeThumbnailUri ? styles.missionThumbDone : null]}>
-                                {freeThumbnailUri ? (
-                                    <Image source={{ uri: freeThumbnailUri }} style={styles.missionThumbImage} resizeMode="cover" />
-                                ) : (
-                                    <VideoIcon />
-                                )}
+                            <View style={styles.missionThumb}>
+                                <VideoIcon />
                             </View>
 
                             <View style={styles.missionTitleWrap}>
-                                <AppText style={styles.missionTitle}>{freeCaptureItem.title}</AppText>
-                                <AppText style={styles.missionDuration}>{freeCaptureItem.durationText}</AppText>
+                                <AppText style={styles.missionTitle}>나의 일상을 자유롭게 기록해볼까요?</AppText>
+                                <AppText style={styles.missionDuration}>6초</AppText>
                             </View>
                         </View>
 
-                        <Pressable style={styles.missionRecordButtonActive} onPress={handlePressFreeCapture}>
-                            <AppText style={styles.missionRecordTextActive}>촬영하기</AppText>
+                        <Pressable style={styles.missionRecordButton} onPress={handlePressFreeCapture}>
+                            <AppText style={styles.missionRecordText}>촬영하기</AppText>
                         </Pressable>
                     </View>
                 </View>
+            </View>
+        );
+    }
+
+    function renderFreeClip(clip: FreeCaptureItem): React.ReactElement {
+        return (
+            <View key={clip.id} style={styles.missionCard}>
+                <View style={styles.missionTopRow}>
+                    <View style={[styles.missionThumb, styles.missionThumbDone]}>
+                        {clip.thumbnailUrl ? (
+                            <Image source={{ uri: clip.thumbnailUrl }} style={styles.missionThumbImage} resizeMode="cover" />
+                        ) : (
+                            <VideoIcon />
+                        )}
+                    </View>
+
+                    <View style={styles.missionTitleWrap}>
+                        <AppText style={styles.missionTitle}>{clip.title}</AppText>
+                        <AppText style={styles.missionDuration}>{clip.durationText}</AppText>
+                    </View>
+                </View>
+
+                <Pressable style={styles.missionRecordButtonActive} onPress={handlePressFreeCapture}>
+                    <AppText style={styles.missionRecordTextActive}>추가 촬영하기</AppText>
+                </Pressable>
             </View>
         );
     }
@@ -1367,6 +1522,12 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     }
 
     const resolvedHeroThumbnailUrl = heroThumbnailOverrideUri ?? heroThumbnailUrl;
+    const safeHeroCurrentTime = heroDuration > 0 ? Math.min(heroCurrentTime, heroDuration) : heroCurrentTime;
+    const heroProgressPercent = heroDuration > 0 ? Math.min(100, Math.max(0, (safeHeroCurrentTime / heroDuration) * 100)) : 0;
+    const heroCurrentTimeText = heroVideoUrl ? formatPlayerTime(Math.floor(safeHeroCurrentTime)) : "00:00";
+    const heroDurationText = heroVideoUrl && heroDuration > 0 ? formatPlayerTime(Math.ceil(heroDuration)) : "00:00";
+    const shouldShowHeroCenterButton = heroVideoLoading || !heroVideoUrl || heroPaused || heroEnded || heroControlsVisible;
+
     return (
         <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
             <Header onBackClick={() => navigation.goBack()} onMenuClick={() => setMenuModalOpen(true)} />
@@ -1384,13 +1545,95 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
 
                 <View style={styles.heroCard}>
-                    {resolvedHeroThumbnailUrl ? (
-                        <Image source={{ uri: resolvedHeroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
+                    <Pressable
+                        style={styles.heroPlayerArea}
+                        onPress={(event) => {
+                            handlePressHeroBackground(event);
+                        }}
+                        disabled={heroVideoLoading || !heroLastClipId}
+                    >
+                        {heroVideoUrl ? (
+                            <Video
+                                ref={heroVideoRef}
+                                source={{ uri: heroVideoUrl }}
+                                style={styles.heroVideo}
+                                resizeMode="cover"
+                                maxBitRate={0}
+                                paused={heroPaused}
+                                repeat={false}
+                                controls={false}
+                                onLoad={(data) => {
+                                    setHeroDuration(data.duration ?? 0);
+                                }}
+                                onProgress={(data) => {
+                                    setHeroCurrentTime(data.currentTime ?? 0);
+                                }}
+                                onEnd={() => {
+                                    setHeroPaused(true);
+                                    setHeroEnded(true);
+                                    setHeroCurrentTime(heroDuration);
+                                    showHeroControls(false);
+                                }}
+                                onError={(error) => {
+                                    console.error("[RECORD_VLOG] hero video error:", error);
+                                    Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                                    resetHeroPlayer();
+                                }}
+                            />
+                        ) : resolvedHeroThumbnailUrl ? (
+                            <Image source={{ uri: resolvedHeroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
+                        ) : (
+                            <AppText style={styles.heroEmptyText}>아직 촬영한 영상이 없어요</AppText>
+                        )}
+
+                        {heroVideoLoading ? (
+                            <View style={styles.heroLoadingOverlay}>
+                                <ActivityIndicator />
+                            </View>
+                        ) : null}
+                    </Pressable>
+
+                    {heroLastClipId && shouldShowHeroCenterButton ? (
+                        <AnimatedPressable
+                            style={[styles.playCircle, { opacity: heroControlsOpacity }]}
+                            onPress={(event) => {
+                                handlePressHeroPlay(event).catch(console.error);
+                            }}
+                            disabled={heroVideoLoading}
+                        >
+                            {heroVideoLoading ? (
+                                <ActivityIndicator />
+                            ) : heroPaused || !heroVideoUrl || heroEnded ? (
+                                <View style={styles.playTriangle} />
+                            ) : (
+                                <View style={styles.pauseIcon}>
+                                    <View style={styles.pauseBar} />
+                                    <View style={styles.pauseBar} />
+                                </View>
+                            )}
+                        </AnimatedPressable>
                     ) : null}
 
-                    <Pressable style={styles.heroPlayButton} onPress={handlePressHeroRecord}>
-                        <View style={styles.heroPlayTriangle} />
-                    </Pressable>
+                    {heroLastClipId ? (
+                        <Animated.View style={[styles.videoControlBar, { opacity: heroControlsOpacity }]}>
+                            <Pressable
+                                style={styles.videoProgressHitArea}
+                                onPress={handlePressHeroProgress}
+                                onLayout={(event) => {
+                                    setHeroProgressWidth(event.nativeEvent.layout.width);
+                                }}
+                            >
+                                <View style={styles.videoProgressTrack}>
+                                    <View style={[styles.videoProgressFill, { width: `${heroProgressPercent}%` }]} />
+                                </View>
+                            </Pressable>
+
+                            <View style={styles.timeRow}>
+                                <AppText style={styles.timeText}>{heroCurrentTimeText}</AppText>
+                                <AppText style={styles.timeText}>{heroDurationText}</AppText>
+                            </View>
+                        </Animated.View>
+                    ) : null}
                 </View>
 
                 <AppText style={styles.sectionTitle}>인턴십 일정</AppText>
@@ -1409,11 +1652,11 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
             </ScrollView>
 
-            <View style={styles.bottomBar}>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
                 <Pressable style={styles.editButton} onPress={handlePressEdit}>
                     <AppText style={styles.editButtonText}>편집하기</AppText>
                 </Pressable>
-            </View>
+            </LinearGradient>
 
             {renderCaptureResultLayer()}
             {renderCameraModal()}
