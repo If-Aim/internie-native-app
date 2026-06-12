@@ -135,6 +135,8 @@ function Header({
     );
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function VlogHomeScreen({ navigation }: Props): React.ReactElement {
     const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -164,8 +166,6 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     const [inlineControlsVisible, setInlineControlsVisible] = React.useState(true);
     const [inlineProgressWidth, setInlineProgressWidth] = React.useState(0);
     const inlineControlsOpacity = React.useRef(new Animated.Value(1)).current;
-
-    const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     React.useEffect(() => {
         void checkAuth();
@@ -486,28 +486,31 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             return;
         }
 
-        if (!inlineControlsVisible) {
-            showInlineControls(!inlinePaused && !inlineEnded);
+        if (inlineControlsVisible) {
+            hideInlineControls();
             return;
         }
 
-        hideInlineControls();
+        showInlineControls(!inlinePaused && !inlineEnded);
     }
 
-    function handlePressInlineProgress(event: GestureResponderEvent): void {
-        event.stopPropagation();
-
+    function seekInlineProgress(locationX: number): void {
         if (inlineDuration <= 0 || inlineProgressWidth <= 0) {
             return;
         }
 
-        const locationX = Math.max(0, Math.min(event.nativeEvent.locationX, inlineProgressWidth));
-        const nextTime = (locationX / inlineProgressWidth) * inlineDuration;
+        const safeLocationX = Math.max(0, Math.min(locationX, inlineProgressWidth));
+        const nextTime = (safeLocationX / inlineProgressWidth) * inlineDuration;
 
         videoRef.current?.seek(nextTime);
         setInlineCurrentTime(nextTime);
         setInlineEnded(false);
-        showInlineControls(!inlinePaused);
+    }
+
+    function handleInlineProgressTouch(event: GestureResponderEvent): void {
+        event.stopPropagation();
+        seekInlineProgress(event.nativeEvent.locationX);
+        showInlineControls(!inlinePaused && !inlineEnded);
     }
 
     function handlePressAdd(): void {
@@ -561,50 +564,56 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
         return (
             <View style={styles.thumbnail}>
-                <Pressable style={styles.thumbnailPressArea} onPress={(event) => handlePressThumbnail(event, item)} disabled={isInlineLoading}>
-                    {isInlinePlaying ? (
-                        <Video
-                            ref={videoRef}
-                            source={{ uri: inlineVideoUrl }}
-                            style={styles.thumbnailVideo}
-                            resizeMode="cover"
-                            paused={inlinePaused}
-                            repeat={false}
-                            controls={false}
-                            onLoad={(data) => {
-                                setInlineDuration(data.duration ?? 0);
-                            }}
-                            onProgress={(data) => {
-                                setInlineCurrentTime(data.currentTime ?? 0);
-                            }}
-                            onEnd={() => {
-                                setInlinePaused(true);
-                                setInlineEnded(true);
-                                setInlineCurrentTime(inlineDuration);
-                                showInlineControls(false);
-                            }}
-                            onError={(error) => {
-                                console.error("[VLOG_HOME] inline video error:", error);
-                                Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
-                                setInlinePlayingClipId(null);
-                                setInlineVideoUrl(null);
-                                setInlinePaused(true);
-                                setInlineEnded(false);
-                                setInlineCurrentTime(0);
-                                setInlineDuration(0);
-                                showInlineControls(false);
-                            }}
-                        />
-                    ) : (
-                        <Image source={{ uri: item.thumbnailUrl as string }} style={styles.thumbnailImage} resizeMode="cover" />
-                    )}
+                {isInlinePlaying ? (
+                    <Video
+                        ref={videoRef}
+                        source={{ uri: inlineVideoUrl }}
+                        style={styles.thumbnailVideo}
+                        resizeMode="cover"
+                        paused={inlinePaused}
+                        repeat={false}
+                        controls={false}
+                        onLoad={(data) => {
+                            setInlineDuration(data.duration ?? 0);
+                        }}
+                        onProgress={(data) => {
+                            setInlineCurrentTime(data.currentTime ?? 0);
+                        }}
+                        onEnd={() => {
+                            setInlinePaused(true);
+                            setInlineEnded(true);
+                            setInlineCurrentTime(inlineDuration);
+                            showInlineControls(false);
+                        }}
+                        onError={(error) => {
+                            console.error("[VLOG_HOME] inline video error:", error);
+                            Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                            setInlinePlayingClipId(null);
+                            setInlineVideoUrl(null);
+                            setInlinePaused(true);
+                            setInlineEnded(false);
+                            setInlineCurrentTime(0);
+                            setInlineDuration(0);
+                            showInlineControls(false);
+                        }}
+                    />
+                ) : (
+                    <Image source={{ uri: item.thumbnailUrl as string }} style={styles.thumbnailImage} resizeMode="cover" />
+                )}
 
-                    {isInlineLoading ? (
-                        <View style={styles.thumbnailLoadingOverlay}>
-                            <ActivityIndicator />
-                        </View>
-                    ) : null}
-                </Pressable>
+                <Pressable
+                    style={styles.thumbnailTouchLayer}
+                    onPress={(event) => {
+                        handlePressThumbnail(event, item).catch(console.error);
+                    }}
+                    disabled={isInlineLoading}
+                />
+
+                {isInlineLoading ? (
+                    <View style={styles.thumbnailLoadingOverlay}>
+                        <ActivityIndicator />
+                    </View>
+                ) : null}
 
                 {shouldShowCenterButton ? (
                     <AnimatedPressable style={[styles.playCircle, { opacity: inlineControlsOpacity }]} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
@@ -621,18 +630,24 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                     </AnimatedPressable>
                 ) : null}
 
-                <Animated.View style={[styles.videoControlBar, { opacity: inlineControlsOpacity }]}>
-                    <Pressable
+                <Animated.View pointerEvents={inlineControlsVisible ? "auto" : "none"} style={[styles.videoControlBar, { opacity: inlineControlsOpacity }]}>
+                    <View
                         style={styles.videoProgressHitArea}
-                        onPress={handlePressInlineProgress}
                         onLayout={(event) => {
                             setInlineProgressWidth(event.nativeEvent.layout.width);
+                        }}
+                        onStartShouldSetResponder={() => true}
+                        onMoveShouldSetResponder={() => true}
+                        onResponderGrant={handleInlineProgressTouch}
+                        onResponderMove={handleInlineProgressTouch}
+                        onResponderRelease={() => {
+                            showInlineControls(!inlinePaused && !inlineEnded);
                         }}
                     >
                         <View style={styles.videoProgressTrack}>
                             <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
                         </View>
-                    </Pressable>
+                    </View>
 
                     <View style={styles.timeRow}>
                         <AppText style={styles.timeText}>{currentTimeText}</AppText>
@@ -659,8 +674,8 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                             <AppText style={styles.completedText}>완료</AppText>
                         </View>
                     ) : item.progressPercent !== null ? (
-                        <View style={styles.progressBadge}>
-                            <AppText style={styles.progressText}>{item.progressPercent}%</AppText>
+                        <View style={[styles.progressBadge, item.progressPercent === 100 && styles.progressBadgeFull]}>
+                            <AppText style={[styles.progressText, item.progressPercent === 100 && styles.progressTextFull]}>{item.progressPercent}%</AppText>
                         </View>
                     ) : null}
 
@@ -691,7 +706,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                     ) : (
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
-                            <AppText style={styles.emptyTitle}>아직 브이로그가 없어요{"\n"}지금 바로 만들어 볼까요?</AppText>
+                            <AppText style={styles.emptyTitle}>아직 브이로그가 없어요{"\n"}바로 촬영해볼까요?</AppText>
                         </View>
                     )
                 }

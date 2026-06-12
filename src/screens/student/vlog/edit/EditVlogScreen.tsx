@@ -23,30 +23,32 @@ type Props = NativeStackScreenProps<StudentStackParamList, "EditVlog">;
 
 function BackIcon(): React.ReactElement {
     return (
-        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 18L9 12L15 6" stroke="#05070A" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M14 17L9 12L14 7" stroke="#000000" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
 
 function PlayIcon(): React.ReactElement {
     return (
-        <Svg width={76} height={76} viewBox="0 0 76 76" fill="none">
-            <Circle cx={38} cy={38} r={38} fill="#BFD8FF" />
-            <Path d="M31 25.5V50.5L51 38L31 25.5Z" fill="#FFFFFF" />
-        </Svg>
+        <View style={styles.playIconShadow}>
+            <Svg width={72} height={72} viewBox="0 0 72 72" fill="none">
+                <Circle cx={36} cy={36} r={32} fill="#BDD8FF" />
+                <Path d="M31 25.5V46.5L48 36L31 25.5Z" fill="#FFFFFF" />
+            </Svg>
+        </View>
     );
 }
 
 function DragHandleIcon(): React.ReactElement {
     return (
-        <Svg width={28} height={36} viewBox="0 0 28 36" fill="none">
-            <Circle cx={8} cy={8} r={2.2} fill="#D8D8D8" />
-            <Circle cx={18} cy={8} r={2.2} fill="#D8D8D8" />
-            <Circle cx={8} cy={18} r={2.2} fill="#D8D8D8" />
-            <Circle cx={18} cy={18} r={2.2} fill="#D8D8D8" />
-            <Circle cx={8} cy={28} r={2.2} fill="#D8D8D8" />
-            <Circle cx={18} cy={28} r={2.2} fill="#D8D8D8" />
+        <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+            <Circle cx={5.25} cy={3} r={1.3} fill="#D9D9D9" />
+            <Circle cx={9.75} cy={3} r={1.3} fill="#D9D9D9" />
+            <Circle cx={5.25} cy={7.5} r={1.3} fill="#D9D9D9" />
+            <Circle cx={9.75} cy={7.5} r={1.3} fill="#D9D9D9" />
+            <Circle cx={5.25} cy={12} r={1.3} fill="#D9D9D9" />
+            <Circle cx={9.75} cy={12} r={1.3} fill="#D9D9D9" />
         </Svg>
     );
 }
@@ -257,6 +259,22 @@ async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Prom
     await CameraRoll.save(`file://${localPath}`, {
         type: "video",
     });
+}
+
+function Header({
+    onBackClick,
+}: {
+    onBackClick: () => void;
+}): React.ReactElement {
+
+    return (
+        <View style={styles.topbarRow}>
+            <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel="뒤로가기">
+                <BackIcon />
+            </Pressable>
+            <View style={commonStyles.iconbtn} />
+        </View>
+    );
 }
 
 export default function EditVlogScreen({ navigation, route }: Props): React.ReactElement {
@@ -659,6 +677,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
     return (
         <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
+            <Header onBackClick={() => navigation.goBack()} />
             <DraggableFlatList
                 data={clips.filter((clip) => clip.includedInFinal !== false)}
                 keyExtractor={(item, index) => String(item.clipId ?? `clip-${index}`)}
@@ -675,10 +694,6 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
                     return (
                         <>
-                            <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="뒤로가기">
-                                <BackIcon />
-                            </Pressable>
-
                             <View style={styles.titleWrap}>
                                 <AppText style={styles.subText}>{subText}</AppText>
                                 <AppText style={styles.title}>{title}</AppText>

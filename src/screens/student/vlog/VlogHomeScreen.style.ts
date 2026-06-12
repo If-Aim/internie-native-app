@@ -9,11 +9,11 @@ export const styles = StyleSheet.create({
     
     card: { marginBottom: 38 },
     thumbnail: { width: "100%", height: 240, borderRadius: 20, overflow: "hidden", backgroundColor: "rgba(189, 216, 255, 0.50)" },
-    thumbnailPressArea: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
     thumbnailImage: { width: "100%", height: "100%" },
     thumbnailVideo: { width: "100%", height: "100%" },
-    thumbnailLoadingOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0, 0, 0, 0.25)" },
+    thumbnailLoadingOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 6, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0, 0, 0, 0.25)" },
 
+    thumbnailTouchLayer: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 2 },
     thumbnailEmpty: { alignItems: "center", justifyContent: "center", backgroundColor: "#BDD8FF80" },
     thumbnailEmptyText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 22 },
 
@@ -34,14 +34,16 @@ export const styles = StyleSheet.create({
     cardDate: { marginTop: 8, fontSize: 16, fontWeight: "700", color: "#808080", lineHeight: 20 },
     
     progressBadge: { minWidth: 64, height: 36, marginLeft: 12, paddingHorizontal: 8, borderRadius: 18, backgroundColor: "#BDD8FF", alignItems: "center", justifyContent: "center" },
-    progressText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 30 },
-    completedBadge: { minWidth: 64, height: 36, paddingHorizontal: 26, borderRadius: 31, backgroundColor: "#006BFF", alignItems: "center", justifyContent: "center", marginRight: 16 },
-    completedText: { fontSize: 28, fontWeight: "900", color: "#FFFFFF", lineHeight: 36 },
+    progressText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 20 },
+    progressBadgeFull: { backgroundColor: "#0166FF" },
+    progressTextFull: { color: "#FFFFFF" },
+    completedBadge: { minWidth: 64, height: 36, marginLeft: 12, paddingHorizontal: 26, borderRadius: 18, backgroundColor: "#006BFF", alignItems: "center", justifyContent: "center",},
+    completedText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
 
     chevronIcon: { width: 28, height: 28, marginLeft: 10, resizeMode: "contain", tintColor: "#999999" },
     emptyWrap: { flex: 1, minHeight: 234, alignItems: "center", justifyContent: "center" },
     emptyImg: { width: 160, height: 160, marginBottom: 26 },
-    emptyTitle: { fontSize: 16, fontWeight: "500", color: "#808080", textAlign: "center", lineHeight: 24 },
+    emptyTitle: { fontSize: 16, fontWeight: "500", color: "#808080", textAlign: "center", lineHeight: 24, textShadowColor: "rgba(0, 0, 0, 0.25)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 },
     addButton: { height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     addButtonText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
     bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160, paddingHorizontal: 20, paddingBottom: 50, justifyContent: "flex-end" },

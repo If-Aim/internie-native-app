@@ -340,6 +340,7 @@ function CaptureSavingDots(): React.ReactElement {
         </View>
     );
 }
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function RecordVlogScreen({ navigation, route }: Props): React.ReactElement {
     const { width, height } = useWindowDimensions();
@@ -378,6 +379,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [heroEnded, setHeroEnded] = React.useState(false);
     const [heroControlsVisible, setHeroControlsVisible] = React.useState(true);
     const [heroProgressWidth, setHeroProgressWidth] = React.useState(0);
+    const heroSeekingRef = React.useRef(false);
     const heroControlsOpacity = React.useRef(new Animated.Value(1)).current;
     const [heroCurrentTime, setHeroCurrentTime] = React.useState(0);
     const [heroDuration, setHeroDuration] = React.useState(0);
@@ -414,8 +416,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         videoUri: null,
         isEditReady: false,
     });
-
-    const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     React.useEffect(() => {
         return () => {
@@ -620,20 +620,45 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         hideHeroControls();
     }
 
-    function handlePressHeroProgress(event: GestureResponderEvent): void {
-        event.stopPropagation();
-
+    function seekHeroProgress(locationX: number): void {
         if (heroDuration <= 0 || heroProgressWidth <= 0) {
             return;
         }
 
-        const locationX = Math.max(0, Math.min(event.nativeEvent.locationX, heroProgressWidth));
-        const nextTime = (locationX / heroProgressWidth) * heroDuration;
+        const safeLocationX = Math.max(0, Math.min(locationX, heroProgressWidth));
+        const nextTime = (safeLocationX / heroProgressWidth) * heroDuration;
 
         heroVideoRef.current?.seek(nextTime);
         setHeroCurrentTime(nextTime);
         setHeroEnded(false);
-        showHeroControls(!heroPaused);
+    }
+
+    function handleHeroProgressStart(event: GestureResponderEvent): void {
+        event.stopPropagation();
+        heroSeekingRef.current = true;
+        clearHeroControlsTimer();
+        showHeroControls(false);
+        seekHeroProgress(event.nativeEvent.locationX);
+    }
+
+    function handleHeroProgressMove(event: GestureResponderEvent): void {
+        event.stopPropagation();
+
+        if (!heroSeekingRef.current) {
+            return;
+        }
+
+        seekHeroProgress(event.nativeEvent.locationX);
+    }
+
+    function handleHeroProgressEnd(): void {
+        heroSeekingRef.current = false;
+        showHeroControls(!heroPaused && !heroEnded);
+    }
+
+    function handleHeroProgressTerminate(): void {
+        heroSeekingRef.current = false;
+        showHeroControls(!heroPaused && !heroEnded);
     }
 
     async function handleDeleteProject(): Promise<void> {
@@ -1545,53 +1570,47 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
 
                 <View style={styles.heroCard}>
-                    <Pressable
-                        style={styles.heroPlayerArea}
-                        onPress={(event) => {
-                            handlePressHeroBackground(event);
-                        }}
-                        disabled={heroVideoLoading || !heroLastClipId}
-                    >
-                        {heroVideoUrl ? (
-                            <Video
-                                ref={heroVideoRef}
-                                source={{ uri: heroVideoUrl }}
-                                style={styles.heroVideo}
-                                resizeMode="cover"
-                                maxBitRate={0}
-                                paused={heroPaused}
-                                repeat={false}
-                                controls={false}
-                                onLoad={(data) => {
-                                    setHeroDuration(data.duration ?? 0);
-                                }}
-                                onProgress={(data) => {
-                                    setHeroCurrentTime(data.currentTime ?? 0);
-                                }}
-                                onEnd={() => {
-                                    setHeroPaused(true);
-                                    setHeroEnded(true);
-                                    setHeroCurrentTime(heroDuration);
-                                    showHeroControls(false);
-                                }}
-                                onError={(error) => {
-                                    console.error("[RECORD_VLOG] hero video error:", error);
-                                    Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
-                                    resetHeroPlayer();
-                                }}
-                            />
-                        ) : resolvedHeroThumbnailUrl ? (
-                            <Image source={{ uri: resolvedHeroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
-                        ) : (
-                            <AppText style={styles.heroEmptyText}>아직 촬영한 영상이 없어요</AppText>
-                        )}
+                    {heroVideoUrl ? (
+                        <Video
+                            ref={heroVideoRef}
+                            source={{ uri: heroVideoUrl }}
+                            style={styles.heroVideo}
+                            resizeMode="cover"
+                            maxBitRate={0}
+                            paused={heroPaused}
+                            repeat={false}
+                            controls={false}
+                            onLoad={(data) => {
+                                setHeroDuration(data.duration ?? 0);
+                            }}
+                            onProgress={(data) => {
+                                setHeroCurrentTime(data.currentTime ?? 0);
+                            }}
+                            onEnd={() => {
+                                setHeroPaused(true);
+                                setHeroEnded(true);
+                                setHeroCurrentTime(heroDuration);
+                                showHeroControls(false);
+                            }}
+                            onError={(error) => {
+                                console.error("[RECORD_VLOG] hero video error:", error);
+                                Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                                resetHeroPlayer();
+                            }}
+                        />
+                    ) : resolvedHeroThumbnailUrl ? (
+                        <Image source={{ uri: resolvedHeroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
+                    ) : (
+                        <AppText style={styles.heroEmptyText}>아직 촬영한 영상이 없어요</AppText>
+                    )}
 
-                        {heroVideoLoading ? (
-                            <View style={styles.heroLoadingOverlay}>
-                                <ActivityIndicator />
-                            </View>
-                        ) : null}
-                    </Pressable>
+                    {heroLastClipId ? (
+                        <Pressable
+                            style={styles.heroTouchLayer}
+                            onPress={handlePressHeroBackground}
+                            disabled={heroVideoLoading}
+                        />
+                    ) : null}
 
                     {heroLastClipId && shouldShowHeroCenterButton ? (
                         <AnimatedPressable
@@ -1615,24 +1634,36 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     ) : null}
 
                     {heroLastClipId ? (
-                        <Animated.View style={[styles.videoControlBar, { opacity: heroControlsOpacity }]}>
-                            <Pressable
+                        <Animated.View pointerEvents={heroControlsVisible ? "auto" : "none"} style={[styles.videoControlBar, { opacity: heroControlsOpacity }]}>
+                            <View
                                 style={styles.videoProgressHitArea}
-                                onPress={handlePressHeroProgress}
                                 onLayout={(event) => {
                                     setHeroProgressWidth(event.nativeEvent.layout.width);
                                 }}
+                                onStartShouldSetResponder={() => true}
+                                onMoveShouldSetResponder={() => true}
+                                onResponderTerminationRequest={() => false}
+                                onResponderGrant={handleHeroProgressStart}
+                                onResponderMove={handleHeroProgressMove}
+                                onResponderRelease={handleHeroProgressEnd}
+                                onResponderTerminate={handleHeroProgressTerminate}
                             >
                                 <View style={styles.videoProgressTrack}>
                                     <View style={[styles.videoProgressFill, { width: `${heroProgressPercent}%` }]} />
                                 </View>
-                            </Pressable>
+                            </View>
 
                             <View style={styles.timeRow}>
                                 <AppText style={styles.timeText}>{heroCurrentTimeText}</AppText>
                                 <AppText style={styles.timeText}>{heroDurationText}</AppText>
                             </View>
                         </Animated.View>
+                    ) : null}
+
+                    {heroVideoLoading ? (
+                        <View style={styles.heroLoadingOverlay}>
+                            <ActivityIndicator />
+                        </View>
                     ) : null}
                 </View>
 
