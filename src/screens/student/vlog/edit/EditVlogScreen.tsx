@@ -1,11 +1,11 @@
 import React from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, PermissionsAndroid, PixelRatio, Platform, Pressable, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, PanResponder, PermissionsAndroid, PixelRatio, Platform, Pressable, TextInput, View, useWindowDimensions } from "react-native";
+import Video, { type VideoRef } from "react-native-video";
 import LinearGradient from "react-native-linear-gradient";
 import { createThumbnail } from "react-native-create-thumbnail";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import Video from "react-native-video";
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from "react-native-draggable-flatlist";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { launchImageLibrary, type Asset } from "react-native-image-picker";
@@ -54,57 +54,59 @@ function DragHandleIcon(): React.ReactElement {
 }
 
 function ExportSavingDots(): React.ReactElement {
-    const dot1 = React.useRef(new Animated.Value(0)).current;
-    const dot2 = React.useRef(new Animated.Value(0)).current;
-    const dot3 = React.useRef(new Animated.Value(0)).current;
+    const dotAnimations = React.useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
+    const gradientAnimations = React.useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
 
     React.useEffect(() => {
-        const createBounce = (value: Animated.Value, delayMs: number) => Animated.loop(
-            Animated.sequence([
-                Animated.delay(delayMs),
-                Animated.timing(value, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-                Animated.timing(value, { toValue: 0, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-                Animated.delay(260),
-            ])
-        );
+        const cycleMs = 900;
+        const activeMs = 540;
+        const delays = [0, 120, 240];
 
-        const animation1 = createBounce(dot1, 0);
-        const animation2 = createBounce(dot2, 120);
-        const animation3 = createBounce(dot3, 240);
+        const animations = dotAnimations.map((dotValue, index) => {
+            const gradientValue = gradientAnimations[index];
+            const delayMs = delays[index];
+            const tailDelayMs = Math.max(0, cycleMs - delayMs - activeMs);
 
-        animation1.start();
-        animation2.start();
-        animation3.start();
+            return Animated.loop(
+                Animated.sequence([
+                    Animated.delay(delayMs),
+                    Animated.parallel([
+                        Animated.sequence([
+                            Animated.timing(dotValue, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+                            Animated.timing(dotValue, { toValue: 0, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+                        ]),
+                        Animated.sequence([
+                            Animated.timing(gradientValue, { toValue: 1, duration: activeMs, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+                            Animated.timing(gradientValue, { toValue: 0, duration: 1, useNativeDriver: true }),
+                        ]),
+                    ]),
+                    Animated.delay(tailDelayMs),
+                ])
+            );
+        });
+
+        animations.forEach((animation) => animation.start());
 
         return () => {
-            animation1.stop();
-            animation2.stop();
-            animation3.stop();
+            animations.forEach((animation) => animation.stop());
         };
-    }, [dot1, dot2, dot3]);
-
-    const getDotAnimatedStyle = (value: Animated.Value) => ({
-        transform: [
-            {
-                translateY: value.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, -12],
-                }),
-            },
-            {
-                scale: value.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 1.12],
-                }),
-            },
-        ],
-    });
+    }, [dotAnimations, gradientAnimations]);
 
     return (
         <View style={styles.exportDotRow} accessibilityRole="progressbar">
-            <Animated.View style={[styles.exportDot, styles.exportDotActive, getDotAnimatedStyle(dot1)]} />
-            <Animated.View style={[styles.exportDot, getDotAnimatedStyle(dot2)]} />
-            <Animated.View style={[styles.exportDot, getDotAnimatedStyle(dot3)]} />
+            {dotAnimations.map((dotValue, index) => {
+                const gradientValue = gradientAnimations[index];
+                const dotStyle = { transform: [{ translateY: dotValue.interpolate({ inputRange: [0, 1], outputRange: [0, -12] }) }, { scale: dotValue.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] };
+                const gradientStyle = { transform: [{ translateX: gradientValue.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }] };
+
+                return (
+                    <Animated.View key={`export-dot-${index}`} style={[styles.exportDot, dotStyle]}>
+                        <Animated.View style={[styles.exportDotGradient, gradientStyle]}>
+                            <LinearGradient colors={["#BDD8FF", "#0166FF", "#BDD8FF"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.exportDotGradientFill} />
+                        </Animated.View>
+                    </Animated.View>
+                );
+            })}
         </View>
     );
 }
@@ -115,6 +117,10 @@ function formatDuration(seconds?: number | null): string {
     const remainSeconds = safeSeconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(remainSeconds).padStart(2, "0")}`;
+}
+
+function getActualClipDurationText(clip: VlogClipResponse): string {
+    return formatDuration(Math.floor(Math.max(0, clip.durationSeconds ?? 0)));
 }
 
 function getRecordWeeksText(subText: string): string {
@@ -286,6 +292,10 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     const [loading, setLoading] = React.useState(false);
     const [exporting, setExporting] = React.useState(false);
 
+    const previewVideoRef = React.useRef<VideoRef>(null);
+    const pendingSeekSecondsRef = React.useRef<number | null>(null);
+    const progressOpacity = React.useRef(new Animated.Value(1)).current;
+    const [previewProgressWidth, setPreviewProgressWidth] = React.useState(0);
     const [previewClipIndex, setPreviewClipIndex] = React.useState(0);
     const [previewVideoUrl, setPreviewVideoUrl] = React.useState<string | null>(null);
     const [previewPlaying, setPreviewPlaying] = React.useState(false);
@@ -298,8 +308,23 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     const [exportStep, setExportStep] = React.useState<"IDLE" | "LOADING" | "DONE">("IDLE");
     
     React.useEffect(() => {
+        Animated.timing(progressOpacity, { toValue: previewPlaying ? 0 : 1, duration: previewPlaying ? 700 : 180, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    }, [previewPlaying, progressOpacity]);
+
+    React.useEffect(() => {
         void loadEditing();
     }, [projectId]);
+
+    function handlePressBack(): void {
+        Alert.alert(
+            "편집을 종료할까요?",
+            "영상 순서 변경, 클립 추가 등 편집 진행상태가 저장되지 않을 수 있습니다. 이전 화면으로 이동하시겠습니까?",
+            [
+                { text: "계속 편집하기", style: "cancel" },
+                { text: "이전으로", style: "destructive", onPress: () => navigation.goBack() },
+            ]
+        );
+    }
 
     async function loadEditing(): Promise<void> {
         try {
@@ -318,8 +343,49 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         }
     }
 
+    function getVisibleClips(): VlogClipResponse[] {
+        return clips.filter((clip) => clip.includedInFinal !== false);
+    }
+
+    function getPreviewElapsedSeconds(visibleClips: VlogClipResponse[]): number {
+        const previousSeconds = visibleClips.slice(0, previewClipIndex).reduce((sum, clip) => sum + Math.max(0, clip.durationSeconds ?? 0), 0);
+        return previousSeconds + Math.max(0, previewCurrentSeconds);
+    }
+
+    async function loadPreviewClipAt(index: number, seekSeconds: number, shouldPlay: boolean): Promise<void> {
+        const visibleClips = getVisibleClips();
+        const clip = visibleClips[index];
+
+        if (!clip?.clipId) {
+            return;
+        }
+
+        const safeSeekSeconds = Math.max(0, seekSeconds);
+
+        setPreviewClipIndex(index);
+        setPreviewCurrentSeconds(safeSeekSeconds);
+        setPreviewDurationSeconds(clip.durationSeconds ?? 0);
+
+        if (previewClipIndex === index && previewVideoUrl) {
+            previewVideoRef.current?.seek(safeSeekSeconds);
+            setPreviewPlaying(shouldPlay);
+            return;
+        }
+
+        pendingSeekSecondsRef.current = safeSeekSeconds;
+
+        const response = await getVlogClipPlayUrl(projectId, clip.clipId);
+
+        if (!response.url) {
+            throw new Error("영상 재생 URL을 불러오지 못했습니다.");
+        }
+
+        setPreviewVideoUrl(response.url);
+        setPreviewPlaying(shouldPlay);
+    }
+
     async function handlePressPreview(): Promise<void> {
-        const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+        const visibleClips = getVisibleClips();
         const clip = visibleClips[previewClipIndex];
 
         if (!clip?.clipId) {
@@ -327,22 +393,13 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             return;
         }
 
-        if (previewPlaying) {
-            setPreviewPlaying(false);
+        if (previewVideoUrl) {
+            setPreviewPlaying((prev) => !prev);
             return;
         }
 
         try {
-            const response = await getVlogClipPlayUrl(projectId, clip.clipId);
-
-            if (!response.url) {
-                Alert.alert("재생 실패", "영상 재생 URL을 불러오지 못했습니다.");
-                return;
-            }
-
-            setPreviewVideoUrl(response.url);
-            setPreviewDurationSeconds(clip.durationSeconds ?? 0);
-            setPreviewPlaying(true);
+            await loadPreviewClipAt(previewClipIndex, previewCurrentSeconds, true);
         } catch (error) {
             console.error("[EDIT_VLOG] play url error:", error);
             Alert.alert("재생 실패", "영상 재생 URL을 불러오지 못했습니다.");
@@ -350,19 +407,172 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     }
 
     function handlePreviewEnd(): void {
-        const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+        const visibleClips = getVisibleClips();
         const nextIndex = previewClipIndex + 1;
 
         if (nextIndex >= visibleClips.length) {
             setPreviewPlaying(false);
             setPreviewCurrentSeconds(0);
+            previewVideoRef.current?.seek(0);
             return;
         }
 
-        setPreviewClipIndex(nextIndex);
-        setPreviewVideoUrl(null);
-        setPreviewCurrentSeconds(0);
-        setPreviewPlaying(false);
+        loadPreviewClipAt(nextIndex, 0, true).catch((error) => {
+            console.error("[EDIT_VLOG] next clip play error:", error);
+            setPreviewPlaying(false);
+        });
+    }
+
+    function getPreviewSeekTarget(locationX: number): { clipIndex: number; clipSeconds: number } | null {
+        const visibleClips = getVisibleClips();
+        const totalDuration = visibleClips.reduce((sum, clip) => sum + Math.max(0, clip.durationSeconds ?? 0), 0);
+
+        if (previewProgressWidth <= 0 || totalDuration <= 0 || visibleClips.length === 0) {
+            return null;
+        }
+
+        const ratio = Math.min(1, Math.max(0, locationX / previewProgressWidth));
+        const targetSeconds = totalDuration * ratio;
+        let accumulatedSeconds = 0;
+
+        for (let index = 0; index < visibleClips.length; index += 1) {
+            const clipDuration = Math.max(0, visibleClips[index].durationSeconds ?? 0);
+            const isLast = index === visibleClips.length - 1;
+
+            if (targetSeconds <= accumulatedSeconds + clipDuration || isLast) {
+                return { clipIndex: index, clipSeconds: Math.min(clipDuration, Math.max(0, targetSeconds - accumulatedSeconds)) };
+            }
+
+            accumulatedSeconds += clipDuration;
+        }
+
+        return null;
+    }
+
+    function previewSeekByLocationX(locationX: number): void {
+        const target = getPreviewSeekTarget(locationX);
+        const visibleClips = getVisibleClips();
+
+        if (!target) {
+            return;
+        }
+
+        setPreviewClipIndex(target.clipIndex);
+        setPreviewCurrentSeconds(target.clipSeconds);
+        setPreviewDurationSeconds(visibleClips[target.clipIndex]?.durationSeconds ?? 0);
+    }
+
+    function commitPreviewSeekByLocationX(locationX: number): void {
+        const target = getPreviewSeekTarget(locationX);
+
+        if (!target) {
+            return;
+        }
+
+        loadPreviewClipAt(target.clipIndex, target.clipSeconds, previewPlaying).catch((error) => {
+            console.error("[EDIT_VLOG] seek preview error:", error);
+            Alert.alert("이동 실패", "해당 구간으로 이동하지 못했습니다.");
+        });
+    }
+
+    const previewProgressPanResponder = React.useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => previewSeekByLocationX(event.nativeEvent.locationX),
+        onPanResponderMove: (event) => previewSeekByLocationX(event.nativeEvent.locationX),
+        onPanResponderRelease: (event) => commitPreviewSeekByLocationX(event.nativeEvent.locationX),
+        onPanResponderTerminate: (event) => commitPreviewSeekByLocationX(event.nativeEvent.locationX),
+    }), [clips, previewProgressWidth, previewPlaying, previewClipIndex, previewVideoUrl]);
+
+    function renderPreviewProgressBars(visibleClips: VlogClipResponse[]): React.ReactElement {
+        return (
+            <Animated.View
+                {...previewProgressPanResponder.panHandlers}
+                pointerEvents={previewPlaying ? "none" : "auto"}
+                style={[styles.previewProgressRow, { opacity: progressOpacity }]}
+                onLayout={(event) => setPreviewProgressWidth(event.nativeEvent.layout.width)}
+            >
+                {visibleClips.slice(0, 6).map((clip, index) => {
+                    const isActive = index === previewClipIndex;
+                    const clipDuration = Math.max(0, isActive ? (previewDurationSeconds || clip.durationSeconds || 0) : (clip.durationSeconds || 0));
+                    const progress = isActive && clipDuration > 0 ? Math.min(1, previewCurrentSeconds / clipDuration) : index < previewClipIndex ? 1 : 0;
+
+                    return (
+                        <View key={`${clip.clipId}-${index}`} style={styles.previewProgressTrack}>
+                            <View style={[styles.previewProgressFill, { width: `${progress * 100}%` }]} />
+                        </View>
+                    );
+                })}
+            </Animated.View>
+        );
+    }
+
+    function renderPreviewHeader(): React.ReactElement {
+        const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
+        const currentClip = visibleClips[previewClipIndex];
+        const totalDurationText = formatDuration(visibleClips.reduce((sum, clip) => sum + (clip.durationSeconds ?? 0), 0));
+        const currentTotalSeconds = getPreviewElapsedSeconds(visibleClips);
+
+        return (
+            <>
+                <View style={styles.titleWrap}>
+                    <AppText style={styles.subText}>{subText}</AppText>
+                    <AppText style={styles.title}>{title}</AppText>
+                </View>
+
+                <View style={styles.previewCard}>
+                    {!previewVideoUrl && currentClip?.thumbnailUrl ? (
+                        <Image source={{ uri: currentClip.thumbnailUrl }} style={styles.previewThumbnailImage} resizeMode="cover" />
+                    ) : null}
+
+                    {previewVideoUrl ? (
+                        <Video
+                            ref={previewVideoRef}
+                            source={{ uri: previewVideoUrl }}
+                            style={styles.previewVideo}
+                            paused={!previewPlaying}
+                            resizeMode="cover"
+                            maxBitRate={0}
+                            muted={false}
+                            repeat={false}
+                            progressUpdateInterval={250}
+                            onProgress={(data) => setPreviewCurrentSeconds(data.currentTime)}
+                            onLoad={(data) => {
+                                setPreviewDurationSeconds(data.duration);
+
+                                if (pendingSeekSecondsRef.current != null) {
+                                    previewVideoRef.current?.seek(pendingSeekSecondsRef.current);
+                                    pendingSeekSecondsRef.current = null;
+                                }
+                            }}
+                            onEnd={handlePreviewEnd}
+                        />
+                    ) : null}
+
+                    <Pressable style={styles.previewPressLayer} onPress={handlePressPreview} />
+
+                    {renderPreviewProgressBars(visibleClips)}
+
+                    {previewPlaying ? (
+                        <View style={styles.previewCenter} pointerEvents="none">
+                            <AppText style={styles.previewWeek}>{currentClip ? getWeekText(currentClip) : "브이로그"}</AppText>
+                            <AppText style={styles.previewTitle}>{currentClip ? getClipTitle(currentClip) : "클립 없음"}</AppText>
+                        </View>
+                    ) : (
+                        <View style={styles.previewPlayOnlyCenter} pointerEvents="none">
+                            <PlayIcon />
+                        </View>
+                    )}
+
+                    {!previewPlaying ? (
+                        <View style={styles.previewTimeRow} pointerEvents="none">
+                            <AppText style={styles.previewTime}>{formatDuration(Math.floor(currentTotalSeconds))}</AppText>
+                            <AppText style={styles.previewTime}>{totalDurationText}</AppText>
+                        </View>
+                    ) : null}
+                </View>
+            </>
+        );
     }
 
     async function handleExcludeClip(clip: VlogClipResponse): Promise<void> {
@@ -561,23 +771,6 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         }
     }
 
-    function renderPreviewProgressBars(visibleClips: VlogClipResponse[]): React.ReactElement {
-        return (
-            <View style={styles.previewProgressRow}>
-                {visibleClips.slice(0, 6).map((clip, index) => {
-                    const isActive = index === previewClipIndex;
-                    const progress = isActive && previewDurationSeconds > 0 ? Math.min(1, previewCurrentSeconds / previewDurationSeconds) : index < previewClipIndex ? 1 : 0;
-
-                    return (
-                        <View key={`${clip.clipId}-${index}`} style={styles.previewProgressTrack}>
-                            <View style={[styles.previewProgressFill, { width: `${progress * 100}%` }]} />
-                        </View>
-                    );
-                })}
-            </View>
-        );
-    }
-
     function renderClipItem({ item, drag, isActive }: RenderItemParams<VlogClipResponse>): React.ReactElement {
         return (
             <ScaleDecorator>
@@ -614,7 +807,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                             <AppText style={styles.clipWeek}>{getWeekText(item)}</AppText>
                         </View>
 
-                        <AppText style={styles.clipDuration}>{Math.max(0, item.durationSeconds ?? 0)}초</AppText>
+                        <AppText style={styles.clipDuration}>{getActualClipDurationText(item)}</AppText>
 
                         <Pressable style={styles.dragHandle} onLongPress={drag} delayLongPress={120}>
                             <DragHandleIcon />
@@ -687,49 +880,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 }}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.content}
-                ListHeaderComponent={() => {
-                    const visibleClips = clips.filter((clip) => clip.includedInFinal !== false);
-                    const currentClip = visibleClips[previewClipIndex];
-                    const totalDurationText = formatDuration(visibleClips.reduce((sum, clip) => sum + (clip.durationSeconds ?? 0), 0));
-
-                    return (
-                        <>
-                            <View style={styles.titleWrap}>
-                                <AppText style={styles.subText}>{subText}</AppText>
-                                <AppText style={styles.title}>{title}</AppText>
-                            </View>
-
-                            <Pressable style={styles.previewCard} onPress={handlePressPreview}>
-                                {previewVideoUrl ? (
-                                    <Video
-                                        source={{ uri: previewVideoUrl }}
-                                        style={styles.previewVideo}
-                                        paused={!previewPlaying}
-                                        resizeMode="cover"
-                                        maxBitRate={0}
-                                        muted={false}
-                                        onProgress={(data) => setPreviewCurrentSeconds(data.currentTime)}
-                                        onLoad={(data) => setPreviewDurationSeconds(data.duration)}
-                                        onEnd={handlePreviewEnd}
-                                    />
-                                ) : null}
-
-                                {!previewPlaying ? renderPreviewProgressBars(visibleClips) : null}
-
-                                <View style={styles.previewCenter}>
-                                    <PlayIcon />
-                                    <AppText style={styles.previewWeek}>{currentClip ? getWeekText(currentClip) : "브이로그"}</AppText>
-                                    <AppText style={styles.previewTitle}>{currentClip ? getClipTitle(currentClip) : "클립 없음"}</AppText>
-                                </View>
-
-                                <View style={styles.previewTimeRow}>
-                                    <AppText style={styles.previewTime}>{formatDuration(Math.floor(previewCurrentSeconds))}</AppText>
-                                    <AppText style={styles.previewTime}>{totalDurationText}</AppText>
-                                </View>
-                            </Pressable>
-                        </>
-                    );
-                }}
+                ListHeaderComponent={renderPreviewHeader()}
                 ListEmptyComponent={() => (
                     <View style={styles.loadingWrap}>
                         {loading ? <ActivityIndicator /> : <AppText style={styles.emptyText}>편집할 클립이 없습니다.</AppText>}

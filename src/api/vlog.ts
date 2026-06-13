@@ -273,31 +273,34 @@ export async function getOperatorFinalVideos(companyCode: string): Promise<VlogR
     return api<VlogResponse>(`/vlogs/operator/final-videos?companyCode=${encodeURIComponent(companyCode)}`, { method: "GET" });
 }
 
-export async function waitVlogFinalVideoDone(projectId: number | string, finalVideoId: number | string, options?: { intervalMs?: number; maxTryCount?: number }): Promise<VlogUrlResponse> {
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function waitVlogFinalVideoDone(
+    projectId: number | string,
+    finalVideoId: number | string,
+    options?: {
+        intervalMs?: number;
+        maxTryCount?: number;
+    }
+): Promise<VlogUrlResponse> {
     const intervalMs = options?.intervalMs ?? 3000;
     const maxTryCount = options?.maxTryCount ?? 60;
 
-    for (let i = 0; i < maxTryCount; i += 1) {
-        const detail = await getVlogProjectDetail(projectId);
+    for (let tryCount = 0; tryCount < maxTryCount; tryCount += 1) {
+        const project = await getVlogProjectDetail(projectId);
 
-        if (detail.finalVideoStatus === "FAILED") {
+        if (project.finalVideoStatus === "DONE") {
+            return getVlogFinalVideoDownloadUrl(projectId, finalVideoId);
+        }
+
+        if (project.finalVideoStatus === "FAILED") {
             throw new Error("최종 영상 생성에 실패했습니다.");
         }
 
-        try {
-            return await getVlogFinalVideoDownloadUrl(projectId, finalVideoId);
-        } catch (error) {
-            if (i === maxTryCount - 1) {
-                throw error;
-            }
-
-            await delay(intervalMs);
-        }
+        await delay(intervalMs);
     }
 
     throw new Error("최종 영상 생성 시간이 초과되었습니다.");
-}
-
-function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }

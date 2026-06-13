@@ -350,6 +350,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const cameraDevice = useCameraDevice("back");
     const videoOutput = useVideoOutput({ enableAudio: true, fileType: "mp4" });
     const recorderRef = React.useRef<any>(null);
+    const recordingStartedAtRef = React.useRef<number | null>(null);
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
     const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
@@ -406,6 +407,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         type: "MISSION" | "FREE";
         thumbnailUri: string | null;
         videoUri: string | null;
+        durationSeconds: number | null;
         isEditReady: boolean;
     }>({
         visible: false,
@@ -414,6 +416,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         type: "MISSION",
         thumbnailUri: null,
         videoUri: null,
+        durationSeconds: null,
         isEditReady: false,
     });
 
@@ -710,8 +713,8 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         };
     }
 
-    async function createCapturePreviewThumbnail(fileUri: string, target: { type: "MISSION" | "FREE"; mission: MissionItem | null } | null): Promise<string | null> {
-        const durationSeconds = getCaptureDurationSecondsByTarget(target);
+    async function createCapturePreviewThumbnail(fileUri: string, target: { type: "MISSION" | "FREE"; mission: MissionItem | null } | null, actualDurationSeconds?: number | null): Promise<string | null> {
+        const durationSeconds = actualDurationSeconds ?? getCaptureDurationSecondsByTarget(target);
         const thumbnailTimestamp = Math.max(0, durationSeconds * 1000 - 300);
         const { maxWidth, maxHeight } = getCaptureThumbnailMaxSize();
 
@@ -734,6 +737,19 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
     function getCaptureMaxDurationSeconds(): number {
         return getCaptureDurationSecondsByTarget(captureTarget);
+    }
+
+    function getActualRecordedDurationSeconds(): number {
+        const startedAt = recordingStartedAtRef.current;
+        const maxSeconds = getCaptureMaxDurationSeconds();
+
+        if (!startedAt) {
+            return maxSeconds;
+        }
+
+        const elapsedSeconds = Math.ceil((Date.now() - startedAt) / 1000);
+
+        return Math.max(1, Math.min(elapsedSeconds, maxSeconds));
     }
 
     async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null }): Promise<void> {
@@ -768,6 +784,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         try {
             setRecording(true);
             setRecordSeconds(0);
+            recordingStartedAtRef.current = Date.now();
 
             const recorder = await videoOutput.createRecorder({
                 maxDuration: getCaptureMaxDurationSeconds(),
@@ -830,7 +847,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
         setRecording(false);
 
-        const thumbnailUri = await createCapturePreviewThumbnail(fileUri, currentTarget);
+        const actualDurationSeconds = getActualRecordedDurationSeconds();
+        recordingStartedAtRef.current = null;
+
+        const thumbnailUri = await createCapturePreviewThumbnail(fileUri, currentTarget, actualDurationSeconds);
 
         setCaptureResult({
             visible: true,
@@ -839,6 +859,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             type: currentTarget.type,
             thumbnailUri,
             videoUri: fileUri,
+            durationSeconds: actualDurationSeconds,
             isEditReady: false,
         });
 
@@ -871,7 +892,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const contentType = "video/mp4";
         const thumbnailFileName = `${prefix}_thumbnail_${now}.png`;
         const thumbnailContentType = "image/png";
-        const durationSeconds = result.type === "FREE" ? 6 : parseDurationText(result.mission?.durationText);
+        const durationSeconds = result.durationSeconds ?? getCaptureDurationSecondsByTarget({
+            type: result.type,
+            mission: result.mission,
+        });
 
         let thumbnailUri = result.thumbnailUri;
 
@@ -879,7 +903,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             thumbnailUri = await createCapturePreviewThumbnail(result.videoUri, {
                 type: result.type,
                 mission: result.mission,
-            });
+            }, durationSeconds);
         }
 
         if (!thumbnailUri) {
@@ -994,6 +1018,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             type: "MISSION",
             thumbnailUri: null,
             videoUri: null,
+            durationSeconds: null,
             isEditReady: false,
         });
     }

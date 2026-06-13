@@ -87,7 +87,7 @@ export const styles = StyleSheet.create({
 
     captureSuccessImg: { width: 150, height: 150, marginBottom: 22 },
     captureSuccessTitle: { fontSize: 34, fontWeight: "700", color: "#000000", lineHeight: 44, textAlign: "center" },
-    captureSuccessSubTitle: { marginTop: 18, fontSize: 20, fontWeight: "700", color: "#808080", lineHeight: 28, textAlign: "center" },
+    captureSuccessSubTitle: { marginTop: 18, fontSize: 16, fontWeight: "700", color: "#808080", lineHeight: 20, textAlign: "center" },
 
     captureBackgroundImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
     captureBackgroundFallback: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "#000000" },

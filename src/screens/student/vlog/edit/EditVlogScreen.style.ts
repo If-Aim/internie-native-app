@@ -10,16 +10,19 @@ export const styles = StyleSheet.create({
     loadingWrap: { minHeight: 180, alignItems: "center", justifyContent: "center" },
 
     previewCard: { height: 240, marginBottom: 21, borderRadius: 12, backgroundColor: "#BDD8FF80", overflow: "hidden" },
-    previewProgressRow: { position: "absolute", top: 19, left: 24, right: 24, flexDirection: "row", gap: 6 },
-    previewCenter: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 22 },
+    previewPressLayer: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 2 },
+    previewProgressRow: { position: "absolute", top: 19, left: 24, right: 24, zIndex: 5, flexDirection: "row", gap: 6 },
+    previewCenter: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center", paddingTop: 22 },
+    previewPlayOnlyCenter: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center" },
     previewWeek: { marginTop: 4, fontSize: 16, fontWeight: "700", color: "#FFF", lineHeight: 20 },
     previewTitle: { marginTop: 0, fontSize: 16, fontWeight: "700", color: "#FFF", lineHeight: 20 },
     previewTimeRow: { position: "absolute", left: 15, right: 15, bottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     previewTime: { fontSize: 12, fontWeight: "700", color: "#FFFFFF", lineHeight: 20, textShadowColor: "rgba(0, 0, 0, 0.25)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 },
     previewVideo: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
-    previewProgressTrack: { flex: 1, height: 12, borderRadius: 6, backgroundColor: "rgba(255, 255, 255, 0.55)", overflow: "hidden" },
+    previewProgressTrack: { flex: 1, height: 6, borderRadius: 6, backgroundColor: "rgba(255, 255, 255, 0.50)", overflow: "hidden" },
     previewProgressFill: { height: "100%", borderRadius: 6, backgroundColor: "#FFFFFF" },
     playIconShadow: { width: 72, height: 72, borderRadius: 36, shadowColor: "#000000", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 },
+    previewThumbnailImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },
 
     clipCard: { height: 64, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 10, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", paddingLeft: 7, paddingRight: 4, marginBottom: 12, marginHorizontal: 4,  },
     clipThumb: { width: 48, height: 48, borderRadius: 4, backgroundColor: "#BDD8FF", marginRight: 11 },
@@ -29,7 +32,7 @@ export const styles = StyleSheet.create({
     clipDuration: { width: 36, textAlign: "center", fontSize: 14, fontWeight: "700", color: "#00000080", lineHeight: 20 },
     clipCardDragging: { shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8, transform: [{ scale: 1.02 }] },
     clipThumbImage: { width: "100%", height: "100%", borderRadius: 4, },
-    clipTitleInput: { height: 40, paddingVertical: 0, paddingHorizontal: 0, fontSize: 28, fontWeight: "900", color: "#000", lineHeight: 36, backgroundColor: "transparent" },
+    clipTitleInput: { height: 20, paddingVertical: 0, paddingHorizontal: 0, fontSize: 16, fontWeight: "700", color: "#000", lineHeight: 20, backgroundColor: "transparent" },
 
     titleEditModalBox: { width: "84%", paddingHorizontal: 22, paddingTop: 24, paddingBottom: 18, borderRadius: 16, backgroundColor: "#FFFFFF" },
     titleEditModalTitle: { fontSize: 18, fontWeight: "800", color: "#000", lineHeight: 24 },
@@ -40,8 +43,8 @@ export const styles = StyleSheet.create({
     titleEditConfirmButton: { flex: 1, height: 48, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     titleEditConfirmText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
 
-    deleteActionButton: { width: 112, height: 128, marginBottom: 14, borderRadius: 14, backgroundColor: "#FF3131", alignItems: "center", justifyContent: "center" },
-    deleteActionText: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", lineHeight: 30 },
+    deleteActionButton: { width: 64, height: 64, marginBottom: 12, borderRadius: 10, backgroundColor: "#FF3838", alignItems: "center", justifyContent: "center" },
+    deleteActionText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
 
     emptyText: { fontSize: 16, fontWeight: "700", color: "#808080", lineHeight: 22 },
 
@@ -59,9 +62,9 @@ export const styles = StyleSheet.create({
     exportOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, backgroundColor: "#F0F6FF" },
     exportLoadingCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
     exportDotRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 50 },
-    exportDotActive: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#0166FF" },
-    exportDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#BDD8FF" },
-    exportLoadingText: { fontSize: 28, fontWeight: "900", color: "#000", lineHeight: 36 },
+    exportDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#BDD8FF", overflow: "hidden" },
+    exportDotGradient: { width: 36, height: 12 },
+    exportDotGradientFill: { flex: 1 },    exportLoadingText: { fontSize: 28, fontWeight: "900", color: "#000", lineHeight: 36 },
 
     exportDoneCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
     exportMascot: { width: 160, height: 160, marginBottom: 18 },
