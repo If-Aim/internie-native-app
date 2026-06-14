@@ -80,13 +80,12 @@ export const styles = StyleSheet.create({
     captureNextButton: { height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     captureNextText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 24 },
 
-    captureSavingDotRow: { height: 28, flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12, marginBottom: 24 },
-    captureSavingDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#BDD8FF" },
-    captureSavingDotActive: { backgroundColor: "#0166FF" },
-    captureSavingTitle: { fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 32, textAlign: "center" },
+    captureSavingDotRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12, height: 40, marginBottom: 17, },
+    captureSavingDot: { width: 12, height: 12, borderRadius: 6, },
+    captureSavingTitle: { fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 36, textAlign: "center" },
 
-    captureSuccessImg: { width: 150, height: 150, marginBottom: 22 },
-    captureSuccessTitle: { fontSize: 34, fontWeight: "700", color: "#000000", lineHeight: 44, textAlign: "center" },
+    captureSuccessImg: { width: 160, height: 160, marginBottom: 18 },
+    captureSuccessTitle: { fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 32, textAlign: "center" },
     captureSuccessSubTitle: { marginTop: 18, fontSize: 16, fontWeight: "700", color: "#808080", lineHeight: 20, textAlign: "center" },
 
     captureBackgroundImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" },

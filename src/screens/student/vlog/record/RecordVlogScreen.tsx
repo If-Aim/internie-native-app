@@ -12,7 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import AppText from "../../../../../AppText";
 import { uploadFileToPresignedUrl } from "../../../../api/client";
-import { completeMissionClip, createFreeClip, createVlogUploadUrl, deleteVlogProject, getVlogClipPlayUrl, getVlogProjectDetail, replaceMissionClip, type VlogClipCompleteInput, type VlogClipResponse, type VlogResponse } from "../../../../api/vlog";
+import { completeMissionClip, createFreeClip, createVlogUploadUrl, deleteVlogProject, getVlogClipPlayUrl, getVlogProjectDetail, replaceFreeClip, replaceMissionClip, type VlogClipCompleteInput, type VlogClipResponse, type VlogResponse } from "../../../../api/vlog";
 import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./RecordVlogScreen.style";
@@ -286,47 +286,80 @@ function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: 
 }
 
 function CaptureSavingDots(): React.ReactElement {
-    const dot1 = React.useRef(new Animated.Value(0)).current;
-    const dot2 = React.useRef(new Animated.Value(0)).current;
-    const dot3 = React.useRef(new Animated.Value(0)).current;
+    const wave = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
-        const createBounce = (value: Animated.Value, delayMs: number) => Animated.loop(
-            Animated.sequence([
-                Animated.delay(delayMs),
-                Animated.timing(value, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-                Animated.timing(value, { toValue: 0, duration: 320, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-                Animated.delay(260),
-            ])
+        wave.setValue(0);
+
+        const animation = Animated.loop(
+            Animated.timing(wave, {
+                toValue: 1,
+                duration: 1350,
+                easing: Easing.linear,
+                useNativeDriver: false,
+            })
         );
 
-        const animation1 = createBounce(dot1, 0);
-        const animation2 = createBounce(dot2, 120);
-        const animation3 = createBounce(dot3, 240);
-
-        animation1.start();
-        animation2.start();
-        animation3.start();
+        animation.start();
 
         return () => {
-            animation1.stop();
-            animation2.stop();
-            animation3.stop();
+            animation.stop();
+            wave.stopAnimation();
         };
-    }, [dot1, dot2, dot3]);
+    }, [wave]);
 
-    const getDotAnimatedStyle = (value: Animated.Value) => ({
+    const inputRange = Array.from({ length: 17 }, (_, index) => index / 16);
+    const phaseGap = 0.24;
+
+    const createTranslateYRange = (dotIndex: number) => {
+        const delayRatio = dotIndex * phaseGap;
+
+        return inputRange.map((value) => {
+            const shiftedValue = value - delayRatio;
+            const waveValue = Math.sin(shiftedValue * Math.PI * 2);
+            const normalizedValue = (waveValue + 1) / 2;
+
+            return -26 * normalizedValue;
+        });
+    };
+
+    const createColorRange = (dotIndex: number) => {
+        const delayRatio = dotIndex * phaseGap;
+
+        return inputRange.map((value) => {
+            const shiftedValue = value - delayRatio;
+            const waveValue = Math.sin(shiftedValue * Math.PI * 2);
+            const normalizedValue = (waveValue + 1) / 2;
+
+            if (normalizedValue >= 0.86) return "#0166FF";
+            if (normalizedValue >= 0.55) return "#7EB5FF";
+
+            return "#C7DFFF";
+        });
+    };
+
+    const getDotAnimatedStyle = (dotIndex: number) => ({
+        backgroundColor: wave.interpolate({
+            inputRange,
+            outputRange: createColorRange(dotIndex),
+        }),
         transform: [
             {
-                translateY: value.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, -12],
+                translateY: wave.interpolate({
+                    inputRange,
+                    outputRange: createTranslateYRange(dotIndex),
                 }),
             },
             {
-                scale: value.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 1.12],
+                scale: wave.interpolate({
+                    inputRange,
+                    outputRange: inputRange.map((value) => {
+                        const shiftedValue = value - dotIndex * phaseGap;
+                        const waveValue = Math.sin(shiftedValue * Math.PI * 2);
+                        const normalizedValue = (waveValue + 1) / 2;
+
+                        return 1 + normalizedValue * 0.16;
+                    }),
                 }),
             },
         ],
@@ -334,12 +367,13 @@ function CaptureSavingDots(): React.ReactElement {
 
     return (
         <View style={styles.captureSavingDotRow} accessibilityRole="progressbar">
-            <Animated.View style={[styles.captureSavingDot, styles.captureSavingDotActive, getDotAnimatedStyle(dot1)]} />
-            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(dot2)]} />
-            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(dot3)]} />
+            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(0)]} />
+            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(1)]} />
+            <Animated.View style={[styles.captureSavingDot, getDotAnimatedStyle(2)]} />
         </View>
     );
 }
+
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function RecordVlogScreen({ navigation, route }: Props): React.ReactElement {
@@ -381,6 +415,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [heroControlsVisible, setHeroControlsVisible] = React.useState(true);
     const [heroProgressWidth, setHeroProgressWidth] = React.useState(0);
     const heroSeekingRef = React.useRef(false);
+    const [heroProgressDragging, setHeroProgressDragging] = React.useState(false);
     const heroControlsOpacity = React.useRef(new Animated.Value(1)).current;
     const [heroCurrentTime, setHeroCurrentTime] = React.useState(0);
     const [heroDuration, setHeroDuration] = React.useState(0);
@@ -398,6 +433,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const [captureTarget, setCaptureTarget] = React.useState<{
         type: "MISSION" | "FREE";
         mission: MissionItem | null;
+        freeClip: FreeCaptureItem | null;
     } | null>(null);
 
     const [captureResult, setCaptureResult] = React.useState<{
@@ -405,6 +441,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         mode: CaptureResultMode;
         mission: MissionItem | null;
         type: "MISSION" | "FREE";
+        freeClip: FreeCaptureItem | null;
         thumbnailUri: string | null;
         videoUri: string | null;
         durationSeconds: number | null;
@@ -414,6 +451,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         mode: "READY",
         mission: null,
         type: "MISSION",
+        freeClip: null,
         thumbnailUri: null,
         videoUri: null,
         durationSeconds: null,
@@ -540,6 +578,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         setHeroControlsVisible(true);
         setHeroCurrentTime(0);
         setHeroDuration(0);
+        setHeroProgressDragging(false);
     }
 
     async function loadHeroVideoUrl(): Promise<string | null> {
@@ -639,9 +678,22 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     function handleHeroProgressStart(event: GestureResponderEvent): void {
         event.stopPropagation();
         heroSeekingRef.current = true;
+        setHeroProgressDragging(true);
         clearHeroControlsTimer();
         showHeroControls(false);
         seekHeroProgress(event.nativeEvent.locationX);
+    }
+
+    function handleHeroProgressEnd(): void {
+        heroSeekingRef.current = false;
+        setHeroProgressDragging(false);
+        showHeroControls(!heroPaused && !heroEnded);
+    }
+
+    function handleHeroProgressTerminate(): void {
+        heroSeekingRef.current = false;
+        setHeroProgressDragging(false);
+        showHeroControls(!heroPaused && !heroEnded);
     }
 
     function handleHeroProgressMove(event: GestureResponderEvent): void {
@@ -652,16 +704,6 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         }
 
         seekHeroProgress(event.nativeEvent.locationX);
-    }
-
-    function handleHeroProgressEnd(): void {
-        heroSeekingRef.current = false;
-        showHeroControls(!heroPaused && !heroEnded);
-    }
-
-    function handleHeroProgressTerminate(): void {
-        heroSeekingRef.current = false;
-        showHeroControls(!heroPaused && !heroEnded);
     }
 
     async function handleDeleteProject(): Promise<void> {
@@ -752,7 +794,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return Math.max(1, Math.min(elapsedSeconds, maxSeconds));
     }
 
-    async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null }): Promise<void> {
+    async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null; freeClip: FreeCaptureItem | null }): Promise<void> {
         if (recording || savingClip) return;
 
         const cameraGranted = hasCameraPermission || await requestCameraPermission();
@@ -836,6 +878,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         openCaptureCamera({
             type: "MISSION",
             mission,
+            freeClip: null,
         }).catch(console.error);
     }
 
@@ -857,6 +900,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             mode: "READY",
             mission: currentTarget.mission,
             type: currentTarget.type,
+            freeClip: currentTarget.freeClip,
             thumbnailUri,
             videoUri: fileUri,
             durationSeconds: actualDurationSeconds,
@@ -945,7 +989,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 sizeBytes: null,
                 durationSeconds,
                 thumbnailKey: thumbnailUpload.fileKey,
-                customTitle: result.type === "FREE" ? "내 자리" : null,
+                customTitle: result.type === "FREE" ? "자유 촬영" : null,
             },
         };
     }
@@ -969,10 +1013,17 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             const { clipInput, thumbnailUri } = await uploadCaptureResultVideo(currentResult);
 
             if (currentResult.type === "FREE") {
-                await createFreeClip(projectId, {
-                    ...clipInput,
-                    customTitle: "내 자리",
-                });
+                if (currentResult.freeClip?.clipId) {
+                    await replaceFreeClip(projectId, currentResult.freeClip.clipId, {
+                        ...clipInput,
+                        customTitle: currentResult.freeClip.title,
+                    });
+                } else {
+                    await createFreeClip(projectId, {
+                        ...clipInput,
+                        customTitle: "자유 촬영",
+                    });
+                }
             } else {
                 if (!currentResult.mission) return;
 
@@ -1016,6 +1067,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             mode: "READY",
             mission: null,
             type: "MISSION",
+            freeClip: null,
             thumbnailUri: null,
             videoUri: null,
             durationSeconds: null,
@@ -1027,6 +1079,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const nextTarget = {
             type: captureResult.type,
             mission: captureResult.mission,
+            freeClip: captureResult.freeClip,
         };
 
         resetCaptureResult();
@@ -1090,10 +1143,11 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         setOpenedWeekId((prev) => (prev === weekId ? null : weekId));
     }
 
-    function handlePressFreeCapture(): void {
+    function handlePressFreeCapture(freeClip: FreeCaptureItem | null = null): void {
         openCaptureCamera({
             type: "FREE",
             mission: null,
+            freeClip,
         }).catch(console.error);
     }
 
@@ -1136,7 +1190,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     onPress={() => handlePressRecord(mission)}
                 >
                     <AppText style={[styles.missionRecordText, mission.completed ? styles.missionRecordTextActive : null]}>
-                        {mission.completed ? "재촬영하기" : "촬영하기"}
+                        {mission.completed ? "다시 촬영하기" : "촬영하기"}
                     </AppText>
                 </Pressable>
             </View>
@@ -1298,7 +1352,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const cameraFoldButtonLeft = isLandscape ? landscapeFoldOpenLeft : portraitFoldLeft;
         const cameraFoldButtonTop = isLandscape ? landscapeFoldTop : portraitFoldOpenTop;
 
-        const missionTitle = captureTarget?.type === "FREE" ? "자율 촬영" : captureTarget?.mission?.title ?? "브이로그 미션";
+        const missionTitle = captureTarget?.type === "FREE" ? "자유 촬영" : captureTarget?.mission?.title ?? "브이로그 미션";
         const missionDuration = captureTarget?.type === "FREE" ? "6초" : captureTarget?.mission?.durationText ?? "6초";
         const missionBackground = captureTarget?.mission?.background ?? "나의 인턴십 과정을 자유롭게 촬영해보세요.";
         const missionComposition = captureTarget?.mission?.composition ?? "자유롭게 촬영해주세요.";
@@ -1439,10 +1493,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return (
             <View style={styles.freeCaptureCard}>
                 <View style={styles.weekHeader}>
-                    <CheckCircleIcon active={freeClips.length > 0} />
+                    <CheckCircleIcon active={freeClips.length >= 0} />
 
                     <View style={styles.weekTitleWrap}>
-                        <AppText style={styles.weekTitle}>자율 촬영</AppText>
+                        <AppText style={styles.weekTitle}>자유 촬영</AppText>
                     </View>
 
                     <ChevronIcon open={true} />
@@ -1465,7 +1519,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             </View>
                         </View>
 
-                        <Pressable style={styles.missionRecordButton} onPress={handlePressFreeCapture}>
+                        <Pressable style={styles.missionRecordButton} onPress={() => handlePressFreeCapture(null)}>
                             <AppText style={styles.missionRecordText}>촬영하기</AppText>
                         </Pressable>
                     </View>
@@ -1492,8 +1546,8 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     </View>
                 </View>
 
-                <Pressable style={styles.missionRecordButtonActive} onPress={handlePressFreeCapture}>
-                    <AppText style={styles.missionRecordTextActive}>추가 촬영하기</AppText>
+                <Pressable style={[styles.missionRecordButton, styles.missionRecordButtonActive]} onPress={() => handlePressFreeCapture(clip)} >
+                    <AppText style={[styles.missionRecordText, styles.missionRecordTextActive]}>다시 촬영하기</AppText>
                 </Pressable>
             </View>
         );
@@ -1582,7 +1636,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         <SafeAreaView style={commonStyles.appRoot} edges={["top", "bottom"]}>
             <Header onBackClick={() => navigation.goBack()} onMenuClick={() => setMenuModalOpen(true)} />
 
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} scrollEnabled={!heroProgressDragging}>
                 <View style={styles.titleRow}>
                     <View style={styles.titleTextWrap}>
                         <AppText style={styles.subText}>{subText}</AppText>

@@ -226,6 +226,13 @@ export async function createFreeClip(projectId: number | string, input: VlogClip
     });
 }
 
+export async function replaceFreeClip(projectId: number | string, clipId: number | string, input: VlogClipCompleteInput): Promise<VlogClipResponse> {
+    return api<VlogClipResponse>(`/vlogs/me/projects/${projectId}/free-clips/${clipId}`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+    });
+}
+
 export async function getVlogEditing(projectId: number | string): Promise<VlogResponse> {
     return api<VlogResponse>(`/vlogs/me/projects/${projectId}/editing`, { method: "GET" });
 }

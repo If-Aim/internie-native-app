@@ -1,9 +1,10 @@
 import React from "react";
 import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, Pressable, View, useWindowDimensions } from "react-native";
+import { CommonActions } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { createThumbnail } from "react-native-create-thumbnail";
 import Svg, { Path } from "react-native-svg";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
 
 import { getVlogCompanies, startVlogProject, type VlogCompanyResponse } from "../../../../api/vlog";
@@ -325,6 +326,15 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         setCameraOpen(false);
     }
 
+    function resetToVlogHome(): void {
+        navigation.dispatch(
+            CommonActions.reset({
+                index: 0,
+                routes: [{name: "VlogHome",},],
+            })
+        );
+    }
+
     async function handleSave(): Promise<void> {
         if (!canSave || !selectedCompanyCode || !selectedCompany) {
             Alert.alert("입력값을 확인해주세요.", "회사를 선택해주세요.");
@@ -346,7 +356,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             Alert.alert("저장되었습니다.", "브이로그 인턴십이 추가되었습니다.", [
                 {
                     text: "확인",
-                    onPress: () => navigation.goBack(),
+                    onPress: resetToVlogHome,
                 },
             ]);
         } catch (error) {
@@ -465,7 +475,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             <View style={styles.content}>
                 <View style={styles.section}>
                     <AppText style={styles.sectionTitle}>인턴십 소개</AppText>
-                    <AppText style={styles.sectionDescription}>나의 인턴 브이로그에 들어갈 첫 번째 장면이에요.</AppText>
+                    <AppText style={styles.sectionDescription}>테스트로 촬영해보세요!</AppText>
 
                     <View style={styles.introCard}>
                         <View style={styles.introTopRow}>
@@ -486,7 +496,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                             </View>
 
                             <View style={styles.introTextWrap}>
-                                <AppText style={styles.introLabel}>{onboardingRecorded ? "온보딩 현장 촬영 완료" : "인턴십 온보딩 현장 촬영하기"}</AppText>
+                                <AppText style={styles.introLabel}>{onboardingRecorded ? "스타트업 인턴십 OT 촬영 완료" : "스타트업 인턴십 OT 촬영하기"}</AppText>
                                 <AppText style={styles.introDuration}>6초</AppText>
                             </View>
                         </View>
