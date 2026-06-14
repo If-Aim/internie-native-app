@@ -711,7 +711,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                     ) : (
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
-                            <AppText style={styles.emptyTitle}>아직 브이로그가 없어요{"\n"}바로 촬영해볼까요?</AppText>
+                            <AppText style={styles.emptyTitle}>아직 진행중인 인턴십이 없어요{"\n"}지금 바로 만들어볼까요?</AppText>
                         </View>
                     )
                 }

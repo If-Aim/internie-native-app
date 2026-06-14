@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
     chevronIcon: { width: 28, height: 28, marginLeft: 10, resizeMode: "contain", tintColor: "#999999" },
     emptyWrap: { flex: 1, minHeight: 234, alignItems: "center", justifyContent: "center" },
     emptyImg: { width: 160, height: 160, marginBottom: 26 },
-    emptyTitle: { fontSize: 16, fontWeight: "500", color: "#808080", textAlign: "center", lineHeight: 24, textShadowColor: "rgba(0, 0, 0, 0.25)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 },
+    emptyTitle: { fontSize: 16, fontWeight: "500", color: "#808080", textAlign: "center", lineHeight: 24, },
     addButtonText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
     bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160 },
     addButtonWrap: { position: "absolute", left: 20, right: 20, bottom: 50, alignItems: "center" },

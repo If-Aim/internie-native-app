@@ -1301,7 +1301,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     }
 
     function renderCameraModal(): React.ReactElement {
-        const cameraCloseTop = insets.top + 9;
+        const cameraCloseTop = insets.top + 59;
         const cameraCloseLeft = isLandscape ? insets.left + 12 : undefined;
         const cameraCloseRight = isLandscape ? undefined : 12;
 
