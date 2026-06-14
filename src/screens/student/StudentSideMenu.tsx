@@ -128,6 +128,19 @@ export default function StudentMobileSideMenu({
         });
     }, [isOpen, translateX]);
 
+    const orderedActivities = React.useMemo(() => {
+        return [...activities].sort((a, b) => {
+            const idA = a.externalActivityId ?? 0;
+            const idB = b.externalActivityId ?? 0;
+
+            if (idA !== idB) {
+                return idA - idB;
+            }
+
+            return String(a.name ?? "").localeCompare(String(b.name ?? ""));
+        });
+    }, [activities]);
+    
     if (!mounted) return null;
 
     const activityMenus: Array<{ key: ActivityMenuKey; label: string; disabled: boolean }> = [
@@ -160,7 +173,7 @@ export default function StudentMobileSideMenu({
             <Pressable style={sideMenuStyles.backdrop} onPress={onClose} />
 
             <Animated.View style={[sideMenuStyles.panel, { transform: [{ translateX }] }]}>
-                <SafeAreaView style={sideMenuStyles.safeArea} edges={["top", "bottom"]}>
+                <SafeAreaView style={sideMenuStyles.safeArea} edges={["top"]}>
                     <View style={sideMenuStyles.header}>
                         <View style={sideMenuStyles.profileWrap}>
                             <View style={sideMenuStyles.profileImgBox}>
@@ -197,7 +210,7 @@ export default function StudentMobileSideMenu({
 
                         {hasActivities && (
                             <View style={sideMenuStyles.activityList}>
-                                {activities.map((activity) => {
+                                {orderedActivities.map((activity) => {
                                     const isActivityOpen = openedActivityId === activity.externalActivityId;
 
                                     return (

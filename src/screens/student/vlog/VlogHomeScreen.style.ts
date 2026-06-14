@@ -44,8 +44,8 @@ export const styles = StyleSheet.create({
     emptyWrap: { flex: 1, minHeight: 234, alignItems: "center", justifyContent: "center" },
     emptyImg: { width: 160, height: 160, marginBottom: 26 },
     emptyTitle: { fontSize: 16, fontWeight: "500", color: "#808080", textAlign: "center", lineHeight: 24, textShadowColor: "rgba(0, 0, 0, 0.25)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 },
-    addButton: { height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     addButtonText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
-    bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160, paddingHorizontal: 20, paddingBottom: 50, justifyContent: "flex-end" },
-
+    bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160 },
+    addButtonWrap: { position: "absolute", left: 20, right: 20, bottom: 50, alignItems: "center" },
+    addButton: { width: "100%", height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
 });

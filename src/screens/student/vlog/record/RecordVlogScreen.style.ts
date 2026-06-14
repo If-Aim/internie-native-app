@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
     captureOverlayLight: { backgroundColor: "#F4F8FF" },
     captureBody: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingTop: 40, paddingBottom: 180 },
     captureActionArea: { position: "absolute", left: 20, right: 20, bottom: 50, gap: 10 },
-    captureCloseButton: { position: "absolute", top: 14, right: 12, width: 44, height: 44, alignItems: "center", justifyContent: "center", zIndex: 5 },
+    captureCloseButton: { position: "absolute", top: 19, right: 12, width: 44, height: 44, alignItems: "center", justifyContent: "center", zIndex: 5 },
 
     captureCheckIcon: { marginBottom: 14 },
     captureTitle: { fontSize: 20, fontWeight: "700", color: "#FFFFFF", lineHeight: 26, textAlign: "center" },
@@ -97,8 +97,9 @@ export const styles = StyleSheet.create({
     captureSuccessTitleWhite: { fontSize: 34, fontWeight: "700", color: "#FFFFFF", lineHeight: 44, textAlign: "center" },
     captureSuccessSubTitleWhite: { marginTop: 18, fontSize: 20, fontWeight: "700", color: "rgba(255, 255, 255, 0.72)", lineHeight: 28, textAlign: "center" },
 
-    bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160, paddingHorizontal: 20, paddingBottom: 28, justifyContent: "flex-end" },
-    editButton: { height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
+    bottomGradientBar: { position: "absolute", left: 0, right: 0, bottom: 0, height: 160 },
+    editButtonWrap: { position: "absolute", left: 20, right: 20, bottom: 50, alignItems: "center" },
+    editButton: { width: "100%", height: 60, borderRadius: 10, backgroundColor: "#0166FF", alignItems: "center", justifyContent: "center" },
     editButtonText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", lineHeight: 20 },
 
     menuModalBackdrop: { flex: 1, backgroundColor: "transparent" },

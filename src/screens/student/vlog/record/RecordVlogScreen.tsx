@@ -1278,7 +1278,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 {renderCaptureBackground()}
                 <View style={styles.captureBackgroundDim} />
 
-                <Pressable style={styles.captureCloseButton} onPress={resetCaptureResult}>
+                <Pressable style={[styles.captureCloseButton, { top: insets.top + 9 }]} onPress={resetCaptureResult}>
                     <CameraCloseIcon />
                 </Pressable>
 
@@ -1301,7 +1301,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     }
 
     function renderCameraModal(): React.ReactElement {
-        const cameraCloseTop = insets.top + 11;
+        const cameraCloseTop = insets.top + 9;
         const cameraCloseLeft = isLandscape ? insets.left + 12 : undefined;
         const cameraCloseRight = isLandscape ? undefined : 12;
 
@@ -1762,11 +1762,12 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
             </ScrollView>
 
-            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar} pointerEvents="none" />
+            <View style={styles.editButtonWrap}>
                 <Pressable style={styles.editButton} onPress={handlePressEdit}>
                     <AppText style={styles.editButtonText}>편집하기</AppText>
                 </Pressable>
-            </LinearGradient>
+            </View>
 
             {renderCaptureResultLayer()}
             {renderCameraModal()}

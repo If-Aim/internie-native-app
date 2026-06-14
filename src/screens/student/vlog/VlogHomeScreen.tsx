@@ -153,6 +153,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     const [userProfileImg, setUserProfileImg] = React.useState<string | null>(null);
     const [userRoleSet, setUserRoleSet] = React.useState<string[]>([]);
 
+    const [inlinePlayingProjectId, setInlinePlayingProjectId] = React.useState<number | null>(null);
     const [inlinePlayingClipId, setInlinePlayingClipId] = React.useState<number | null>(null);
     const [inlineVideoUrl, setInlineVideoUrl] = React.useState<string | null>(null);
     const [inlineLoadingClipId, setInlineLoadingClipId] = React.useState<number | null>(null);
@@ -464,6 +465,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
             if (!url) return;
 
+            setInlinePlayingProjectId(item.projectId);
             setInlinePlayingClipId(item.lastClipId);
             setInlineVideoUrl(url);
             setInlinePaused(false);
@@ -479,7 +481,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     async function handlePressThumbnail(event: GestureResponderEvent, item: VlogHomeCard): Promise<void> {
         event.stopPropagation();
 
-        const isCurrentVideo = inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
+        const isCurrentVideo = inlinePlayingProjectId === item.projectId && inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
 
         if (!isCurrentVideo) {
             await handlePressInlinePlay(event, item);
@@ -546,7 +548,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
     function renderVideoThumbnail(item: VlogHomeCard): React.ReactElement {
         const hasThumbnail = !!item.thumbnailUrl;
-        const isInlinePlaying = inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
+        const isInlinePlaying = inlinePlayingProjectId === item.projectId && inlinePlayingClipId === item.lastClipId && inlineVideoUrl !== null;
         const isInlineLoading = inlineLoadingClipId === item.lastClipId;
         const safeCurrentTime = inlineDuration > 0 ? Math.min(inlineCurrentTime, inlineDuration) : inlineCurrentTime;
         const progressPercent = inlineDuration > 0 ? Math.min(100, Math.max(0, (safeCurrentTime / inlineDuration) * 100)) : 0;
@@ -588,6 +590,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                         onError={(error) => {
                             console.error("[VLOG_HOME] inline video error:", error);
                             Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                            setInlinePlayingProjectId(null);
                             setInlinePlayingClipId(null);
                             setInlineVideoUrl(null);
                             setInlinePaused(true);
@@ -616,7 +619,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                 ) : null}
 
                 {shouldShowCenterButton ? (
-                    <AnimatedPressable style={[styles.playCircle, { opacity: inlineControlsOpacity }]} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
+                    <AnimatedPressable style={[styles.playCircle, isInlinePlaying ? { opacity: inlineControlsOpacity } : { opacity: 1 }]} onPress={(event) => handlePressInlinePlay(event, item)} disabled={isInlineLoading}>
                         {isInlineLoading ? (
                             <ActivityIndicator />
                         ) : inlinePaused || !isInlinePlaying || inlineEnded ? (
@@ -630,30 +633,32 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                     </AnimatedPressable>
                 ) : null}
 
-                <Animated.View pointerEvents={inlineControlsVisible ? "auto" : "none"} style={[styles.videoControlBar, { opacity: inlineControlsOpacity }]}>
-                    <View
-                        style={styles.videoProgressHitArea}
-                        onLayout={(event) => {
-                            setInlineProgressWidth(event.nativeEvent.layout.width);
-                        }}
-                        onStartShouldSetResponder={() => true}
-                        onMoveShouldSetResponder={() => true}
-                        onResponderGrant={handleInlineProgressTouch}
-                        onResponderMove={handleInlineProgressTouch}
-                        onResponderRelease={() => {
-                            showInlineControls(!inlinePaused && !inlineEnded);
-                        }}
-                    >
-                        <View style={styles.videoProgressTrack}>
-                            <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
+                {isInlinePlaying ? (
+                    <Animated.View pointerEvents={inlineControlsVisible ? "auto" : "none"} style={[styles.videoControlBar, { opacity: inlineControlsOpacity }]}>
+                        <View
+                            style={styles.videoProgressHitArea}
+                            onLayout={(event) => {
+                                setInlineProgressWidth(event.nativeEvent.layout.width);
+                            }}
+                            onStartShouldSetResponder={() => true}
+                            onMoveShouldSetResponder={() => true}
+                            onResponderGrant={handleInlineProgressTouch}
+                            onResponderMove={handleInlineProgressTouch}
+                            onResponderRelease={() => {
+                                showInlineControls(!inlinePaused && !inlineEnded);
+                            }}
+                        >
+                            <View style={styles.videoProgressTrack}>
+                                <View style={[styles.videoProgressFill, { width: `${progressPercent}%` }]} />
+                            </View>
                         </View>
-                    </View>
 
-                    <View style={styles.timeRow}>
-                        <AppText style={styles.timeText}>{currentTimeText}</AppText>
-                        <AppText style={styles.timeText}>{durationText}</AppText>
-                    </View>
-                </Animated.View>
+                        <View style={styles.timeRow}>
+                            <AppText style={styles.timeText}>{currentTimeText}</AppText>
+                            <AppText style={styles.timeText}>{durationText}</AppText>
+                        </View>
+                    </Animated.View>
+                ) : null}
             </View>
         );
     }
@@ -714,11 +719,12 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
             />
 
-            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar} pointerEvents="none" />
+            <View style={styles.addButtonWrap}>
                 <Pressable style={styles.addButton} onPress={handlePressAdd}>
                     <AppText style={styles.addButtonText}>인턴십 추가하기</AppText>
                 </Pressable>
-            </LinearGradient>
+            </View>
 
             <StudentMobileSideMenu
                 isOpen={menuOpen}

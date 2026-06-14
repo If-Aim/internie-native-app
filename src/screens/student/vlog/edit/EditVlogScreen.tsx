@@ -277,6 +277,30 @@ async function requestSaveVideoPermission(): Promise<boolean> {
 //     const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
 //     return granted === PermissionsAndroid.RESULTS.GRANTED;
 // }
+function isIosCameraRollFirstSaveError(error: unknown): boolean {
+    if (Platform.OS !== "ios") {
+        return false;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+
+    return message.toLowerCase().includes("unknown") || message.toLowerCase().includes("native module");
+}
+
+async function saveLocalVideoToCameraRoll(localPath: string): Promise<void> {
+    try {
+        await CameraRoll.save(`file://${localPath}`, {
+            type: "video",
+        });
+    } catch (error) {
+        if (isIosCameraRollFirstSaveError(error)) {
+            console.warn("[EDIT_VLOG] ignored iOS first CameraRoll save error:", error);
+            return;
+        }
+
+        throw error;
+    }
+}
 
 async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Promise<void> {
     const hasPermission = await requestSaveVideoPermission();
@@ -297,9 +321,7 @@ async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Prom
         throw new Error(`영상 다운로드 실패: ${result.statusCode}`);
     }
 
-    await CameraRoll.save(`file://${localPath}`, {
-        type: "video",
-    });
+    await saveLocalVideoToCameraRoll(localPath);
 }
 
 function Header({
@@ -356,7 +378,8 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     const [editingTitle, setEditingTitle] = React.useState("");
 
     const [exportStep, setExportStep] = React.useState<"IDLE" | "LOADING" | "DONE">("IDLE");
-    
+    const [pendingGalleryOpen, setPendingGalleryOpen] = React.useState(false);
+
     React.useEffect(() => {
         const shouldShowProgress = !previewPlaying || previewSeeking || previewVideoLoading;
 
@@ -769,8 +792,26 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         }
     }
 
+    function resetPreviewPlayer(): void {
+        previewLoadRequestIdRef.current += 1;
+        pendingSeekSecondsRef.current = null;
+        previewSeekingRef.current = false;
+        previewResumeAfterSeekRef.current = false;
+        previewSeekTargetRef.current = null;
+        setPreviewVideoUrl(null);
+        setLoadedPreviewClipId(null);
+        setPreviewPlaying(false);
+        setPreviewVideoLoading(false);
+        setPreviewSeeking(false);
+        setPreviewProgressDragging(false);
+        setPreviewClipIndex(0);
+        setPreviewCurrentSeconds(0);
+        setPreviewDurationSeconds(0);
+    }
+
     async function handleDragEnd(data: VlogClipResponse[]): Promise<void> {
         setClips(data);
+        resetPreviewPlayer();
 
         try {
             await Promise.all(data.map((clip, index) => {
@@ -784,20 +825,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             console.error("[EDIT_VLOG] reorder error:", error);
             Alert.alert("정렬 저장 실패", "클립 순서를 저장하지 못했습니다.");
             await loadEditing();
-        }
-    }
-
-    async function handleToggleClip(clip: VlogClipResponse): Promise<void> {
-        if (clip.clipId == null) return;
-
-        try {
-            const updated = await updateVlogEditClip(projectId, clip.clipId, {
-                includedInFinal: !(clip.includedInFinal === true),
-            });
-
-            setClips((prev) => prev.map((item) => item.clipId === clip.clipId ? updated : item));
-        } catch (error) {
-            Alert.alert("수정 실패", "클립 포함 여부를 변경하지 못했습니다.");
+            resetPreviewPlayer();
         }
     }
 
@@ -900,6 +928,8 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 mediaType: "video",
                 selectionLimit: 1,
                 includeExtra: false,
+                presentationStyle: "fullScreen",
+                formatAsMp4: true,
             });
 
             const asset = result.assets?.[0];
@@ -1019,7 +1049,23 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
     function renderAddClipModal(): React.ReactElement {
         return (
-            <Modal visible={addClipModalOpen} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setAddClipModalOpen(false)}>
+            <Modal
+                visible={addClipModalOpen}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                navigationBarTranslucent
+                onRequestClose={() => setAddClipModalOpen(false)}
+                onDismiss={() => {
+                    if (!pendingGalleryOpen) return;
+
+                    setPendingGalleryOpen(false);
+
+                    setTimeout(() => {
+                        handlePressAddGalleryClip().catch(console.error);
+                    }, 150);
+                }}
+            >
                 <Pressable style={styles.addClipModalBackdrop} onPress={() => setAddClipModalOpen(false)}>
                     <Pressable style={styles.addClipModalBox} onPress={(event) => event.stopPropagation()}>
                         <AppText style={styles.addClipModalTitle}>영상 추가하기</AppText>
@@ -1028,8 +1074,8 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                             style={styles.addClipModalButton}
                             disabled={addingClip}
                             onPress={() => {
+                                setPendingGalleryOpen(true);
                                 setAddClipModalOpen(false);
-                                handlePressAddGalleryClip().catch(console.error);
                             }}
                         >
                             <AppText style={styles.addClipModalButtonText}>{addingClip ? "추가 중..." : "내 갤러리에서 추가하기"}</AppText>
@@ -1115,6 +1161,9 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 keyExtractor={(item, index) => String(item.clipId ?? `clip-${index}`)}
                 renderItem={renderClipItem}
                 scrollEnabled={!previewSeeking && !previewProgressDragging}
+                onDragBegin={() => {
+                    resetPreviewPlayer();
+                }}
                 onDragEnd={({ data }) => {
                     handleDragEnd(data).catch(console.error);
                 }}
@@ -1133,7 +1182,9 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 )}
             />
 
-            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar}>
+            <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar} pointerEvents="none" />
+
+            <View style={styles.exportButtonWrap}>
                 <Pressable
                     style={[styles.exportButton, exporting ? styles.exportButtonDisabled : null]}
                     disabled={exporting}
@@ -1143,7 +1194,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 >
                     <AppText style={styles.exportButtonText}>{exporting ? "내보내는 중" : "내보내기"}</AppText>
                 </Pressable>
-            </LinearGradient>
+            </View>
             {renderAddClipModal()}
             {renderExportOverlay()}
         </SafeAreaView>

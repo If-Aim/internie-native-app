@@ -67,7 +67,7 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>학생증 이미지를 저장하거나 내보낸 브이로그 영상을 저장하기 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>학생증 인증, 프로필 이미지 등록, 과제 제출 파일 선택을 위해 사진 보관함 접근 권한이 필요합니다.</string>
+	<string>학생증 인증, 프로필 이미지 등록, 과제 제출 파일 선택, 브이로그 클립 추가를 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
