@@ -21,7 +21,7 @@ import EcaStudentAssignment from "../screens/student/eca/assignment/EcaStudentAs
 import EcaStudentAssignmentSubmit from "../screens/student/eca/assignment/EcaStudentAssignmentSubmit";
 
 import VlogHomeScreen from "../screens/student/vlog/VlogHomeScreen";
-import NewVlogScreen from "../screens/student/vlog/internship/NewVlogScreen";
+import NewVlogScreen from "../screens/student/vlog/create/NewVlogScreen";
 import RecordVlogScreen from "../screens/student/vlog/record/RecordVlogScreen";
 import EditVlogScreen from "../screens/student/vlog/edit/EditVlogScreen";
 
