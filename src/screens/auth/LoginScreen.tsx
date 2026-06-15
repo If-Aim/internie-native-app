@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Pressable, Image, NativeModules, Alert, ScrollView, Modal } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ApiError, exchangeKakaoToken, loginWithApple, loginWithGoogle, loginWithLocal } from "../../api/client";
-import { saveAccessToken, saveOnboardingCompleted } from "../../auth/tokenStorage";
+import { saveOnboardingCompleted } from "../../auth/tokenStorage";
 import { styles } from "./Login.style";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -23,6 +23,7 @@ type KakaoLoginResult = {
 
 const { KakaoLogin } = NativeModules as {
     KakaoLogin?: {
+        isTalkLoginAvailable(): Promise<boolean>;
         loginWithTalk(): Promise<KakaoLoginResult>;
         loginWithAccount(): Promise<KakaoLoginResult>;
     };
@@ -50,6 +51,7 @@ export default function LoginScreen(_props: Props) {
 
     const moveAfterLogin = async (onboardingCompleted: boolean) => {
         await saveOnboardingCompleted(onboardingCompleted === true);
+
         if (onboardingCompleted === true) {
             rootNav.replace("Student");
         } else {
@@ -58,23 +60,17 @@ export default function LoginScreen(_props: Props) {
     };
 
     const handleServerKakaoLogin = async (kakaoAccessToken: string) => {
-        const res = await exchangeKakaoToken(kakaoAccessToken);
-        if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            Alert.alert(t("login.loginFailed"), text || t("login.kakaoLoginFailed"));
-            return;
+        try {
+            const data = await exchangeKakaoToken(kakaoAccessToken);
+            await moveAfterLogin(data.onboardingCompleted);
+        } catch (e) {
+            if (e instanceof ApiError) {
+                Alert.alert(t("login.loginFailed"), e.bodyText || e.message || t("login.kakaoLoginFailed"));
+                return;
+            }
+
+            Alert.alert(t("login.loginFailed"), t("login.kakaoLoginFailed"));
         }
-
-        const auth = res.headers.get("Authorization") || res.headers.get("authorization");
-        const body = await res.json().catch(() => null);
-
-        if (!auth) {
-            Alert.alert(t("login.loginFailed"), t("login.authorizationHeaderMissing"));
-            return;
-        }
-
-        await saveAccessToken(auth);
-        await moveAfterLogin(body?.onboardingCompleted === true);
     };
 
     const handleLocalLogin = async () => {
@@ -109,12 +105,20 @@ export default function LoginScreen(_props: Props) {
 
     const handleKakaoTalkLogin = async () => {
         try {
-            const kakaoToken = await KakaoLogin!.loginWithTalk();
+            if (!KakaoLogin?.loginWithTalk) {
+                console.log("NativeModules.KakaoLogin =", NativeModules.KakaoLogin);
+                Alert.alert(t("login.loginFailed"), "KakaoLogin.loginWithTalk 네이티브 모듈을 찾을 수 없습니다.");
+                return;
+            }
+
+            const kakaoToken = await KakaoLogin.loginWithTalk();
             const kakaoAccessToken = kakaoToken?.accessToken ?? "";
+
             if (!kakaoAccessToken) {
                 Alert.alert(t("login.loginFailed"), t("login.kakaoTokenMissing"));
                 return;
             }
+
             await handleServerKakaoLogin(kakaoAccessToken);
         } catch (e: any) {
             Alert.alert(t("login.loginFailed"), String(e?.message || t("login.kakaoLoginFailed")));
@@ -123,12 +127,20 @@ export default function LoginScreen(_props: Props) {
 
     const handleKakaoAccountLogin = async () => {
         try {
-            const kakaoToken = await KakaoLogin!.loginWithAccount();
+            if (!KakaoLogin?.loginWithAccount) {
+                console.log("NativeModules.KakaoLogin =", NativeModules.KakaoLogin);
+                Alert.alert(t("login.loginFailed"), "KakaoLogin.loginWithAccount 네이티브 모듈을 찾을 수 없습니다.");
+                return;
+            }
+
+            const kakaoToken = await KakaoLogin.loginWithAccount();
             const kakaoAccessToken = kakaoToken?.accessToken ?? "";
+
             if (!kakaoAccessToken) {
                 Alert.alert(t("login.loginFailed"), t("login.kakaoTokenMissing"));
                 return;
             }
+
             await handleServerKakaoLogin(kakaoAccessToken);
         } catch (e: any) {
             Alert.alert(t("login.loginFailed"), String(e?.message || t("login.kakaoAccountLoginFailed")));

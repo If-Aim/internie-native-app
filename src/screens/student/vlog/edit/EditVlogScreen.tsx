@@ -700,12 +700,15 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                             resizeMode="cover"
                             maxBitRate={0}
                             muted={false}
+                            volume={1}
+                            ignoreSilentSwitch="ignore"
                             repeat={false}
                             progressUpdateInterval={250}
                             onProgress={(data) => {
                                 if (previewSeekingRef.current) {
                                     return;
                                 }
+
                                 setPreviewCurrentSeconds(data.currentTime);
                             }}
                             onLoad={(data) => {
