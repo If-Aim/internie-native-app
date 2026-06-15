@@ -25,7 +25,7 @@
         "startWithGoogleAria": "Continue with Google",
         "loginWithGoogle": "Log in with Google",
         "getLoginTitle": "Login Required",
-        "getLoginSub": "Would you like to log in?",
+        "getLoginSub": "Registration of the schedule and recording of the answer will be available after logging in.",
 		"googleNotReady": "Google login is being prepared. Please try again shortly.",
 		"googleLoginFailed": "Google login failed.",
 		"localLoginRequired": "Please enter both your ID and password.",
@@ -191,15 +191,20 @@
 		"cancel": "Cancel"
 	},
 	"menu": {
+		"home": "Home",
 		"mypage": "Profile",
 		"recent": "Recent Activity",
 		"settings": "Settings & Privacy",
+		"vlog": "Vlog",
 		"language": "Language"
 	},
 	"empty": {
 		"title": "No schedules yet.",
 		"subtitle": "Would you like to add one?",
-		"sync": "Sync Calendar"
+		"sync": "Sync Calendar",
+		"guestTitle": "Create a schedule and record your answers.",
+		"guestSubtitle": "Schedule registration and answer recording are available after login.",
+		"loginStart": "Log in to get started"
 	},
 	"modal": {
 		"desc1": "Record today's experience",
