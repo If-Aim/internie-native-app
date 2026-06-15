@@ -22,6 +22,7 @@ import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./EditVlogScreen.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "EditVlog">;
+const EXPORT_DISABLED = true; // 내보내기 기능 제한
 
 function BackIcon(): React.ReactElement {
     return (
@@ -875,6 +876,10 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         );
     }
     async function handlePressExport(): Promise<void> {
+        if (EXPORT_DISABLED) {
+            Alert.alert("준비 중", "내보내기 서비스는 준비중입니다.");
+            return;
+        }
         if (exporting) return;
 
         try {
@@ -1186,13 +1191,13 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
             <View style={styles.exportButtonWrap}>
                 <Pressable
-                    style={[styles.exportButton, exporting ? styles.exportButtonDisabled : null]}
+                    style={[styles.exportButton, exporting || EXPORT_DISABLED ? styles.exportButtonDisabled : null]}
                     disabled={exporting}
                     onPress={() => {
                         handlePressExport().catch(console.error);
                     }}
                 >
-                    <AppText style={styles.exportButtonText}>{exporting ? "내보내는 중" : "내보내기"}</AppText>
+                    <AppText style={styles.exportButtonText}>{EXPORT_DISABLED ? "내보내기 준비 중" : exporting ? "내보내는 중" : "내보내기"}</AppText>
                 </Pressable>
             </View>
             {renderAddClipModal()}
