@@ -1657,6 +1657,9 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             resizeMode="cover"
                             maxBitRate={0}
                             paused={heroPaused}
+                            muted={false}
+                            volume={1}
+                            ignoreSilentSwitch="ignore"
                             repeat={false}
                             controls={false}
                             onLoad={(data) => {

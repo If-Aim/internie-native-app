@@ -5,6 +5,7 @@ import ReactAppDependencyProvider
 import KakaoSDKCommon
 import KakaoSDKAuth
 import GoogleSignIn
+import AVFoundation
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -12,6 +13,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
+
+  private func configureAudioSession() {
+    do {
+      let session = AVAudioSession.sharedInstance()
+
+      try session.setCategory(
+        .playAndRecord,
+        mode: .default,
+        options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+      )
+
+      try session.setActive(true)
+    } catch {
+      print("AUDIO SESSION ERROR:", error.localizedDescription)
+    }
+  }
 
   func application(
     _ application: UIApplication,
@@ -29,6 +46,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         serverClientID: serverClientID
       )
     }
+
+    configureAudioSession()
 
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)

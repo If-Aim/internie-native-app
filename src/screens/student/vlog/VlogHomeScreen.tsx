@@ -573,6 +573,9 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                         style={styles.thumbnailVideo}
                         resizeMode="cover"
                         paused={inlinePaused}
+                        muted={false}
+                        volume={1}
+                        ignoreSilentSwitch="ignore"
                         repeat={false}
                         controls={false}
                         onLoad={(data) => {
