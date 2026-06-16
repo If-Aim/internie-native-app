@@ -8,14 +8,14 @@ export const styles = StyleSheet.create({
     loadingWrap: { minHeight: 360, alignItems: "center", justifyContent: "center" },
     
     card: { marginBottom: 38 },
-    thumbnail: { width: "100%", height: 240, borderRadius: 20, overflow: "hidden", backgroundColor: "rgba(189, 216, 255, 0.50)" },
+    thumbnail: { width: "100%", height: 240, borderRadius: 20, overflow: "hidden", backgroundColor: "#FFFFFF" },
     thumbnailImage: { width: "100%", height: "100%" },
     thumbnailVideo: { width: "100%", height: "100%" },
     thumbnailLoadingOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 6, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0, 0, 0, 0.25)" },
 
     thumbnailTouchLayer: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 2 },
-    thumbnailEmpty: { alignItems: "center", justifyContent: "center", backgroundColor: "#BDD8FF80" },
-    thumbnailEmptyText: { fontSize: 16, fontWeight: "700", color: "#0166FF", lineHeight: 22 },
+    thumbnailEmpty: { alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" },
+    thumbnailEmptyText: { fontSize: 16, fontWeight: "500", color: "#808080", lineHeight: 22 },
 
     videoControlBar: { position: "absolute", left: 15, right: 15, bottom: 12, zIndex: 4 },
     videoProgressTrack: { height: 6, borderRadius: 6.5, backgroundColor: "rgba(255, 255, 255, 0.45)", overflow: "hidden" },
