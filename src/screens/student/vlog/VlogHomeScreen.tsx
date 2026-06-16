@@ -412,7 +412,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         }
 
         if (!item.lastClipId) {
-            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 클립이 없습니다.");
+            Alert.alert("아직 영상이 없어요.", "아직 촬영된 클립이 없습니다.");
             return null;
         }
 
@@ -420,7 +420,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             const response = await getVlogClipPlayUrl(item.projectId, item.lastClipId);
 
             if (!response.url) {
-                Alert.alert("재생할 영상이 없습니다.", "영상 URL을 불러오지 못했습니다.");
+                Alert.alert("아직 영상이 없어요", "영상 URL을 불러오지 못했습니다.");
                 return null;
             }
 
@@ -436,7 +436,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         event.stopPropagation();
 
         if (!item.lastClipId) {
-            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 클립이 없습니다.");
+            Alert.alert("아직 영상이 없어요", "아직 촬영된 클립이 없습니다.");
             return;
         }
 

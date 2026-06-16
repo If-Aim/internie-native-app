@@ -141,6 +141,11 @@ export const styles = StyleSheet.create({
     cameraMissionBadgeText: { fontSize: 14, fontWeight: "700", color: "#fff", lineHeight: 24 },
     cameraMissionDesc: { flex: 1, fontSize: 14, fontWeight: "500", color: "rgba(255, 255, 255, 0.50)", lineHeight: 20 },
 
+    cameraSwitchButton: { position: "absolute", width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255, 255, 255, 0.50)", alignItems: "center", justifyContent: "center", zIndex: 20 },
+    cameraSwitchButtonPortrait: { left: "50%", top: 29, marginLeft: 127 },
+    cameraSwitchButtonLandscape: { left: 29, top: "50%", marginTop: -127 },
+    cameraSwitchButtonDisabled: { opacity: 0.45 },
+
     cameraFoldButtonInner: { flex: 1, width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
     cameraFoldButton: { position: "absolute", width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.24)", alignItems: "center", justifyContent: "center", zIndex: 20 },
 

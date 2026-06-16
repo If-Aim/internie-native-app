@@ -49,6 +49,7 @@ type WeekItem = {
     missions: MissionItem[];
 };
 
+type CameraPosition = "back" | "front";
 type CaptureResultMode = "READY" | "SAVING" | "DONE";
 
 // 날짜 표시
@@ -166,6 +167,14 @@ function CameraCloseIcon(): React.ReactElement {
     return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
             <Path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+function CameraSwitchIcon(): React.ReactElement {
+    return (
+        <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+            <Path d="M7.43714 9.66667C9.2904 6.27913 12.7543 4 16.7216 4C21.2198 4 25.0708 6.92991 26.6609 11.0833M10.6925 11.0833H5.33331V5.41667M25.8961 21C24.0429 24.3875 20.579 26.6667 16.6117 26.6667C12.1135 26.6667 8.26246 23.7368 6.67242 19.5833M22.6408 19.5833H28V25.25" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -381,7 +390,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const insets = useSafeAreaInsets();
     const isLandscape = width > height;
 
-    const cameraDevice = useCameraDevice("back");
+    const [cameraPosition, setCameraPosition] = React.useState<CameraPosition>("back");
+    const backCameraDevice = useCameraDevice("back");
+    const frontCameraDevice = useCameraDevice("front");
+    const cameraDevice = cameraPosition === "front" ? frontCameraDevice : backCameraDevice;
     const videoOutput = useVideoOutput({ enableAudio: true, fileType: "mp4" });
     const recorderRef = React.useRef<any>(null);
     const recordingStartedAtRef = React.useRef<number | null>(null);
@@ -872,6 +884,20 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         }
 
         setCameraOpen(false);
+    }
+
+    function toggleCameraPosition(): void {
+        if (recording) return;
+
+        const nextPosition = cameraPosition === "back" ? "front" : "back";
+        const nextCameraDevice = nextPosition === "front" ? frontCameraDevice : backCameraDevice;
+
+        if (!nextCameraDevice) {
+            Alert.alert("카메라 오류", "전환할 수 있는 카메라를 찾지 못했습니다.");
+            return;
+        }
+
+        setCameraPosition(nextPosition);
     }
 
     function handlePressRecord(mission: MissionItem): void {
@@ -1372,6 +1398,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 >
                     {cameraDevice ? (
                         <Camera
+                            key={cameraDevice.id}
                             style={styles.cameraPreview}
                             device={cameraDevice}
                             isActive={cameraOpen}
@@ -1477,6 +1504,19 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                                 }}
                             >
                                 <View style={recording ? styles.recordStopInner : styles.recordCircleInner} />
+                            </Pressable>
+
+                            <Pressable
+                                style={[
+                                    styles.cameraSwitchButton,
+                                    isLandscape ? styles.cameraSwitchButtonLandscape : styles.cameraSwitchButtonPortrait,
+                                    recording ? styles.cameraSwitchButtonDisabled : null,
+                                ]}
+                                onPress={toggleCameraPosition}
+                                disabled={recording}
+                                accessibilityLabel="카메라 전후면 전환"
+                            >
+                                <CameraSwitchIcon />
                             </Pressable>
 
                             {recording ? (
