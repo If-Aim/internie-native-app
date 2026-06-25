@@ -6,23 +6,26 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppText from "../../../../../AppText";
+import AppText from "../../../../../../AppText";
 import { API_BASE_URL } from "@env";
-import { getAccessToken } from "../../../../auth/tokenStorage";
-import { getUserMe } from "../../../../api/client";
-import type { UserMe, UploadFileLike } from "../../../../api/client";
-import { getAssignment, getMyAssignmentSubmissions, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity, submitAssignment, updateAssignmentSubmission } from "../../../../api/ea";
-import type { AssignmentResponse, AssignmentResultForm, AssignmentSubmissionResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse, SubmissionFileResponse } from "../../../../api/ea";
-import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
-import { commonStyles } from "../../../../theme/common.Style";
-import EcaStudentApp from "../EcaStudentApp";
-import StudentMobileSideMenu from "../../StudentSideMenu";
+import { getAccessToken } from "../../../../../auth/tokenStorage";
+import { getUserMe } from "../../../../../api/client";
+import type { UserMe, UploadFileLike } from "../../../../../api/client";
+import { getAssignment, getMyAssignmentSubmissions, getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity, getSubmissionEvaluation, submitAssignment, updateAssignmentSubmission, } from "../../../../../api/ea";
+import type { AssignmentResponse, AssignmentResultForm, AssignmentSubmissionEvaluationResponse, AssignmentSubmissionResponse, StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse, SubmissionFileResponse, } from "../../../../../api/ea";
+import { formatServerKstDateAndTimeCompactForUser, formatServerKstDateTimeDotForUser, } from "../../../../../theme/dateTime";
+import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
+import { commonStyles } from "../../../../../theme/common.Style";
+import EcaStudentApp from "../../EcaStudentApp";
+import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { getFileIconByExtension } from "./FileIcons";
 import { styles } from "./EcaStudentAssignmentSubmit.style";
 
+const ASSIGNMENT_SUBMIT_T = "ecaStudent.assignmentSubmitPage";
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentAssignmentSubmit">;
 
-type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "team-activity";
+type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
 
 type UploadFileItem = {
     id: string;
@@ -30,29 +33,16 @@ type UploadFileItem = {
     extension: string;
 };
 
-function formatDateTime(date?: string | null, time?: string | null): string {
-    if (!date) return "-";
-
-    const compactDate = date.slice(2).replaceAll("-", ".");
-    const compactTime = time ? time.slice(0, 5) : "";
-
-    return compactTime ? `${compactDate}. ${compactTime}` : compactDate;
+function formatDateTime(
+    date?: string | null,
+    time?: string | null,
+    fallbackTime: string = "00:00:00"
+): string {
+    return formatServerKstDateAndTimeCompactForUser(date, time, fallbackTime).slice(2);
 }
 
 function formatSubmittedAt(value?: string | null): string {
-    if (!value) return "-";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return value;
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hour = String(date.getHours()).padStart(2, "0");
-    const minute = String(date.getMinutes()).padStart(2, "0");
-
-    return `${year}.${month}.${day} ${hour}:${minute}`;
+    return formatServerKstDateTimeDotForUser(value);
 }
 
 function getLatestSubmittedAt(submission: AssignmentSubmissionResponse): string {
@@ -68,24 +58,35 @@ function isSameNumberArray(a: number[], b: number[]): boolean {
     return sortedA.every((value, index) => value === sortedB[index]);
 }
 
-function getSystemFormLabel(value?: string | null): string {
-    if (value === "TEAM") return "팀";
-    return "개인";
-}
-
-function getResultFormLabel(value?: AssignmentResultForm | null): string {
-    if (value === "WRITING") return "문서";
-    if (value === "VIDEO") return "영상";
-    if (value === "IMAGE") return "사진";
-    if (value === "LINK") return "링크";
-    if (value === "ETC") return "기타";
+function getResultFormLabel(value: AssignmentResultForm | null | undefined, t: TranslationFunction): string {
+    if (value === "WRITING") return t(`${ASSIGNMENT_SUBMIT_T}.resultForm.WRITING`);
+    if (value === "VIDEO") return t(`${ASSIGNMENT_SUBMIT_T}.resultForm.VIDEO`);
+    if (value === "IMAGE") return t(`${ASSIGNMENT_SUBMIT_T}.resultForm.IMAGE`);
+    if (value === "LINK") return t(`${ASSIGNMENT_SUBMIT_T}.resultForm.LINK`);
+    if (value === "ETC") return t(`${ASSIGNMENT_SUBMIT_T}.resultForm.ETC`);
     return value ?? "-";
 }
 
-function getResultFormsLabel(values?: AssignmentResultForm[] | null): string {
+function getStudentAssignmentFormLabel(
+    assignment: AssignmentResponse | null,
+    studentAssignment: StudentAssignmentResponse | null,
+    t: TranslationFunction
+): string {
+    const isTeamAssignment = studentAssignment?.isTeamAssignment ?? (assignment?.systemForm === "TEAM");
+
+    if (!isTeamAssignment) return t(`${ASSIGNMENT_SUBMIT_T}.assignmentForm.individual`);
+
+    const teamName = studentAssignment?.myTeam?.name?.trim();
+
+    return teamName
+        ? t(`${ASSIGNMENT_SUBMIT_T}.assignmentForm.teamWithName`, { teamName })
+        : t(`${ASSIGNMENT_SUBMIT_T}.assignmentForm.team`);
+}
+
+function getResultFormsLabel(values: AssignmentResultForm[] | null | undefined, t: TranslationFunction): string {
     if (!values || values.length === 0) return "-";
 
-    return values.map(getResultFormLabel).join(", ");
+    return values.map((value) => getResultFormLabel(value, t)).join(", ");
 }
 
 function getFileExtension(fileName: string): string {
@@ -243,21 +244,26 @@ function ReadonlyField({
     );
 }
 
-function getAssignmentDeadlineTime(assignment?: AssignmentResponse | null): number | null {
-    if (!assignment?.endDate) return null;
+function getEvaluationTotalScore(evaluation?: AssignmentSubmissionEvaluationResponse | null): number {
+    return evaluation?.criteria.reduce((total, item) => total + item.score, 0) ?? 0;
+}
 
-    const time = assignment.endTime ?? "23:59:59";
-    const deadline = new Date(`${assignment.endDate}T${time}`);
+function getEvaluationTotalMaxScore(evaluation?: AssignmentSubmissionEvaluationResponse | null): number {
+    return evaluation?.criteria.reduce((total, item) => total + item.maxScore, 0) ?? 0;
+}
 
-    if (Number.isNaN(deadline.getTime())) return null;
-
-    return deadline.getTime();
+function isEvaluationCompleted(
+    submission?: AssignmentSubmissionResponse | null,
+    evaluation?: AssignmentSubmissionEvaluationResponse | null
+): boolean {
+    return submission?.status === "REVIEWED" || !!evaluation?.evaluationId || !!evaluation?.evaluatedAt;
 }
 
 export default function EcaStudentAssignmentSubmit({
     route,
     navigation,
 }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { externalActivityId, assignmentId } = route.params;
 
     const [menuOpen, setMenuOpen] = React.useState(false);
@@ -277,7 +283,9 @@ export default function EcaStudentAssignmentSubmit({
     const [error, setError] = React.useState("");
     const [submitResultModalOpen, setSubmitResultModalOpen] = React.useState(false);
     const [submitResult, setSubmitResult] = React.useState<"success" | "fail">("success");
-    const [closedConfirmModalOpen, setClosedConfirmModalOpen] = React.useState(false);
+
+    const [evaluation, setEvaluation] = React.useState<AssignmentSubmissionEvaluationResponse | null>(null);
+    const [studentAssignment, setStudentAssignment] = React.useState<StudentAssignmentResponse | null>(null);
 
     const userName = (me?.name ?? "").trim() || "User";
     const userEmail = (me?.email ?? "").trim();
@@ -296,6 +304,19 @@ export default function EcaStudentAssignmentSubmit({
         setInitialExistingFileIds(nextFiles.map((file) => file.submissionFileId));
         setInitialExistingLinkIds(nextLinks.map((file) => file.submissionFileId));
         setLinkUrl("");
+
+        if (!latestSubmission) {
+            setEvaluation(null);
+            return;
+        }
+
+        try {
+            const evaluationData = await getSubmissionEvaluation(latestSubmission.submissionId);
+            setEvaluation(evaluationData);
+        } catch (e) {
+            console.error(e);
+            setEvaluation(null);
+        }
     }
 
     React.useEffect(() => {
@@ -306,12 +327,16 @@ export default function EcaStudentAssignmentSubmit({
             setError("");
 
             try {
-                const [meData, activityListData, activityData, assignmentData] = await Promise.all([
+                const [meData, activityListData, activityData, assignmentData, assignmentListData] = await Promise.all([
                     getUserMe(),
                     getMyParticipatingExternalActivities(),
                     getMyParticipatingExternalActivity(externalActivityId),
                     getAssignment(assignmentId),
+                    getMyExternalActivityAssignments(externalActivityId),
                 ]);
+
+                const matchedStudentAssignment =
+                    assignmentListData.find((item) => String(item.assignmentId) === String(assignmentId)) ?? null;
 
                 if (!mounted) return;
 
@@ -319,6 +344,7 @@ export default function EcaStudentAssignmentSubmit({
                 setMyActivities([...activityListData].sort((a, b) => a.externalActivityId - b.externalActivityId));
                 setActivity(activityData);
                 setAssignment(assignmentData);
+                setStudentAssignment(matchedStudentAssignment);
 
                 await fetchMySubmission(assignmentId);
             } catch (e) {
@@ -333,7 +359,9 @@ export default function EcaStudentAssignmentSubmit({
                 setExistingLinks([]);
                 setFiles([]);
                 setLinkUrl("");
-                setError("과제 정보를 불러오지 못했습니다.");
+                setStudentAssignment(null);
+                setEvaluation(null);
+                setError(t(`${ASSIGNMENT_SUBMIT_T}.error.assignmentLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -344,7 +372,7 @@ export default function EcaStudentAssignmentSubmit({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId, assignmentId]);
+    }, [externalActivityId, assignmentId, t]);
 
     const resultForms = assignment?.resultForms ?? [];
     const acceptsLink = resultForms.includes("LINK");
@@ -360,9 +388,20 @@ export default function EcaStudentAssignmentSubmit({
     const hasFileChange = files.length > 0 || !isSameNumberArray(initialExistingFileIds, currentExistingFileIds);
     const hasLinkChange = trimmedLinkUrl.length > 0 || !isSameNumberArray(initialExistingLinkIds, currentExistingLinkIds);
     const hasSubmissionChange = !mySubmission || hasFileChange || hasLinkChange;
-    const assignmentDeadlineTime = getAssignmentDeadlineTime(assignment);
-    const isSubmissionClosed = assignmentDeadlineTime != null && Date.now() > assignmentDeadlineTime;
-    const submitDisabled = !hasRequiredSubmission || !hasSubmissionChange || hasInvalidFileType || hasInvalidLink || submitting || loading || !!error;
+    
+    const evaluationCompleted = isEvaluationCompleted(mySubmission, evaluation);
+    const evaluationTotalScore = getEvaluationTotalScore(evaluation);
+    const evaluationTotalMaxScore = getEvaluationTotalMaxScore(evaluation);
+
+    const submitDisabled =
+        evaluationCompleted ||
+        !hasRequiredSubmission ||
+        !hasSubmissionChange ||
+        hasInvalidFileType ||
+        hasInvalidLink ||
+        submitting ||
+        loading ||
+        !!error;    
 
     async function openFilePicker(): Promise<void> {
         try {
@@ -406,14 +445,20 @@ export default function EcaStudentAssignmentSubmit({
     }
 
     function removeFile(fileId: string): void {
+        if (evaluationCompleted) return;
+
         setFiles((prev) => prev.filter((item) => item.id !== fileId));
     }
 
     function removeExistingFile(fileId: number): void {
+        if (evaluationCompleted) return;
+
         setExistingFiles((prev) => prev.filter((file) => file.submissionFileId !== fileId));
     }
 
     function removeExistingLink(fileId: number): void {
+        if (evaluationCompleted) return;
+
         setExistingLinks((prev) => prev.filter((file) => file.submissionFileId !== fileId));
     }
 
@@ -486,38 +531,28 @@ export default function EcaStudentAssignmentSubmit({
     }
 
     async function handleSubmit(): Promise<void> {
-        if (submitting) return;
+        if (!assignmentId || submitting || evaluationCompleted) return;
 
         if (!hasRequiredSubmission) {
-            Alert.alert(acceptsLink && !acceptsFile ? "제출할 링크를 입력해주세요." : "제출할 파일 또는 링크를 입력해주세요.");
+            Alert.alert(
+                acceptsLink && !acceptsFile
+                    ? t(`${ASSIGNMENT_SUBMIT_T}.alert.linkRequired`)
+                    : t(`${ASSIGNMENT_SUBMIT_T}.alert.fileOrLinkRequired`)
+            );
             return;
         }
 
         if (hasInvalidLink) {
-            Alert.alert("http 또는 https로 시작하는 링크를 입력해주세요.");
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.invalidLink`));
             return;
         }
 
         if (hasInvalidFileType) {
-            Alert.alert("과제 형식에 맞지 않는 파일이 포함되어 있습니다.");
-            return;
-        }
-
-        if (mySubmission && isSubmissionClosed) {
-            setClosedConfirmModalOpen(true);
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.invalidFileType`));
             return;
         }
 
         await submitNow();
-    }
-
-    function closeClosedConfirmModal(): void {
-        setClosedConfirmModalOpen(false);
-    }
-
-    function confirmClosedAssignmentSubmit(): void {
-        setClosedConfirmModalOpen(false);
-        void submitNow();
     }
 
     function requireAuth(action: () => void): void {
@@ -551,6 +586,16 @@ export default function EcaStudentAssignmentSubmit({
 
             if (menuKey === "assignment") {
                 navigation.navigate("EcaStudentAssignment", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "attendance") {
+                navigation.navigate("EcaStudentMobileAttendance", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "leaderboard") {
+                navigation.navigate("EcaStudentLeaderboard", { externalActivityId: String(activityId) });
                 return;
             }
 
@@ -617,19 +662,19 @@ export default function EcaStudentAssignmentSubmit({
                     ) : (
                         <>
                             <View style={styles.card}>
-                                <AppText style={styles.cardTitle}>과제 정보</AppText>
+                                <AppText style={styles.cardTitle}>{t(`${ASSIGNMENT_SUBMIT_T}.uploadTitle`)}</AppText>
 
-                                <ReadonlyField label="과제명" value={assignment?.name ?? ""} />
+                                <ReadonlyField label={t(`${ASSIGNMENT_SUBMIT_T}.assignmentName`)} value={assignment?.name ?? ""} />
 
                                 <View style={styles.period}>
-                                    <AppText style={styles.fieldLabel}>과제 수행 기간</AppText>
+                                    <AppText style={styles.readonlyInputText} numberOfLines={1}>{formatDateTime(assignment?.endDate, assignment?.endTime, "23:59:59")}</AppText>
 
                                     <View style={styles.periodRow}>
                                         <View style={styles.periodInput}>
                                             <AppText style={styles.readonlyInputText} numberOfLines={1}>{formatDateTime(assignment?.startDate, assignment?.startTime)}</AppText>
                                         </View>
 
-                                        <AppText style={styles.periodDash}>~</AppText>
+                                        <AppText style={styles.periodDash}>-</AppText>
 
                                         <View style={styles.periodInput}>
                                             <AppText style={styles.readonlyInputText} numberOfLines={1}>{formatDateTime(assignment?.endDate, assignment?.endTime)}</AppText>
@@ -641,14 +686,14 @@ export default function EcaStudentAssignmentSubmit({
                                     <View style={styles.gridItem}>
                                         <AppText style={styles.fieldLabel}>팀/개인</AppText>
                                         <View style={styles.readonlyInput}>
-                                            <AppText style={styles.readonlyInputText}>{getSystemFormLabel(assignment?.systemForm)}</AppText>
+                                            <AppText style={styles.readonlyInputText}>{getStudentAssignmentFormLabel(assignment, studentAssignment, t)}</AppText>
                                         </View>
                                     </View>
 
                                     <View style={styles.gridItem}>
                                         <AppText style={styles.fieldLabel}>과제 형태</AppText>
                                         <View style={styles.readonlyInput}>
-                                            <AppText style={styles.readonlyInputText} numberOfLines={1}>{getResultFormsLabel(assignment?.resultForms)}</AppText>
+                                            <AppText style={styles.readonlyInputText} numberOfLines={1}>{getResultFormsLabel(assignment?.resultForms, t)}</AppText>
                                         </View>
                                     </View>
                                 </View>
@@ -658,9 +703,15 @@ export default function EcaStudentAssignmentSubmit({
                                 <AppText style={styles.cardTitle}>과제 업로드</AppText>
 
                                 {acceptsFile ? (
-                                    <Pressable style={styles.uploadBox} onPress={openFilePicker}>
+                                    <Pressable
+                                        style={[styles.uploadBox, evaluationCompleted ? styles.uploadBoxDisabled : null]}
+                                        onPress={openFilePicker}
+                                        disabled={evaluationCompleted}
+                                    >
                                         <UploadIcon />
-                                        <AppText style={styles.uploadText}>파일을 업로드해주세요</AppText>
+                                        <AppText style={styles.uploadText}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileUploadGuide`)}
+                                        </AppText>
                                     </Pressable>
                                 ) : null}
 
@@ -669,10 +720,11 @@ export default function EcaStudentAssignmentSubmit({
                                         <TextInput
                                             value={linkUrl}
                                             onChangeText={setLinkUrl}
-                                            placeholder="링크를 붙여주세요"
+                                            placeholder={t(`${ASSIGNMENT_SUBMIT_T}.linkPlaceholder`)}
                                             placeholderTextColor="#808080"
                                             autoCapitalize="none"
                                             keyboardType="url"
+                                            editable={!evaluationCompleted}
                                             style={[styles.linkInput, hasInvalidLink ? styles.linkInputInvalid : null]}
                                         />
 
@@ -682,9 +734,11 @@ export default function EcaStudentAssignmentSubmit({
                                                     <AppText style={styles.linkText} numberOfLines={1}>{link.url ?? "링크 정보 없음"}</AppText>
                                                 </Pressable>
 
-                                                <Pressable style={styles.linkRemoveButton} onPress={() => removeExistingLink(link.submissionFileId)} accessibilityLabel="링크 삭제">
-                                                    <CloseIcon />
-                                                </Pressable>
+                                                {!evaluationCompleted ? (
+                                                    <Pressable style={styles.linkRemoveButton} onPress={() => removeExistingLink(link.submissionFileId)}>
+                                                        <CloseIcon />
+                                                    </Pressable>
+                                                ) : null}
                                             </View>
                                         ))}
 
@@ -694,14 +748,28 @@ export default function EcaStudentAssignmentSubmit({
                                     </View>
                                 ) : null}
 
-                                {mySubmission ? (
-                                    <View style={styles.submittedBar}>
-                                        <AppText style={styles.submittedBarTitle}>제출된 과제</AppText>
-                                        <AppText style={styles.submittedBarLabel}>마지막 수정 일시:</AppText>
-                                        <AppText style={styles.submittedBarDate}>{formatSubmittedAt(getLatestSubmittedAt(mySubmission))}</AppText>
+                                {acceptsFile ? (
+                                    <View style={styles.submissionMeta}>
+                                        <AppText style={styles.submissionMetaLabel}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileLabel`)}
+                                        </AppText>
+
+                                        {mySubmission ? (
+                                            <AppText style={styles.submissionMetaDate} numberOfLines={1}>
+                                                {t(`${ASSIGNMENT_SUBMIT_T}.lastModifiedAt`)} {formatSubmittedAt(getLatestSubmittedAt(mySubmission))}
+                                            </AppText>
+                                        ) : null}
                                     </View>
                                 ) : null}
 
+                                {evaluationCompleted ? (
+                                    <View style={styles.evaluatedBar}>
+                                        <AppText style={styles.evaluatedBarText}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.evaluatedNotice`)}
+                                        </AppText>
+                                    </View>
+                                ) : null}
+                                
                                 {existingFiles.length > 0 ? (
                                     <View style={styles.fileList}>
                                         {existingFiles.map((file) => {
@@ -764,39 +832,63 @@ export default function EcaStudentAssignmentSubmit({
                                     </View>
                                 ) : null}
                             </View>
+                            {evaluationCompleted && evaluation ? (
+                                <>
+                                    <View style={[styles.card, styles.evaluationCard]}>
+                                        <AppText style={styles.cardTitle}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.evaluationTitle`)}
+                                        </AppText>
+
+                                        <View style={[styles.evaluationRow, styles.evaluationRowTotal]}>
+                                            <AppText style={styles.evaluationLabel}>
+                                                {t(`${ASSIGNMENT_SUBMIT_T}.totalScore`)}
+                                            </AppText>
+                                            <AppText style={[styles.evaluationScore, styles.evaluationScoreTotal]}>
+                                                {evaluationTotalScore}/{evaluationTotalMaxScore}
+                                            </AppText>
+                                        </View>
+
+                                        {evaluation.criteria.map((criterion) => (
+                                            <View style={styles.evaluationRow} key={criterion.criterionId}>
+                                                <AppText style={styles.evaluationLabel} numberOfLines={1}>
+                                                    {criterion.name}
+                                                </AppText>
+                                                <AppText style={styles.evaluationScore}>
+                                                    {criterion.score}/{criterion.maxScore}
+                                                </AppText>
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <View style={[styles.card, styles.feedbackCard]}>
+                                        <AppText style={styles.cardTitle}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.feedbackTitle`)}
+                                        </AppText>
+
+                                        <AppText style={styles.feedbackText}>
+                                            {evaluation.feedback?.trim() || t(`${ASSIGNMENT_SUBMIT_T}.noFeedback`)}
+                                        </AppText>
+                                    </View>
+                                </>
+                            ) : null}
 
                             <View style={styles.buttonRow}>
                                 <Pressable style={[styles.submitButton, submitDisabled ? styles.submitButtonDisabled : null]} disabled={submitDisabled} onPress={handleSubmit}>
                                     <AppText style={[styles.submitButtonText, submitDisabled ? styles.submitButtonTextDisabled : null]}>
-                                        {submitting ? "저장 중" : mySubmission ? "수정하기" : "제출하기"}
+                                        {evaluationCompleted
+                                            ? t(`${ASSIGNMENT_SUBMIT_T}.evaluationCompletedButton`)
+                                            : submitting
+                                                ? t(`${ASSIGNMENT_SUBMIT_T}.savingButton`)
+                                                : mySubmission
+                                                    ? t(`${ASSIGNMENT_SUBMIT_T}.editButton`)
+                                                    : t(`${ASSIGNMENT_SUBMIT_T}.submitButton`)}
                                     </AppText>
                                 </Pressable>
                             </View>
                         </>
                     )}
                 </ScrollView>
-                <Modal visible={closedConfirmModalOpen} transparent animationType="fade" onRequestClose={closeClosedConfirmModal}>
-                    <View style={styles.modalBackdrop}>
-                        <View style={styles.modifymodal}>
-                            <View style={styles.modalIcon}>
-                                <ResultIcon success={false} />
-                            </View>
 
-                            <AppText style={styles.modalTitle}>이미 종료된 과제입니다.</AppText>
-                            <AppText style={styles.modalMessage}>수정하시겠습니까?</AppText>
-
-                            <View style={styles.modalButtonRow}>
-                                <Pressable style={[styles.modalButton, styles.modalSecondaryButton]} onPress={closeClosedConfirmModal}>
-                                    <AppText style={[styles.modalButtonText, styles.modalSecondaryButtonText]}>아니요</AppText>
-                                </Pressable>
-
-                                <Pressable style={styles.modalButton} onPress={confirmClosedAssignmentSubmit}>
-                                    <AppText style={styles.modalButtonText}>예</AppText>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
                 <Modal visible={submitResultModalOpen} transparent animationType="fade" onRequestClose={() => setSubmitResultModalOpen(false)}>
                     <View style={styles.modalBackdrop}>
                         <View style={styles.modal}>

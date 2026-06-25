@@ -5,22 +5,22 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppText from "../../../../../AppText";
-import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
+import AppText from "../../../../../../AppText";
+import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import { API_BASE_URL } from "@env";
-import { getAccessToken } from "../../../../auth/tokenStorage";
-import { getUserMe } from "../../../../api/client";
-import type { UserMe } from "../../../../api/client";
-import { getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity } from "../../../../api/ea";
-import type { StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse } from "../../../../api/ea";
-import EcaStudentApp from "../EcaStudentApp";
-import StudentMobileSideMenu from "../../StudentSideMenu";
-import { commonStyles } from "../../../../theme/common.Style";
+import { getAccessToken } from "../../../../../auth/tokenStorage";
+import { getUserMe } from "../../../../../api/client";
+import type { UserMe } from "../../../../../api/client";
+import { getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity } from "../../../../../api/ea";
+import type { StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse } from "../../../../../api/ea";
+import EcaStudentApp from "../../EcaStudentApp";
+import StudentMobileSideMenu from "../../../StudentSideMenu";
+import { commonStyles } from "../../../../../theme/common.Style";
 import { styles } from "./EcaStudentDashboard.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentDashboard">;
 
-type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "team-activity";
+type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
 
 type MobileScheduleItem = {
     id: number;
@@ -137,8 +137,10 @@ function AssignmentFolderIcon(): React.ReactElement {
 
 function Header({
     onMenuClick,
+    onNotificationClick,
 }: {
     onMenuClick: () => void;
+    onNotificationClick: () => void;
 }): React.ReactElement {
     const { t } = useTranslation();
 
@@ -151,7 +153,7 @@ function Header({
             <AppText style={styles.appTitle} />
 
             <View style={commonStyles.iconbtn}>
-                <Pressable style={commonStyles.icon24} onPress={() => Alert.alert("서비스 준비중입니다.")} accessibilityLabel="알림" >
+                <Pressable style={commonStyles.icon24} onPress={onNotificationClick} accessibilityLabel="알림">
                     <BellIcon />
                 </Pressable>
             </View>
@@ -258,6 +260,16 @@ export default function EcaStudentDashboard({
                 return;
             }
 
+            if (menuKey === "attendance") {
+                navigation.navigate("EcaStudentMobileAttendance", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "leaderboard") {
+                navigation.navigate("EcaStudentLeaderboard", { externalActivityId: String(activityId) });
+                return;
+            }
+
             Alert.alert("서비스 준비중입니다.");
         });
     }
@@ -283,6 +295,14 @@ export default function EcaStudentDashboard({
             externalActivityId,
             assignmentId: String(assignmentId),
         });
+    }
+
+    function openLeaderboard(): void {
+        navigation.navigate("EcaStudentLeaderboard", { externalActivityId });
+    }
+
+    function openNotification(): void {
+        navigation.navigate("EcaStudentNotification", { externalActivityId });
     }
 
     return (
@@ -311,7 +331,7 @@ export default function EcaStudentDashboard({
             )}
         >
             <SafeAreaView style={commonStyles.appRoot}>
-                <Header onMenuClick={() => setMenuOpen(true)} />
+                <Header onMenuClick={() => setMenuOpen(true)} onNotificationClick={openNotification} />
 
                 <ScrollView style={styles.main} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.titleSection}>

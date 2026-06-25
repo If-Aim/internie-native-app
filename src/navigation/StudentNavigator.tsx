@@ -16,9 +16,16 @@ import NewScheduleScreen from "../screens/student/schedule/NewScheduleScreen";
 import EditScheduleScreen from "../screens/student/schedule/EditScheduleScreen";
 import DetailScheduleScreen from "../screens/student/schedule/DetailScheduleScreen";
 
-import EcaStudentDashboard from "../screens/student/eca/dashboard/EcaStudentDashboard";
-import EcaStudentAssignment from "../screens/student/eca/assignment/EcaStudentAssignment";
-import EcaStudentAssignmentSubmit from "../screens/student/eca/assignment/EcaStudentAssignmentSubmit";
+import EcaStudentDashboard from "../screens/student/eca/dashboard/dashboard/EcaStudentDashboard";
+import EcaStudentAssignment from "../screens/student/eca/dashboard/assignment/EcaStudentAssignment";
+import EcaStudentAssignmentSubmit from "../screens/student/eca/dashboard/assignment/EcaStudentAssignmentSubmit";
+import EcaStudentAttendance from "../screens/student/eca/dashboard/attendance/EcaStudentAttendance";
+import EcaStudentAttendanceSubmit from "../screens/student/eca/dashboard/attendance/EcaStudentAttendanceSubmit";
+import EcaStudentLeaderboard from "../screens/student/eca/dashboard/leaderboard/EcaStudentLeaderboard";
+import EcaStudentLeaderboardMission from "../screens/student/eca/dashboard/leaderboard/EcaStudentLeaderboardMission";
+import EcaStudentNotification from "../screens/student/eca/dashboard/notification/EcaStudentNotification";
+
+import type { MyAttendanceEventResponse } from "../api/ea";
 
 import VlogHomeScreen from "../screens/student/vlog/VlogHomeScreen";
 import NewVlogScreen from "../screens/student/vlog/create/NewVlogScreen";
@@ -42,7 +49,12 @@ export type StudentStackParamList = {
   EcaStudentDashboard: { externalActivityId: string };
   EcaStudentAssignment: { externalActivityId: string };
   EcaStudentAssignmentSubmit: { externalActivityId: string; assignmentId: string };
-  
+  EcaStudentMobileAttendance: { externalActivityId: string };
+  EcaStudentMobileAttendanceSubmit: { externalActivityId: string; eventId: number | string; event?: MyAttendanceEventResponse };
+  EcaStudentLeaderboard: { externalActivityId: string };
+  EcaStudentLeaderboardMission: { externalActivityId: string };
+  EcaStudentNotification: { externalActivityId: string };
+
   VlogHome: undefined;
   NewVlog: undefined;
   RecordVlog: {
@@ -84,7 +96,12 @@ export default function StudentNavigator() {
       <Stack.Screen name="EcaStudentDashboard" component={EcaStudentDashboard} />
       <Stack.Screen name="EcaStudentAssignment" component={EcaStudentAssignment} />
       <Stack.Screen name="EcaStudentAssignmentSubmit" component={EcaStudentAssignmentSubmit} />
-
+      <Stack.Screen name="EcaStudentMobileAttendance" component={EcaStudentAttendance} />
+      <Stack.Screen name="EcaStudentMobileAttendanceSubmit" component={EcaStudentAttendanceSubmit} />
+      <Stack.Screen name="EcaStudentLeaderboard" component={EcaStudentLeaderboard} />
+      <Stack.Screen name="EcaStudentLeaderboardMission" component={EcaStudentLeaderboardMission} />
+      <Stack.Screen name="EcaStudentNotification" component={EcaStudentNotification} />
+      
       <Stack.Screen name="VlogHome" component={VlogHomeScreen} />
       <Stack.Screen name="NewVlog" component={NewVlogScreen} />
       <Stack.Screen name="RecordVlog" component={RecordVlogScreen} />

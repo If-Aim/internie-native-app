@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthNavigator from "./AuthNavigator";
 import StudentNavigator from "./StudentNavigator";
 import OnboardingScreen from "../screens/auth/OnBoardingScreen";
-
+import { syncPushToken, subscribePushTokenRefresh } from "../notifications/pushNotification";
 import { getAccessToken, clearAccessToken, getOnboardingCompleted } from "../auth/tokenStorage";
 import { getUserMe, isOnboardingDone } from "../api/client";
 
@@ -21,6 +21,20 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
     const [initialRouteName, setInitialRouteName] = useState<"Auth" | "Onboarding" | "Student" | null>(null);
 
+    async function syncPushTokenSafely(): Promise<void> {
+        await syncPushToken().catch((error) => {
+            console.log("[PUSH] bootstrap sync failed:", error);
+        });
+    }
+
+    useEffect(() => {
+        const unsubscribe = subscribePushTokenRefresh();
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+    
     useEffect(() => {
         const bootstrapAuth = async () => {
             try {
@@ -30,6 +44,8 @@ export default function AppNavigator() {
                     setInitialRouteName("Student");
                     return;
                 }
+
+                void syncPushTokenSafely();
 
                 const onboardingCompleted = await getOnboardingCompleted();
 

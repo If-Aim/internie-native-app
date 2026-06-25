@@ -9,13 +9,14 @@ import AppText from "../../../../AppText";
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
 import { ecaStudentAppStyles as styles } from "./EcaStudentApp.style";
 
-type EcaStudentTab = "dashboard" | "assignment" | "attendance" | "team-activity";
+type EcaStudentTab = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
 
 type EcaStudentAppProps = {
     children: React.ReactNode;
     externalActivityId: string;
     activeTab: EcaStudentTab;
     overlay?: React.ReactNode;
+    hideBottomNav?: boolean;
 };
 
 type BottomNavItem = {
@@ -27,8 +28,8 @@ type BottomNavItem = {
 const bottomNavItems: BottomNavItem[] = [
     { key: "dashboard", label: "대시보드", disabled: false },
     { key: "assignment", label: "과제 제출", disabled: false },
-    { key: "attendance", label: "출석 확인", disabled: true },
-    { key: "team-activity", label: "팀 활동", disabled: true },
+    { key: "attendance", label: "출석 확인", disabled: false },
+    { key: "leaderboard", label: "리더보드", disabled: false },
 ];
 
 function BottomNavIcon({
@@ -62,6 +63,14 @@ function BottomNavIcon({
         );
     }
 
+    if (type === "leaderboard") {
+        return (
+            <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+                <Path d="M6 25V16C6 15.4477 6.44772 15 7 15H11C11.5523 15 12 15.4477 12 16V25M12 25V9C12 8.44772 12.4477 8 13 8H17C17.5523 8 18 8.44772 18 9V25M18 25V13C18 12.4477 18.4477 12 19 12H25C25.5523 12 26 12.4477 26 13V25M4 25H28" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+        );
+    }
+
     return (
         <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
             <Path d="M25.6002 18.2476C27.29 19.5101 28.8002 22.6889 28.8002 24.6475C28.8002 25.2577 28.355 25.7523 27.8058 25.7523H27.2002M20.8002 13.0726C21.8933 12.4402 22.6288 11.2584 22.6288 9.9047C22.6288 8.55104 21.8933 7.36916 20.8002 6.73682M4.19456 25.7523H21.7106C22.2598 25.7523 22.705 25.2577 22.705 24.6475C22.705 20.812 19.5006 17.7027 12.9526 17.7027C6.40455 17.7027 3.2002 20.812 3.2002 24.6475C3.2002 25.2577 3.64539 25.7523 4.19456 25.7523ZM16.6097 9.9047C16.6097 11.9245 14.9724 13.5618 12.9526 13.5618C10.9328 13.5618 9.29543 11.9245 9.29543 9.9047C9.29543 7.88492 10.9328 6.24756 12.9526 6.24756C14.9724 6.24756 16.6097 7.88492 16.6097 9.9047Z" stroke={color} strokeWidth={2} strokeLinecap="round" />
@@ -74,6 +83,7 @@ export default function EcaStudentApp({
     externalActivityId,
     activeTab,
     overlay,
+    hideBottomNav = false,
 }: EcaStudentAppProps): React.ReactElement {
     const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
 
@@ -94,6 +104,20 @@ export default function EcaStudentApp({
             navigation.navigate("EcaStudentAssignment", {
                 externalActivityId,
             });
+            return;
+        }
+
+        if (item.key === "attendance") {
+            navigation.navigate("EcaStudentMobileAttendance", {
+                externalActivityId,
+            });
+        }
+
+        if (item.key === "leaderboard") {
+            navigation.navigate("EcaStudentLeaderboard", {
+                externalActivityId,
+            });
+            return;
         }
     }
 
@@ -103,28 +127,30 @@ export default function EcaStudentApp({
                 {children}
             </View>
 
-            <View style={styles.bottomNavWrap}>
-                <SafeAreaView style={styles.bottomNavSafe} edges={["bottom"]}>
-                    <View style={styles.bottomNav}>
-                        {bottomNavItems.map((item) => {
-                            const active = activeTab === item.key;
-                            const color = active ? "#0166FF" : "#808080";
+            {hideBottomNav ? null : (
+                <View style={styles.bottomNavWrap}>
+                    <SafeAreaView style={styles.bottomNavSafe} edges={["bottom"]}>
+                        <View style={styles.bottomNav}>
+                            {bottomNavItems.map((item) => {
+                                const active = activeTab === item.key;
+                                const color = active ? "#0166FF" : "#808080";
 
-                            return (
-                                <Pressable key={item.key} style={styles.bottomNavItem} onPress={() => handlePress(item)}>
-                                    <View style={[styles.bottomNavIcon, active ? styles.bottomNavIconActive : null]}>
-                                        <BottomNavIcon type={item.key} color={color} />
-                                    </View>
+                                return (
+                                    <Pressable key={item.key} style={styles.bottomNavItem} onPress={() => handlePress(item)}>
+                                        <View style={[styles.bottomNavIcon, active ? styles.bottomNavIconActive : null]}>
+                                            <BottomNavIcon type={item.key} color={color} />
+                                        </View>
 
-                                    <AppText style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
-                                        {item.label}
-                                    </AppText>
-                                </Pressable>
-                            );
-                        })}
-                    </View>
-                </SafeAreaView>
-            </View>
+                                        <AppText style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
+                                            {item.label}
+                                        </AppText>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </SafeAreaView>
+                </View>
+            )}
             {overlay}
         </View>
     );

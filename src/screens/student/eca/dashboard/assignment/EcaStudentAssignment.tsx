@@ -5,27 +5,30 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppText from "../../../../../AppText";
+import AppText from "../../../../../../AppText";
 import { API_BASE_URL } from "@env";
-import { getAccessToken } from "../../../../auth/tokenStorage";
-import { ApiError, getUserMe } from "../../../../api/client";
-import type { UserMe } from "../../../../api/client";
-import { getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity } from "../../../../api/ea";
-import type { AssignmentParticipantStatus, StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse } from "../../../../api/ea";
-import type { StudentStackParamList } from "../../../../navigation/StudentNavigator";
-import { commonStyles } from "../../../../theme/common.Style";
-import EcaStudentApp from "../EcaStudentApp";
-import StudentMobileSideMenu from "../../StudentSideMenu";
+import { getAccessToken } from "../../../../../auth/tokenStorage";
+import { ApiError, getUserMe } from "../../../../../api/client";
+import type { UserMe } from "../../../../../api/client";
+import { getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity } from "../../../../../api/ea";
+import type { AssignmentParticipantStatus, StudentAssignmentResponse, StudentAssignmentTeam, StudentExternalActivityDetailResponse, StudentExternalActivityResponse } from "../../../../../api/ea";
+import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
+import { formatServerKstDateAndTimeCompactForUser, parseServerKstDateTime, } from "../../../../../theme/dateTime";
+import { commonStyles } from "../../../../../theme/common.Style";
+import EcaStudentApp from "../../EcaStudentApp";
+import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { styles } from "./EcaStudentAssignment.style";
 
+const ASSIGNMENT_T = "ecaStudent.assignmentPage";
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentAssignment">;
-
-type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "team-activity";
-type AssignmentStatus = "before" | "submitted" | "lateSubmitted" | "missing";
+type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
+type AssignmentStatus = "before" | "submitted" | "lateSubmitted" | "missing" | "evaluated";
 
 type StudentAssignmentViewModel = {
     id: number;
     name: string;
+    isTeamAssignment: boolean;
+    myTeam?: StudentAssignmentTeam | null;
     startDate: string;
     endDate: string;
     startTime?: string | null;
@@ -34,7 +37,12 @@ type StudentAssignmentViewModel = {
     status: AssignmentStatus;
 };
 
-function getAssignmentStatus(status: AssignmentParticipantStatus, deadlineAt?: string | null): AssignmentStatus {
+function getAssignmentStatus(
+    status: AssignmentParticipantStatus,
+    deadlineAt?: string | null,
+    evaluationCompleted = false
+): AssignmentStatus {
+    if (evaluationCompleted) return "evaluated";
     if (status === "SUBMITTED") return "submitted";
     if (status === "LATE_SUBMITTED") return "lateSubmitted";
     if (status === "LATE") return "missing";
@@ -42,7 +50,11 @@ function getAssignmentStatus(status: AssignmentParticipantStatus, deadlineAt?: s
     if (status === "NOT_SUBMITTED") {
         if (!deadlineAt) return "before";
 
-        return Date.now() > new Date(deadlineAt).getTime() ? "missing" : "before";
+        const deadline = parseServerKstDateTime(deadlineAt);
+
+        if (!deadline) return "before";
+
+        return Date.now() > deadline.getTime() ? "missing" : "before";
     }
 
     return "before";
@@ -52,43 +64,71 @@ function toStudentAssignmentViewModel(assignment: StudentAssignmentResponse): St
     return {
         id: assignment.assignmentId,
         name: assignment.name,
+        isTeamAssignment: assignment.isTeamAssignment,
+        myTeam: assignment.myTeam ?? null,
         startDate: assignment.startDate,
         endDate: assignment.endDate,
         startTime: assignment.startTime,
         endTime: assignment.endTime,
         deadlineAt: assignment.deadlineAt,
-        status: getAssignmentStatus(assignment.status, assignment.deadlineAt),
+        status: getAssignmentStatus(
+            assignment.status,
+            assignment.deadlineAt,
+            assignment.evaluationCompleted
+        ),
     };
 }
 
-function formatDate(value?: string | null): string {
-    if (!value) return "-";
-
-    return value.replaceAll("-", ".");
-}
-
-function formatTime(value?: string | null): string {
-    if (!value) return "";
-
-    return value.slice(0, 5);
-}
-
 function formatMobilePeriod(assignment: StudentAssignmentViewModel): string {
-    const start = `${formatDate(assignment.startDate)}${assignment.startTime ? ` ${formatTime(assignment.startTime)}` : ""}`;
-    const endDate = formatDate(assignment.endDate).slice(5);
-    const end = `${endDate}${assignment.endTime ? ` ${formatTime(assignment.endTime)}` : ""}`;
+    const start = formatServerKstDateAndTimeCompactForUser(
+        assignment.startDate,
+        assignment.startTime,
+        "00:00:00"
+    );
+    const end = formatServerKstDateAndTimeCompactForUser(
+        assignment.endDate,
+        assignment.endTime,
+        "23:59:59"
+    );
 
-    return `${start} ~ ${end}`;
+    return `${start} ~ ${end.slice(5)}`;
 }
 
-function getAssignmentStatusLabel(status: AssignmentStatus): string {
-    if (status === "submitted") return "제출";
-    if (status === "lateSubmitted") return "제출";
-    if (status === "missing") return "미제출";
-    return "제출전";
+function isUnsubmittedAssignment(status: AssignmentStatus): boolean {
+    return status === "before" || status === "missing";
+}
+
+function getAssignmentDeadlineSortTime(assignment: StudentAssignmentViewModel): number {
+    if (!assignment.deadlineAt) return Number.MAX_SAFE_INTEGER;
+
+    const deadline = parseServerKstDateTime(assignment.deadlineAt);
+
+    return deadline?.getTime() ?? Number.MAX_SAFE_INTEGER;
+}
+
+function compareStudentAssignments(a: StudentAssignmentViewModel, b: StudentAssignmentViewModel): number {
+    const unsubmittedA = isUnsubmittedAssignment(a.status);
+    const unsubmittedB = isUnsubmittedAssignment(b.status);
+
+    if (unsubmittedA !== unsubmittedB) return unsubmittedA ? -1 : 1;
+
+    const deadlineDiff = getAssignmentDeadlineSortTime(a) - getAssignmentDeadlineSortTime(b);
+
+    if (deadlineDiff !== 0) return deadlineDiff;
+
+    return a.name.localeCompare(b.name, "ko-KR", { numeric: true });
+}
+
+function getAssignmentStatusLabelKey(status: AssignmentStatus): string {
+    if (status === "evaluated") return `${ASSIGNMENT_T}.status.evaluated`;
+    if (status === "submitted") return `${ASSIGNMENT_T}.status.submitted`;
+    if (status === "lateSubmitted") return `${ASSIGNMENT_T}.status.late`;
+    if (status === "missing") return `${ASSIGNMENT_T}.status.missing`;
+    return `${ASSIGNMENT_T}.status.assigned`;
 }
 
 function getStatusStyle(status: AssignmentStatus) {
+    if (status === "evaluated") return styles.statusEvaluated;
     if (status === "submitted") return styles.statusSubmitted;
     if (status === "lateSubmitted") return styles.statusLateSubmitted;
     if (status === "missing") return styles.statusMissing;
@@ -96,6 +136,7 @@ function getStatusStyle(status: AssignmentStatus) {
 }
 
 function getStatusTextStyle(status: AssignmentStatus) {
+    if (status === "evaluated") return styles.statusTextEvaluated;
     if (status === "submitted") return styles.statusTextSubmitted;
     if (status === "lateSubmitted") return styles.statusTextLateSubmitted;
     if (status === "missing") return styles.statusTextMissing;
@@ -155,6 +196,7 @@ export default function EcaStudentAssignment({
     route,
     navigation,
 }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { externalActivityId } = route.params;
 
     const [menuOpen, setMenuOpen] = React.useState(false);
@@ -190,7 +232,11 @@ export default function EcaStudentAssignment({
                 setMe(meData);
                 setMyActivities([...activityListData].sort((a, b) => a.externalActivityId - b.externalActivityId));
                 setActivity(activityData);
-                setAssignments(assignmentData.map(toStudentAssignmentViewModel));
+                setAssignments(
+                    assignmentData
+                        .map(toStudentAssignmentViewModel)
+                        .sort(compareStudentAssignments)
+                );
             } catch (e) {
                 console.error(e);
 
@@ -201,19 +247,19 @@ export default function EcaStudentAssignment({
 
                 if (e instanceof ApiError) {
                     if (e.status === 404 || e.code === "EXTERNAL_ACTIVITY_NOT_FOUND") {
-                        Alert.alert("삭제되었거나 존재하지 않는 대외활동입니다.");
+                        Alert.alert(t(`${ASSIGNMENT_T}.error.activityDeletedOrNotFound`));
                         navigation.navigate("StudentHome");
                         return;
                     }
 
                     if (e.status === 403 || e.code === "FORBIDDEN" || e.code === "SUBMISSION_NOT_ALLOWED") {
-                        Alert.alert("접근할 수 없는 대외활동입니다.");
+                        Alert.alert(t(`${ASSIGNMENT_T}.error.accessDenied`));
                         navigation.navigate("StudentHome");
                         return;
                     }
                 }
 
-                setError("과제 목록을 불러오지 못했습니다.");
+                setError(t(`${ASSIGNMENT_T}.error.assignmentLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -224,7 +270,7 @@ export default function EcaStudentAssignment({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId, navigation]);
+    }, [externalActivityId, navigation, t]);
 
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
@@ -261,6 +307,16 @@ export default function EcaStudentAssignment({
                 return;
             }
 
+            if (menuKey === "attendance") {
+                navigation.navigate("EcaStudentMobileAttendance", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "leaderboard") {
+                navigation.navigate("EcaStudentLeaderboard", { externalActivityId: String(activityId) });
+                return;
+            }
+
             Alert.alert("서비스 준비중입니다.");
         });
     }
@@ -278,7 +334,7 @@ export default function EcaStudentAssignment({
     }
 
     function handleFilterClick(): void {
-        Alert.alert("필터 기능은 준비중입니다.");
+        Alert.alert(t(`${ASSIGNMENT_T}.alert.filterPreparing`));
     }
 
     function moveToAssignmentDetail(assignmentId: number): void {
@@ -318,9 +374,9 @@ export default function EcaStudentAssignment({
 
                 <ScrollView style={styles.main} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.titleRow}>
-                        <AppText style={styles.title}>과제 현황</AppText>
+                        <AppText style={styles.title}>{t(`${ASSIGNMENT_T}.title`)}</AppText>
 
-                        <Pressable style={styles.filterButton} onPress={handleFilterClick} accessibilityLabel="필터">
+                        <Pressable style={styles.filterButton} onPress={handleFilterClick} accessibilityLabel={t(`${ASSIGNMENT_T}.filter`)}>
                             <FilterIcon />
                         </Pressable>
                     </View>
@@ -336,7 +392,7 @@ export default function EcaStudentAssignment({
                             </View>
                         ) : assignments.length === 0 ? (
                             <View style={styles.emptyWrap}>
-                                <AppText style={styles.emptyText}>배정된 과제가 없습니다.</AppText>
+                                <AppText style={styles.emptyText}>{t(`${ASSIGNMENT_T}.empty`)}</AppText>
                             </View>
                         ) : (
                             assignments.map((assignment) => (
@@ -348,7 +404,7 @@ export default function EcaStudentAssignment({
 
                                     <View style={[styles.status, getStatusStyle(assignment.status)]}>
                                         <AppText style={[styles.statusText, getStatusTextStyle(assignment.status)]}>
-                                            {getAssignmentStatusLabel(assignment.status)}
+                                            {t(getAssignmentStatusLabelKey(assignment.status))}
                                         </AppText>
                                     </View>
 
