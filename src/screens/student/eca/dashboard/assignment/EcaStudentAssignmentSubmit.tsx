@@ -217,7 +217,7 @@ function Header({
     return (
         <View style={styles.topbarRow}>
             <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
-                <Image source={require("../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
+                <Image source={require("../../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
             </Pressable>
 
             <AppText style={styles.appTitle} numberOfLines={1}>{activityName}</AppText>
@@ -667,7 +667,7 @@ export default function EcaStudentAssignmentSubmit({
                                 <ReadonlyField label={t(`${ASSIGNMENT_SUBMIT_T}.assignmentName`)} value={assignment?.name ?? ""} />
 
                                 <View style={styles.period}>
-                                    <AppText style={styles.readonlyInputText} numberOfLines={1}>{formatDateTime(assignment?.endDate, assignment?.endTime, "23:59:59")}</AppText>
+                                    <AppText style={styles.fieldLabel}>과제 수행 기간</AppText>
 
                                     <View style={styles.periodRow}>
                                         <View style={styles.periodInput}>
@@ -701,6 +701,20 @@ export default function EcaStudentAssignmentSubmit({
 
                             <View style={styles.card}>
                                 <AppText style={styles.cardTitle}>과제 업로드</AppText>
+
+                                {acceptsFile ? (
+                                    <View style={styles.submissionMeta}>
+                                        <AppText style={styles.submissionMetaLabel}>
+                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileLabel`)}
+                                        </AppText>
+
+                                        {mySubmission ? (
+                                            <AppText style={styles.submissionMetaDate} numberOfLines={1}>
+                                                {t(`${ASSIGNMENT_SUBMIT_T}.lastModifiedAt`)} {formatSubmittedAt(getLatestSubmittedAt(mySubmission))}
+                                            </AppText>
+                                        ) : null}
+                                    </View>
+                                ) : null}
 
                                 {acceptsFile ? (
                                     <Pressable
@@ -744,20 +758,6 @@ export default function EcaStudentAssignmentSubmit({
 
                                         {hasInvalidLink ? (
                                             <AppText style={styles.linkError}>http 또는 https로 시작하는 링크를 입력해주세요.</AppText>
-                                        ) : null}
-                                    </View>
-                                ) : null}
-
-                                {acceptsFile ? (
-                                    <View style={styles.submissionMeta}>
-                                        <AppText style={styles.submissionMetaLabel}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileLabel`)}
-                                        </AppText>
-
-                                        {mySubmission ? (
-                                            <AppText style={styles.submissionMetaDate} numberOfLines={1}>
-                                                {t(`${ASSIGNMENT_SUBMIT_T}.lastModifiedAt`)} {formatSubmittedAt(getLatestSubmittedAt(mySubmission))}
-                                            </AppText>
                                         ) : null}
                                     </View>
                                 ) : null}

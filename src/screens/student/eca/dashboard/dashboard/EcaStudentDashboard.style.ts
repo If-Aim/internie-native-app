@@ -4,7 +4,13 @@ export const styles = StyleSheet.create({
     topbarRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop:11, paddingHorizontal: 12, paddingBottom: 15, backgroundColor: "#F0F6FF" },
     iconButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
     appTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: "#000000" },
-    main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingLeft: 20, paddingBottom: 0, margin: 0, },
+    main: { flex: 1, paddingTop: 27, paddingRight: 20, paddingLeft: 20, paddingBottom: 30, margin: 0, },
+
+    topActions: { flexDirection: "row", alignItems: "center", gap: 6, }, 
+    dashboardIconButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", },
+    profileButton: { width: 44, height: 44, borderRadius: 999, alignItems: "center", justifyContent: "center", overflow: "hidden", },
+    profileImage: { width: 32, height: 32, borderRadius: 999, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D9D9D9", },
+
     scrollContent: { paddingBottom: 80 },
     titleSection: { marginBottom: 24, paddingHorizontal: 4 },
     todayText: { marginLeft: 3, color: "#808080", fontSize: 16, fontWeight: "700", lineHeight: 20 },
@@ -23,8 +29,12 @@ export const styles = StyleSheet.create({
     metricBadgeText: { color: "#0166FF", fontSize: 16, fontWeight: "700" },
     metricBadgeTextPrimary: { color: "#FFFFFF" },
     metricArrow: { width: 36, height: 36, marginLeft: 2, alignItems: "center", justifyContent: "center" },
-    scheduleSection: { marginTop: 37 },
-    scheduleTitle: { marginHorizontal: 11, marginBottom: 21, color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 24 },
+    
+    scheduleSection: { marginTop: 18, },
+    scheduleHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginLeft: 11, marginRight: 1, marginBottom: 21, },
+    scheduleTitle: { color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 24, },
+    scheduleActions: { flexDirection: "row", alignItems: "center", gap: 10, },
+    scheduleActionButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", },
     scheduleList: { gap: 10 },
     scheduleItem: { width: "100%", minHeight: 84, paddingVertical: 18, paddingHorizontal: 20, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 14, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", gap: 14 },
     scheduleIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#E7E7E7", alignItems: "center", justifyContent: "center" },
@@ -32,6 +42,13 @@ export const styles = StyleSheet.create({
     scheduleTextWrap: { flex: 1, minWidth: 0, gap: 5 },
     scheduleItemTitle: { color: "#000000", fontSize: 16, fontWeight: "700", lineHeight: 20 },
     scheduleItemDate: { color: "rgba(0, 0, 0, 0.50)", fontSize: 14, fontWeight: "500", lineHeight: 20 },
+
+    filterModalBackdrop: { flex: 1, backgroundColor: "rgba(104, 104, 104, 0.50)", justifyContent: "flex-end",},
+    filterModal: { width: "100%", minHeight: 162, paddingTop: 15, paddingBottom: 34, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderWidth: 1, borderColor: "#D9D9D9", backgroundColor: "#FFFFFF", overflow: "hidden", },
+    filterModalOption: { width: "100%", height: 55, paddingHorizontal: 33, justifyContent: "center", backgroundColor: "#FFFFFF", },
+    filterModalOptionSelected: { backgroundColor: "#BDD8FF", },
+    filterModalOptionText: { color: "#000000", fontSize: 20, fontWeight: "500", lineHeight: 55, },
+
     empty: { minHeight: 120, color: "#808080", fontSize: 15, fontWeight: "700", textAlign: "center", textAlignVertical: "center" },
     emptyWrap: { minHeight: 120, alignItems: "center", justifyContent: "center" },
 });

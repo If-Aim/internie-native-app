@@ -1,18 +1,26 @@
 import React from "react";
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { launchCamera, launchImageLibrary } from "react-native-image-picker";
+import { launchImageLibrary } from "react-native-image-picker";
 import type { Asset } from "react-native-image-picker";
+import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput, } from "react-native-vision-camera";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import AppText from "../../../../../../AppText";
+import { formatServerKstDateTimeDateLabelForUser, parseServerKstDateTime, } from "../../../../../theme/dateTime";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import { checkInAttendance, getAttendanceCheckInEligibility, getMyAttendanceEventDetail, getMyAttendanceEvents } from "../../../../../api/ea";
 import type { MyAttendanceEventDetailResponse, MyAttendanceSelfieResponse, MyAttendanceEventResponse } from "../../../../../api/ea";
 import type { UploadFileLike } from "../../../../../api/client";
 import { styles } from "./EcaStudentAttendanceSubmit.style";
 
+const ATTENDANCE_SUBMIT_T = "ecaStudent.attendanceSubmitPage";
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentMobileAttendanceSubmit">;
+type CameraPosition = "back" | "front";
 
 type GalleryItem = {
     id: string;
@@ -26,6 +34,7 @@ type HeaderProps = {
     pickerOpen: boolean;
     onBackClick: () => void;
     onPickerClose: () => void;
+    t: TFunction;
 };
 
 function BackIcon(): React.ReactElement {
@@ -70,24 +79,59 @@ function SuccessIcon(): React.ReactElement {
     );
 }
 
-function Header({ titleDate, titleType, pickerOpen, onBackClick, onPickerClose }: HeaderProps): React.ReactElement {
+function CameraSwitchIcon(): React.ReactElement {
+    return (
+        <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+            <Path
+                d="M7.43714 9.66667C9.2904 6.27913 12.7543 4 16.7216 4C21.2198 4 25.0708 6.92991 26.6609 11.0833M10.6925 11.0833H5.33331V5.41667M25.8961 21C24.0429 24.3875 20.579 26.6667 16.6117 26.6667C12.1135 26.6667 8.26246 23.7368 6.67242 19.5833M22.6408 19.5833H28V25.25"
+                stroke="#FFFFFF"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+function Header({
+    titleDate,
+    titleType,
+    pickerOpen,
+    onBackClick,
+    onPickerClose,
+    t,
+}: HeaderProps): React.ReactElement {
     return (
         <View style={styles.topbar}>
             {pickerOpen ? (
                 <View style={styles.iconSpacer} />
             ) : (
-                <Pressable style={styles.iconButton} accessibilityLabel="back" onPress={onBackClick}>
+                <Pressable
+                    style={styles.iconButton}
+                    accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.back`)}
+                    onPress={onBackClick}
+                >
                     <BackIcon />
                 </Pressable>
             )}
 
             <View style={styles.appTitle}>
-                <Text style={styles.appTitleText}>{titleDate}</Text>
-                {titleType ? <Text style={styles.appTitleStatus}>{titleType}</Text> : null}
+                <AppText style={styles.appTitleText} numberOfLines={1}>
+                    {titleDate}
+                </AppText>
+                {titleType ? (
+                    <AppText style={styles.appTitleStatus} numberOfLines={1}>
+                        {titleType}
+                    </AppText>
+                ) : null}
             </View>
 
             {pickerOpen ? (
-                <Pressable style={styles.iconButton} accessibilityLabel="close" onPress={onPickerClose}>
+                <Pressable
+                    style={styles.iconButton}
+                    accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.close`)}
+                    onPress={onPickerClose}
+                >
                     <CloseIcon />
                 </Pressable>
             ) : (
@@ -97,27 +141,42 @@ function Header({ titleDate, titleType, pickerOpen, onBackClick, onPickerClose }
     );
 }
 
-function toDate(value?: string | null): Date | null {
-    if (!value) return null;
+function toLocalUri(path: string): string {
+    if (
+        path.startsWith("file://") ||
+        path.startsWith("content://") ||
+        path.startsWith("ph://") ||
+        path.startsWith("assets-library://")
+    ) {
+        return path;
+    }
 
-    const date = new Date(`${value}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) return null;
-
-    return date;
+    return `file://${path}`;
 }
 
-function formatTitleParts(event?: MyAttendanceEventResponse | null): { dateText: string; typeText: string } {
-    if (!event) return { dateText: "Attendance", typeText: "" };
+function getEventBaseDateTimeValue(event?: MyAttendanceEventResponse | null): string | null {
+    if (!event) return null;
 
-    const date = toDate(event.eventDate);
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const dateText = date ? `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}` : event.eventDate;
+    return event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
+}
+
+function formatTitleParts(
+    event: MyAttendanceEventResponse | null | undefined,
+    t: TFunction
+): { dateText: string; typeText: string } {
+    if (!event) {
+        return {
+            dateText: t(`${ATTENDANCE_SUBMIT_T}.fallbackTitle`),
+            typeText: "",
+        };
+    }
 
     return {
-        dateText,
-        typeText: event.type === "CLASS_START" ? "Start" : "End",
+        dateText: formatServerKstDateTimeDateLabelForUser(
+            getEventBaseDateTimeValue(event),
+            event.eventDate
+        ),
+        typeText: t(`${ATTENDANCE_SUBMIT_T}.type.${event.type}`),
     };
 }
 
@@ -130,10 +189,10 @@ function getSelfieRecords(detail: MyAttendanceEventDetailResponse | null): MyAtt
 function isNowInUploadWindow(event?: MyAttendanceEventResponse | null, now: Date = new Date()): boolean {
     if (!event) return false;
 
-    const start = new Date(event.uploadWindowStart);
-    const end = new Date(event.uploadWindowEnd);
+    const start = parseServerKstDateTime(event.uploadWindowStart);
+    const end = parseServerKstDateTime(event.uploadWindowEnd);
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+    if (!start || !end) return false;
 
     return now.getTime() >= start.getTime() && now.getTime() <= end.getTime();
 }
@@ -152,6 +211,7 @@ export default function EcaStudentAttendanceSubmit({
     route,
     navigation,
 }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { externalActivityId, eventId } = route.params;
     const initialEvent = route.params.event ?? null;
 
@@ -160,9 +220,10 @@ export default function EcaStudentAttendanceSubmit({
     const [selectedFile, setSelectedFile] = React.useState<UploadFileLike | null>(null);
     const [galleryItems, setGalleryItems] = React.useState<GalleryItem[]>([]);
     const [pickerOpen, setPickerOpen] = React.useState(false);
-    const [cameraReviewOpen, setCameraReviewOpen] = React.useState(false);
+    
     const [capturedCameraFile, setCapturedCameraFile] = React.useState<UploadFileLike | null>(null);
     const [capturedCameraPreviewUri, setCapturedCameraPreviewUri] = React.useState("");
+    const [takingPhoto, setTakingPhoto] = React.useState(false);
     const [, setEligible] = React.useState(false);
     const [alreadyChecked, setAlreadyChecked] = React.useState(false);
     const [now, setNow] = React.useState(new Date());
@@ -170,6 +231,21 @@ export default function EcaStudentAttendanceSubmit({
     const [saving, setSaving] = React.useState(false);
     const [success, setSuccess] = React.useState(false);
     const [error, setError] = React.useState("");
+
+    const insets = useSafeAreaInsets();
+
+    const [cameraOpen, setCameraOpen] = React.useState(false);
+    const [cameraPosition, setCameraPosition] = React.useState<CameraPosition>("front");
+    
+    const frontCameraDevice = useCameraDevice("front");
+    const backCameraDevice = useCameraDevice("back");
+    const cameraDevice = cameraPosition === "front" ? frontCameraDevice : backCameraDevice;
+    const photoOutput = usePhotoOutput({});
+
+    const {
+        hasPermission: hasCameraPermission,
+        requestPermission: requestCameraPermission,
+    } = useCameraPermission();
 
     const finishSuccessOverlay = React.useCallback((): void => {
         setSuccess(false);
@@ -183,7 +259,7 @@ export default function EcaStudentAttendanceSubmit({
 
         async function fetchAttendanceDetail(): Promise<void> {
             if (!externalActivityId || !eventId) {
-                setError("출석 정보를 찾을 수 없습니다.");
+                setError(t(`${ATTENDANCE_SUBMIT_T}.error.attendanceNotFound`));
                 return;
             }
 
@@ -234,7 +310,7 @@ export default function EcaStudentAttendanceSubmit({
 
                 setEvent(null);
                 setDetail(null);
-                setError("출석 상세 정보를 불러오지 못했습니다.");
+                setError(t(`${ATTENDANCE_SUBMIT_T}.error.attendanceDetailLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -245,7 +321,7 @@ export default function EcaStudentAttendanceSubmit({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId, eventId]);
+    }, [externalActivityId, eventId, t]);
 
     React.useEffect(() => {
         const timerId = setInterval(() => {
@@ -279,12 +355,12 @@ export default function EcaStudentAttendanceSubmit({
 
     function openPicker(): void {
         if (alreadyChecked) {
-            Alert.alert("이미 출석 체크가 완료되었습니다.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.alreadyChecked`));
             return;
         }
 
         if (!isNowInUploadWindow(event, now)) {
-            Alert.alert("현재 출석 가능한 시간이 아닙니다.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.notAvailableTime`));
             return;
         }
 
@@ -292,42 +368,95 @@ export default function EcaStudentAttendanceSubmit({
     }
 
     async function openCamera(): Promise<void> {
-        const response = await launchCamera({
-            mediaType: "photo",
-            cameraType: "front",
-            quality: 0.9,
-            saveToPhotos: false,
-        });
-
-        if (response.didCancel) return;
-
-        if (response.errorCode) {
-            Alert.alert("카메라를 사용할 수 없습니다.", response.errorMessage ?? "카메라 권한을 확인해주세요.");
+        if (alreadyChecked) {
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.alreadyChecked`));
             return;
         }
 
-        const asset = response.assets?.[0];
-        const file = asset ? assetToUploadFile(asset) : null;
-
-        if (!file) {
-            Alert.alert("사진을 가져오지 못했습니다.");
+        if (!isNowInUploadWindow(event, now)) {
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.notAvailableTime`));
             return;
         }
 
-        setCapturedCameraFile(file);
-        setCapturedCameraPreviewUri(file.uri);
-        setCameraReviewOpen(true);
+        const cameraGranted = hasCameraPermission || await requestCameraPermission();
+
+        if (!cameraGranted) {
+            Alert.alert(
+                t(`${ATTENDANCE_SUBMIT_T}.alert.cameraPermissionRequired`)
+            );
+            return;
+        }
+
+        if (!cameraDevice) {
+            Alert.alert(
+                t(`${ATTENDANCE_SUBMIT_T}.alert.cameraNotSupported`, {
+                    defaultValue: "사용 가능한 카메라를 찾지 못했습니다.",
+                })
+            );
+            return;
+        }
+
+        setCapturedCameraFile(null);
+        setCapturedCameraPreviewUri("");
+        setCameraOpen(true);
     }
 
-    function closeCameraReview(): void {
-        setCameraReviewOpen(false);
+    function closeCamera(): void {
+        if (saving || takingPhoto) return;
+
+        setCameraOpen(false);
         setCapturedCameraFile(null);
         setCapturedCameraPreviewUri("");
     }
 
-    async function retakeCameraPhoto(): Promise<void> {
-        closeCameraReview();
-        await openCamera();
+    function retakeCameraPhoto(): void {
+        if (saving || takingPhoto) return;
+
+        setCapturedCameraFile(null);
+        setCapturedCameraPreviewUri("");
+    }
+
+    function toggleCameraPosition(): void {
+        if (saving || takingPhoto || capturedCameraPreviewUri) return;
+
+        const nextPosition: CameraPosition = cameraPosition === "front" ? "back" : "front";
+        const nextDevice = nextPosition === "front" ? frontCameraDevice : backCameraDevice;
+
+        if (!nextDevice) {
+            Alert.alert(
+                t(`${ATTENDANCE_SUBMIT_T}.alert.cameraNotSupported`, {
+                    defaultValue: "전환할 수 있는 카메라를 찾지 못했습니다.",
+                })
+            );
+            return;
+        }
+
+        setCameraPosition(nextPosition);
+    }
+
+    async function captureCameraPhoto(): Promise<void> {
+        if (takingPhoto || saving) return;
+
+        try {
+            setTakingPhoto(true);
+
+            const { filePath } = await photoOutput.capturePhotoToFile({}, {});
+            const uri = toLocalUri(filePath);
+
+            const file: UploadFileLike = {
+                uri,
+                name: `attendance-selfie-${Date.now()}.jpg`,
+                type: "image/jpeg",
+            };
+
+            setCapturedCameraFile(file);
+            setCapturedCameraPreviewUri(uri);
+        } catch (error) {
+            console.error(error);
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.photoCaptureFailed`));
+        } finally {
+            setTakingPhoto(false);
+        }
     }
 
     async function openGallery(): Promise<void> {
@@ -360,7 +489,7 @@ export default function EcaStudentAttendanceSubmit({
             .filter((item): item is GalleryItem => item !== null);
 
         if (nextItems.length === 0) {
-            Alert.alert("이미지 파일만 선택할 수 있습니다.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.imageOnly`));
             return;
         }
 
@@ -398,14 +527,14 @@ export default function EcaStudentAttendanceSubmit({
             await refreshDetail();
 
             if (closeCameraAfterSuccess) {
-                closeCameraReview();
+                closeCamera();
             }
 
             setPickerOpen(false);
             setSuccess(true);
         } catch (e) {
             console.error(e);
-            Alert.alert("출석 체크에 실패했습니다.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.checkInFailed`));
         } finally {
             setSaving(false);
         }
@@ -413,7 +542,7 @@ export default function EcaStudentAttendanceSubmit({
 
     async function handleUpload(): Promise<void> {
         if (!selectedFile) {
-            Alert.alert("업로드할 사진을 선택해주세요.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.photoRequired`));
             return;
         }
 
@@ -430,19 +559,110 @@ export default function EcaStudentAttendanceSubmit({
     const selfieRecords = getSelfieRecords(detail);
     const canCheckIn = !alreadyChecked && isNowInUploadWindow(event, now);
     const selectedFileInGallery = galleryItems.some((item) => item.file.uri === selectedFile?.uri);
-    const titleParts = formatTitleParts(event);
+    const titleParts = formatTitleParts(event, t);
+
+    function renderCameraModal(): React.ReactElement {
+        return (
+            <Modal
+                visible={cameraOpen}
+                animationType="fade"
+                presentationStyle="fullScreen"
+                onRequestClose={closeCamera}
+            >
+                <View style={styles.cameraRoot}>
+                    {capturedCameraPreviewUri ? (
+                        <Image
+                            source={{ uri: capturedCameraPreviewUri }}
+                            style={styles.cameraReviewImage}
+                            resizeMode="cover"
+                        />
+                    ) : cameraDevice ? (
+                        <Camera
+                            key={cameraDevice.id}
+                            style={styles.cameraPreview}
+                            device={cameraDevice}
+                            isActive={cameraOpen && !capturedCameraPreviewUri}
+                            outputs={[photoOutput]}
+                        />
+                    ) : (
+                        <View style={styles.cameraLayer} />
+                    )}
+
+                    <Pressable
+                        style={[styles.cameraClose, { top: insets.top + 11 }]}
+                        accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.closeCamera`)}
+                        onPress={closeCamera}
+                    >
+                        <CloseIcon color="#FFFFFF" />
+                    </Pressable>
+
+                    {!capturedCameraPreviewUri ? (
+                        <>
+                            <View style={[styles.cameraGuide, { top: insets.top + 62 }]}>
+                                <AppText style={styles.cameraGuideText}>
+                                    {t(`${ATTENDANCE_SUBMIT_T}.cameraGuide`, {
+                                        defaultValue: "얼굴이 잘 보이도록 촬영해주세요.",
+                                    })}
+                                </AppText>
+                            </View>
+
+                            <Pressable
+                                style={[styles.cameraCapture, { bottom: insets.bottom + 60 }]}
+                                disabled={takingPhoto || saving}
+                                onPress={() => void captureCameraPhoto()}
+                                accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.takePhoto`)}
+                            />
+
+                            <Pressable
+                                style={[styles.cameraSwitch, { bottom: insets.bottom + 89 }]}
+                                disabled={takingPhoto || saving}
+                                onPress={toggleCameraPosition}
+                                accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.switchCamera`)}
+                            >
+                                <CameraSwitchIcon />
+                            </Pressable>
+                        </>
+                    ) : (
+                        <View style={[styles.cameraReviewActions, { bottom: insets.bottom + 50 }]}>
+                            <Pressable
+                                style={[styles.cameraReviewButton, styles.cameraRetakeButton]}
+                                disabled={saving}
+                                onPress={retakeCameraPhoto}
+                            >
+                                <AppText style={styles.cameraRetakeText}>
+                                    {t(`${ATTENDANCE_SUBMIT_T}.retake`)}
+                                </AppText>
+                            </Pressable>
+
+                            <Pressable
+                                style={[styles.cameraReviewButton, styles.cameraCheckInButton]}
+                                disabled={saving}
+                                onPress={() => void confirmCameraPhoto()}
+                            >
+                                <AppText style={styles.cameraCheckInText}>
+                                    {saving
+                                        ? t(`${ATTENDANCE_SUBMIT_T}.uploading`)
+                                        : t(`${ATTENDANCE_SUBMIT_T}.checkIn`)}
+                                </AppText>
+                            </Pressable>
+                        </View>
+                    )}
+                </View>
+            </Modal>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.page} edges={["top", "bottom"]}>
-            <Header titleDate={titleParts.dateText} titleType={titleParts.typeText} pickerOpen={pickerOpen} onBackClick={goBack} onPickerClose={closePicker} />
+            <Header titleDate={titleParts.dateText} titleType={titleParts.typeText} pickerOpen={pickerOpen} onBackClick={goBack} onPickerClose={closePicker} t={t}/>
 
             {loading ? (
                 <View style={styles.emptyWrap}>
-                    <ActivityIndicator />
+                    <ActivityIndicator color="#0166FF" />
                 </View>
             ) : error ? (
                 <View style={styles.emptyWrap}>
-                    <Text style={styles.emptyText}>{error}</Text>
+                    <AppText style={styles.emptyText}>{error}</AppText>
                 </View>
             ) : (
                 <>
@@ -478,7 +698,7 @@ export default function EcaStudentAttendanceSubmit({
                                 })}
 
                                 <Pressable style={[styles.photoTile, styles.galleryTile]} onPress={() => void openGallery()}>
-                                    <Text style={styles.galleryText}>+</Text>
+                                    <AppText style={styles.galleryText}>+</AppText>
                                 </Pressable>
                             </View>
                         ) : selfieRecords.length > 0 ? (
@@ -490,46 +710,32 @@ export default function EcaStudentAttendanceSubmit({
                                 ))}
                             </View>
                         ) : (
-                            <Text style={styles.noSelfieText}>아직 출석한 학생이 없습니다.</Text>
+                            <AppText style={styles.noSelfieText}>{t(`${ATTENDANCE_SUBMIT_T}.noCheckedStudents`)}</AppText>
                         )}
                     </ScrollView>
 
                     <View style={styles.bottomBar}>
                         {pickerOpen ? (
                             <Pressable style={[styles.primaryButton, saving ? styles.primaryButtonDisabled : null]} disabled={saving} onPress={() => void handleUpload()}>
-                                <Text style={[styles.primaryButtonText, saving ? styles.primaryButtonTextDisabled : null]}>{saving ? "Uploading..." : "Upload"}</Text>
+                                <AppText style={[styles.primaryButtonText, saving ? styles.primaryButtonTextDisabled : null]}>
+                                    {saving ? t(`${ATTENDANCE_SUBMIT_T}.uploading`) : t(`${ATTENDANCE_SUBMIT_T}.upload`)}
+                                </AppText>
                             </Pressable>
                         ) : (
                             <Pressable style={[styles.primaryButton, !canCheckIn ? styles.primaryButtonDisabled : null]} disabled={!canCheckIn} onPress={openPicker}>
-                                <Text style={[styles.primaryButtonText, !canCheckIn ? styles.primaryButtonTextDisabled : null]}>Check-In</Text>
+                                <AppText style={[styles.primaryButtonText, !canCheckIn ? styles.primaryButtonTextDisabled : null]}>
+                                    {t(`${ATTENDANCE_SUBMIT_T}.checkIn`)}
+                                </AppText>
                             </Pressable>
                         )}
                     </View>
 
-                    <Modal visible={cameraReviewOpen} animationType="fade" transparent={false} onRequestClose={closeCameraReview}>
-                        <View style={styles.cameraLayer}>
-                            {capturedCameraPreviewUri ? <Image source={{ uri: capturedCameraPreviewUri }} style={styles.cameraReviewImage} /> : null}
-
-                            <Pressable style={styles.cameraClose} accessibilityLabel="close camera" onPress={closeCameraReview}>
-                                <CloseIcon color="#FFFFFF" />
-                            </Pressable>
-
-                            <View style={styles.cameraReviewActions}>
-                                <Pressable style={[styles.cameraReviewButton, styles.cameraRetakeButton]} disabled={saving} onPress={() => void retakeCameraPhoto()}>
-                                    <Text style={styles.cameraRetakeText}>Retake</Text>
-                                </Pressable>
-
-                                <Pressable style={[styles.cameraReviewButton, styles.cameraCheckInButton]} disabled={saving} onPress={() => void confirmCameraPhoto()}>
-                                    <Text style={styles.cameraCheckInText}>{saving ? "Uploading..." : "Check-In"}</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </Modal>
+                    {renderCameraModal()}
 
                     <Modal visible={success} animationType="fade" transparent={false} onRequestClose={finishSuccessOverlay}>
                         <Pressable style={styles.successLayer} accessibilityLabel="close success message" onPress={finishSuccessOverlay}>
                             <SuccessIcon />
-                            <Text style={styles.successText}>Check-In Complete!</Text>
+                            <AppText style={styles.successText}>{t(`${ATTENDANCE_SUBMIT_T}.checkInComplete`)}</AppText>
                         </Pressable>
                     </Modal>
                 </>

@@ -148,7 +148,7 @@ export default function StudentMobileSideMenu({
         { key: "assignment", label: isKo ? "과제 제출 현황" : "Assignment Status", disabled: false },
         { key: "attendance", label: isKo ? "출석 현황" : "Attendance", disabled: false },
         { key: "leaderboard", label: isKo ? "리더보드" : "Leaderboard", disabled: false },
-        { key: "team-activity", label: isKo ? "팀 활동" : "Team Activity", disabled: true },
+        // { key: "team-activity", label: isKo ? "팀 활동" : "Team Activity", disabled: true },
     ];
 
     const hasActivities = activities.length > 0;

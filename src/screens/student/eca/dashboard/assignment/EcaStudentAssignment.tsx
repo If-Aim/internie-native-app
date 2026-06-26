@@ -182,7 +182,7 @@ function Header({
     return (
         <View style={styles.topbarRow}>
             <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
-                <Image source={require("../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
+                <Image source={require("../../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
             </Pressable>
 
             <AppText style={styles.appTitle} numberOfLines={1}>{activityName}</AppText>

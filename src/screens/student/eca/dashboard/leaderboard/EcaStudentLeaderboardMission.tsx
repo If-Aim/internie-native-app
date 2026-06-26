@@ -10,18 +10,10 @@ import { pick } from "@react-native-documents/picker";
 import AppText from "../../../../../../AppText";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import type { UploadFileLike } from "../../../../../api/client";
-import {
-    LEADERBOARD_MISSION_CATEGORY_OPTIONS,
-    getMyLeaderboardMissionLogs,
-    getMyLeaderboardMissions,
-    submitLeaderboardMission,
-} from "../../../../../api/ea";
-import type {
-    LeaderboardMissionCategory,
-    LeaderboardMissionResponse,
-    StudentLeaderboardLogResponse,
-} from "../../../../../api/ea";
+import { LEADERBOARD_MISSION_CATEGORY_OPTIONS, getMyLeaderboardMissionLogs, getMyLeaderboardMissions, submitLeaderboardMission, } from "../../../../../api/ea";
+import type { LeaderboardMissionCategory, LeaderboardMissionResponse, StudentLeaderboardLogResponse, } from "../../../../../api/ea";
 
+import { getFileIconByExtension } from "../assignment/FileIcons";
 import EcaStudentApp from "../../EcaStudentApp";
 import { styles } from "./EcaStudentLeaderboard.style";
 
@@ -681,9 +673,7 @@ export default function EcaStudentLeaderboardMission({
                                                 <View style={styles.missionFileItem} key={file.key}>
                                                     <View style={styles.missionFileMain}>
                                                         <View style={styles.missionFileIcon}>
-                                                            <AppText style={styles.missionFileIconText}>
-                                                                {extension.slice(0, 4).toUpperCase()}
-                                                            </AppText>
+                                                            {getFileIconByExtension(extension)}
                                                         </View>
 
                                                         <AppText style={styles.missionFileName} numberOfLines={1}>

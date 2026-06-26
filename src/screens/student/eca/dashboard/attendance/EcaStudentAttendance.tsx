@@ -1,10 +1,12 @@
 import React from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "@env";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { formatServerKstDateTimeDateLabelForUser, formatServerKstDateTimeTimeForUser, parseServerKstDateTime, } from "../../../../../theme/dateTime";
 
 import AppText from "../../../../../../AppText";
 import { getAccessToken } from "../../../../../auth/tokenStorage";
@@ -18,6 +20,7 @@ import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { commonStyles } from "../../../../../theme/common.Style";
 import { styles } from "./EcaStudentAttendance.style";
 
+const ATTENDANCE_T = "ecaStudent.attendancePage";
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentMobileAttendance">;
 
 type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
@@ -37,7 +40,7 @@ function Header({ activityName, onMenuClick }: HeaderProps): React.ReactElement 
     return (
         <View style={styles.topbar}>
             <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
-                <Image source={require("../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
+                <Image source={require("../../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
             </Pressable>
 
             <AppText style={styles.appTitle} numberOfLines={1}>{activityName}</AppText>
@@ -58,62 +61,34 @@ function getProfileImageUrl(profileImage?: string | null): string | null {
     return raw.startsWith("/") ? `${origin}${raw}` : `${origin}/${raw}`;
 }
 
-function toDate(value?: string | null): Date | null {
-    if (!value) return null;
-
-    const date = new Date(`${value}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) return null;
-
-    return date;
+function getEventBaseDateTimeValue(event: MyAttendanceEventResponse): string | null {
+    return event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
 }
 
-function formatEventDate(value?: string | null): string {
-    const date = toDate(value);
-
-    if (!date) return "-";
-
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    return `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
-}
-
-function formatEventStartTime(value?: string | null): string {
-    if (!value) return "";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "";
-
-    const hour = String(date.getHours()).padStart(2, "0");
-    const minute = String(date.getMinutes()).padStart(2, "0");
-
-    return `${hour}:${minute}`;
+function formatEventDate(event: MyAttendanceEventResponse): string {
+    return formatServerKstDateTimeDateLabelForUser(getEventBaseDateTimeValue(event));
 }
 
 function getEventDisplayTime(event: MyAttendanceEventResponse): string {
-    const value = event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
-
-    return formatEventStartTime(value);
+    return formatServerKstDateTimeTimeForUser(getEventBaseDateTimeValue(event), "");
 }
 
-function getTypeLabel(type: AttendanceEventType): string {
-    return type === "CLASS_START" ? "Start" : "End";
+function getEventSortTime(event: MyAttendanceEventResponse): number {
+    const date = parseServerKstDateTime(event.uploadWindowStart);
+
+    if (date) {
+        return date.getTime();
+    }
+
+    return Number.MAX_SAFE_INTEGER;
 }
 
-function getStatusLabel(status: AttendanceStatus): string {
-    const labels: Record<AttendanceStatus, string> = {
-        NOT_CHECKED: "Not Checked",
-        PRESENT: "Present",
-        LATE: "Late",
-        VERY_LATE: "Very Late",
-        EARLY_LEAVE: "Early Leave",
-        VERY_EARLY_LEAVE: "Very Early Leave",
-        ABSENT: "Absent",
-    };
+function getTypeLabel(type: AttendanceEventType, t: TFunction): string {
+    return t(`${ATTENDANCE_T}.type.${type}`);
+}
 
-    return labels[status];
+function getStatusLabel(status: AttendanceStatus, t: TFunction): string {
+    return t(`${ATTENDANCE_T}.status.${status}`);
 }
 
 function getStatusBoxStyle(status: AttendanceStatus) {
@@ -132,29 +107,23 @@ function getStatusTextStyle(status: AttendanceStatus) {
     return styles.statusTextLate;
 }
 
-function getEventSortTime(event: MyAttendanceEventResponse): number {
-    const windowTime = new Date(event.uploadWindowStart).getTime();
-
-    if (Number.isFinite(windowTime)) {
-        return windowTime;
-    }
-
-    return new Date(`${event.eventDate}T00:00:00`).getTime();
+function sortAttendanceEvents(events: MyAttendanceEventResponse[]): MyAttendanceEventResponse[] {
+    return [...events].sort((a, b) => getEventSortTime(a) - getEventSortTime(b));
 }
 
-function sortAttendanceEvents(events: MyAttendanceEventResponse[]): MyAttendanceEventResponse[] {
-    return [...events].sort((a, b) => {
-        if (a.progress === "OPEN" && b.progress !== "OPEN") return -1;
-        if (a.progress !== "OPEN" && b.progress === "OPEN") return 1;
-
-        return getEventSortTime(b) - getEventSortTime(a);
-    });
+function ArrowRightIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M10 7L15 12L10 17" stroke="#848484" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
 }
 
 export default function EcaStudentAttendance({
     route,
     navigation,
 }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { externalActivityId } = route.params;
 
     const [menuOpen, setMenuOpen] = React.useState(false);
@@ -198,7 +167,7 @@ export default function EcaStudentAttendance({
 
                 setActivity(null);
                 setEvents([]);
-                setError("출석 정보를 불러오지 못했습니다.");
+                setError(t(`${ATTENDANCE_T}.error.attendanceLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -209,7 +178,7 @@ export default function EcaStudentAttendance({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId]);
+    }, [externalActivityId, t]);
 
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
@@ -308,21 +277,25 @@ export default function EcaStudentAttendance({
             )}
         >
             <SafeAreaView style={styles.page}>
-                <Header activityName={activity?.name ?? "Attendance"} onMenuClick={() => setMenuOpen(true)} />
+                <Header activityName={activity?.name ?? t(`${ATTENDANCE_T}.fallbackTitle`)} onMenuClick={() => setMenuOpen(true)} />
 
                 <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
                     {loading ? (
                         <View style={styles.emptyWrap}>
-                            <ActivityIndicator />
-                            <Text style={styles.emptyText}>출석 정보를 불러오는 중입니다.</Text>
+                            <ActivityIndicator color="#0166FF" />
+                            <AppText style={styles.emptyText}>
+                                {t(`${ATTENDANCE_T}.loading`)}
+                            </AppText>
                         </View>
                     ) : error ? (
                         <View style={styles.emptyWrap}>
-                            <Text style={styles.emptyText}>{error}</Text>
+                            <AppText style={styles.emptyText}>{error}</AppText>
                         </View>
                     ) : events.length === 0 ? (
                         <View style={styles.emptyWrap}>
-                            <Text style={styles.emptyText}>등록된 출석 이벤트가 없습니다.</Text>
+                            <AppText style={styles.emptyText}>
+                                {t(`${ATTENDANCE_T}.empty`)}
+                            </AppText>
                         </View>
                     ) : (
                         events.map((event) => {
@@ -331,19 +304,32 @@ export default function EcaStudentAttendance({
                             return (
                                 <Pressable key={String(event.eventId)} style={styles.card} onPress={() => openAttendance(event)}>
                                     <View style={styles.cardText}>
-                                        <Text style={styles.cardTitle}>{formatEventDate(event.eventDate)}</Text>
+                                        <AppText style={styles.cardTitle} numberOfLines={1}>
+                                            {formatEventDate(event)}
+                                        </AppText>
 
                                         <View style={styles.cardSubRow}>
-                                            <Text style={styles.cardSubText}>{getTypeLabel(event.type)}</Text>
-                                            {displayTime ? <Text style={styles.cardTime}>{displayTime}</Text> : null}
+                                            <AppText style={styles.cardSubText}>
+                                                {getTypeLabel(event.type, t)}
+                                            </AppText>
+
+                                            {displayTime ? (
+                                                <AppText style={styles.cardTime}>
+                                                    {displayTime}
+                                                </AppText>
+                                            ) : null}
                                         </View>
                                     </View>
 
                                     <View style={[styles.statusBox, getStatusBoxStyle(event.status)]}>
-                                        <Text style={[styles.statusText, getStatusTextStyle(event.status)]}>{getStatusLabel(event.status)}</Text>
+                                        <AppText style={[styles.statusText, getStatusTextStyle(event.status)]}>
+                                            {getStatusLabel(event.status, t)}
+                                        </AppText>
                                     </View>
 
-                                    <Text style={styles.chevron}>›</Text>
+                                    <View style={styles.chevronWrap}>
+                                        <ArrowRightIcon />
+                                    </View>
                                 </Pressable>
                             );
                         })

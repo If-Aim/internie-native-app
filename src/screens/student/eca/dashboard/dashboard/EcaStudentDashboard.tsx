@@ -1,56 +1,132 @@
 import React from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppText from "../../../../../../AppText";
+import { getUserDateOnly, serverKstDateTimeToUserDateOnly, } from "../../../../../theme/dateTime";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import { API_BASE_URL } from "@env";
 import { getAccessToken } from "../../../../../auth/tokenStorage";
 import { getUserMe } from "../../../../../api/client";
 import type { UserMe } from "../../../../../api/client";
-import { getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity } from "../../../../../api/ea";
-import type { StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse } from "../../../../../api/ea";
+import { getMyAttendanceEvents, getMyExternalActivityAssignments, getMyParticipatingExternalActivities, getMyParticipatingExternalActivity, } from "../../../../../api/ea";
+import type { MyAttendanceEventResponse, StudentAssignmentResponse, StudentExternalActivityDetailResponse, StudentExternalActivityResponse, } from "../../../../../api/ea";
 import EcaStudentApp from "../../EcaStudentApp";
 import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { commonStyles } from "../../../../../theme/common.Style";
 import { styles } from "./EcaStudentDashboard.style";
 
+const DASHBOARD_T = "ecaStudent.dashboardPage";
+const SCHEDULE_FILTER_VALUES: ScheduleTypeFilter[] = ["attendance", "assignment"];
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentDashboard">;
 
 type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
+
+type ScheduleTypeFilter = "assignment" | "attendance";
+type ScheduleSortDirection = "asc" | "desc";
 
 type MobileScheduleItem = {
     id: number;
     title: string;
     date: string;
-    type: "activity" | "assignment" | "attendance";
+    sortTime: number;
+    type: ScheduleTypeFilter;
     completed: boolean;
 };
 
-function formatToday(): string {
-    const date = new Date();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
-
-    return `${month}월 ${day}일, ${weekdays[date.getDay()]}`;
+function getScheduleFilterOptions(t: TFunction): { value: ScheduleTypeFilter; label: string }[] {
+    return SCHEDULE_FILTER_VALUES.map((value) => ({
+        value,
+        label: t(`${DASHBOARD_T}.scheduleType.${value}`),
+    }));
 }
 
-function formatDate(value?: string | null): string {
-    if (!value) return "-";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return value;
-
+function formatDateOnlyDot(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
 
     return `${year}.${month}.${day}.`;
+}
+
+function parseDateOnlyLocal(value?: string | null): Date | null {
+    if (!value) return null;
+
+    const [year, month, day] = value.split("-").map(Number);
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+        return null;
+    }
+
+    const date = new Date(year, month - 1, day);
+
+    if (Number.isNaN(date.getTime())) return null;
+
+    return date;
+}
+
+function formatToday(t: TFunction, language: string): string {
+    const date = getUserDateOnly();
+
+    if (language.toLowerCase().startsWith("en")) {
+        return new Intl.DateTimeFormat("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+        }).format(date);
+    }
+
+    const weekday = t(`${DASHBOARD_T}.weekday.${date.getDay()}`);
+
+    return t(`${DASHBOARD_T}.todayFormat`, {
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        weekday,
+    });
+}
+
+function formatDate(value?: string | null, language?: string): string {
+    if (!value) return "-";
+
+    const formatTargetDate = (date: Date): string => {
+        if (language?.toLowerCase().startsWith("en")) {
+            return new Intl.DateTimeFormat("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+            }).format(date);
+        }
+
+        return formatDateOnlyDot(date);
+    };
+
+    if (value.includes("T")) {
+        const userDate = serverKstDateTimeToUserDateOnly(value);
+
+        return userDate ? formatTargetDate(userDate) : value;
+    }
+
+    const date = parseDateOnlyLocal(value);
+
+    return date ? formatTargetDate(date) : value;
+}
+
+function getScheduleSortTime(value?: string | null): number {
+    if (!value) return Number.MAX_SAFE_INTEGER;
+
+    if (value.includes("T")) {
+        const userDate = serverKstDateTimeToUserDateOnly(value);
+
+        return userDate ? userDate.getTime() : Number.MAX_SAFE_INTEGER;
+    }
+
+    const date = parseDateOnlyLocal(value);
+
+    return date ? date.getTime() : Number.MAX_SAFE_INTEGER;
 }
 
 function getDateProgressRate(startDate?: string | null, endDate?: string | null): number {
@@ -81,16 +157,67 @@ function isCompletedAssignment(assignment: StudentAssignmentResponse): boolean {
     return assignment.status === "SUBMITTED" || assignment.status === "LATE_SUBMITTED";
 }
 
-function toScheduleItems(assignments: StudentAssignmentResponse[]): MobileScheduleItem[] {
-    return assignments.map((assignment) => ({
-        id: assignment.assignmentId,
-        title: assignment.name,
-        date: formatDate(assignment.deadlineAt),
-        type: "assignment" as const,
-        completed: isCompletedAssignment(assignment),
-    }));
+function isCompletedAttendance(event: MyAttendanceEventResponse): boolean {
+    return event.status === "PRESENT"
+        || event.status === "LATE"
+        || event.status === "VERY_LATE"
+        || event.status === "EARLY_LEAVE"
+        || event.status === "VERY_EARLY_LEAVE";
 }
 
+function formatAttendanceScheduleTitle(event: MyAttendanceEventResponse, t: TFunction): string {
+    const value = event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
+    const baseDate = serverKstDateTimeToUserDateOnly(value);
+    const typeText = t(`${DASHBOARD_T}.attendanceType.${event.type}`);
+
+    if (!baseDate) {
+        return t(`${DASHBOARD_T}.attendanceNameWithType`, {
+            name: event.name,
+            type: typeText,
+        });
+    }
+
+    return t(`${DASHBOARD_T}.attendanceScheduleTitle`, {
+        month: baseDate.getMonth() + 1,
+        day: baseDate.getDate(),
+        type: typeText,
+    });
+}
+
+function toScheduleItems(
+    assignments: StudentAssignmentResponse[],
+    attendanceEvents: MyAttendanceEventResponse[],
+    t: TFunction,
+    language: string
+): MobileScheduleItem[] {
+    const assignmentItems = assignments.map((assignment) => {
+        const scheduleDate = assignment.deadlineAt;
+
+        return {
+            id: assignment.assignmentId,
+            title: assignment.name,
+            date: formatDate(scheduleDate, language),
+            sortTime: getScheduleSortTime(scheduleDate),
+            type: "assignment" as const,
+            completed: isCompletedAssignment(assignment),
+        };
+    });
+
+    const attendanceItems = attendanceEvents.map((event) => {
+        const scheduleDate = event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
+
+        return {
+            id: event.eventId,
+            title: formatAttendanceScheduleTitle(event, t),
+            date: formatDate(scheduleDate, language),
+            sortTime: getScheduleSortTime(scheduleDate),
+            type: "attendance" as const,
+            completed: isCompletedAttendance(event),
+        };
+    });
+
+    return [...assignmentItems, ...attendanceItems];
+}
 function getProfileImageUrl(profileImage?: string | null): string | null {
     const raw = String(profileImage ?? "").trim();
 
@@ -135,26 +262,62 @@ function AssignmentFolderIcon(): React.ReactElement {
     );
 }
 
+function FilterIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M22.125 7.875H1.875C1.57663 7.875 1.29048 7.75647 1.0795 7.5455C0.868526 7.33452 0.75 7.04837 0.75 6.75C0.75 6.45163 0.868526 6.16548 1.0795 5.9545C1.29048 5.74353 1.57663 5.625 1.875 5.625H22.125C22.4234 5.625 22.7095 5.74353 22.9205 5.9545C23.1315 6.16548 23.25 6.45163 23.25 6.75C23.25 7.04837 23.1315 7.33452 22.9205 7.5455C22.7095 7.75647 22.4234 7.875 22.125 7.875ZM18.375 13.125H5.625C5.32663 13.125 5.04048 13.0065 4.8295 12.7955C4.61853 12.5845 4.5 12.2984 4.5 12C4.5 11.7016 4.61853 11.4155 4.8295 11.2045C5.04048 10.9935 5.32663 10.875 5.625 10.875H18.375C18.6734 10.875 18.9595 10.9935 19.1705 11.2045C19.3815 11.4155 19.5 11.7016 19.5 12C19.5 12.2984 19.3815 12.5845 19.1705 12.7955C18.9595 13.0065 18.6734 13.125 18.375 13.125ZM13.875 18.375H10.125C9.82663 18.375 9.54048 18.2565 9.3295 18.0455C9.11853 17.8345 9 17.5484 9 17.25C9 16.9516 9.11853 16.6655 9.3295 16.4545C9.54048 16.2435 9.82663 16.125 10.125 16.125H13.875C14.1734 16.125 14.4595 16.2435 14.6705 16.4545C14.8815 16.6655 15 16.9516 15 17.25C15 17.5484 14.8815 17.8345 14.6705 18.0455C14.4595 18.2565 14.1734 18.375 13.875 18.375Z" fill="#000000" />
+        </Svg>
+    );
+}
+
+function SortIcon(): React.ReactElement {
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path d="M21 6.375L17.625 3L14.25 6.375M17.625 3L17.625 21M3 17.625L6.375 21L9.75 17.625M6.375 21L6.375 3" stroke="#000000" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
+
 function Header({
     onMenuClick,
     onNotificationClick,
+    onProfileClick,
+    userProfileImg,
 }: {
     onMenuClick: () => void;
     onNotificationClick: () => void;
+    onProfileClick: () => void;
+    userProfileImg: string | null;
 }): React.ReactElement {
     const { t } = useTranslation();
 
     return (
         <View style={styles.topbarRow}>
             <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
-                <Image source={require("../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
+                <Image source={require("../../../../../assets/icons/menu-01.png")} style={commonStyles.icon24} />
             </Pressable>
 
             <AppText style={styles.appTitle} />
 
-            <View style={commonStyles.iconbtn}>
-                <Pressable style={commonStyles.icon24} onPress={onNotificationClick} accessibilityLabel="알림">
+            <View style={styles.topActions}>
+                <Pressable
+                    style={styles.dashboardIconButton}
+                    onPress={onNotificationClick}
+                    accessibilityLabel={t(`${DASHBOARD_T}.aria.notification`)}
+                >
                     <BellIcon />
+                </Pressable>
+
+                <Pressable
+                    style={styles.profileButton}
+                    onPress={onProfileClick}
+                    accessibilityLabel={t("menu.settings")}
+                >
+                    {userProfileImg ? (
+                        <Image source={{ uri: userProfileImg }} style={styles.profileImage} />
+                    ) : (
+                        <Image source={require("../../../../../assets/images/internie_mascot_normal.png")} style={styles.profileImage} />
+                    )}
                 </Pressable>
             </View>
         </View>
@@ -165,6 +328,7 @@ export default function EcaStudentDashboard({
     route,
     navigation,
 }: Props): React.ReactElement {
+    const { t, i18n } = useTranslation();
     const { externalActivityId } = route.params;
 
     const [menuOpen, setMenuOpen] = React.useState(false);
@@ -174,6 +338,11 @@ export default function EcaStudentDashboard({
     const [assignments, setAssignments] = React.useState<StudentAssignmentResponse[]>([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState("");
+
+    const [attendanceEvents, setAttendanceEvents] = React.useState<MyAttendanceEventResponse[]>([]);
+    const [selectedScheduleTypes, setSelectedScheduleTypes] = React.useState<ScheduleTypeFilter[]>(["attendance", "assignment"]);
+    const [scheduleSortDirection, setScheduleSortDirection] = React.useState<ScheduleSortDirection>("asc");
+    const [scheduleFilterOpen, setScheduleFilterOpen] = React.useState(false);
 
     const userName = (me?.name ?? "").trim() || "User";
     const userEmail = (me?.email ?? "").trim();
@@ -188,11 +357,12 @@ export default function EcaStudentDashboard({
             setError("");
 
             try {
-                const [meData, activityListData, activityData, assignmentData] = await Promise.all([
+                const [meData, activityListData, activityData, assignmentData, attendanceData] = await Promise.all([
                     getUserMe(),
                     getMyParticipatingExternalActivities(),
                     getMyParticipatingExternalActivity(externalActivityId),
                     getMyExternalActivityAssignments(externalActivityId),
+                    getMyAttendanceEvents(externalActivityId),
                 ]);
 
                 if (!mounted) return;
@@ -201,6 +371,7 @@ export default function EcaStudentDashboard({
                 setMyActivities([...activityListData].sort((a, b) => a.externalActivityId - b.externalActivityId));
                 setActivity(activityData);
                 setAssignments(assignmentData);
+                setAttendanceEvents(attendanceData);
             } catch (e) {
                 console.error(e);
 
@@ -208,7 +379,8 @@ export default function EcaStudentDashboard({
 
                 setActivity(null);
                 setAssignments([]);
-                setError("대시보드 정보를 불러오지 못했습니다.");
+                setAttendanceEvents([]);
+                setError(t(`${DASHBOARD_T}.error.dashboardLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -219,12 +391,64 @@ export default function EcaStudentDashboard({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId]);
+    }, [externalActivityId, t]);
 
     const progressRate = getDateProgressRate(activity?.startDate, activity?.endDate);
     const completedAssignmentCount = assignments.filter(isCompletedAssignment).length;
     const assignmentRate = assignments.length === 0 ? 0 : Math.round((completedAssignmentCount / assignments.length) * 100);
-    const scheduleItems = toScheduleItems(assignments);
+    const scheduleFilterOptions = React.useMemo(() => getScheduleFilterOptions(t), [t]);
+    const scheduleLanguage = i18n.resolvedLanguage ?? i18n.language;
+
+    const scheduleItems = React.useMemo(() => {
+        return toScheduleItems(assignments, attendanceEvents, t, scheduleLanguage)
+            .filter((item) => selectedScheduleTypes.includes(item.type))
+            .sort((a, b) =>
+                scheduleSortDirection === "asc"
+                    ? a.sortTime - b.sortTime
+                    : b.sortTime - a.sortTime
+            );
+    }, [
+        assignments,
+        attendanceEvents,
+        selectedScheduleTypes,
+        scheduleSortDirection,
+        t,
+        scheduleLanguage,
+    ]);
+
+    function openAttendanceSubmit(eventId: number): void {
+        navigation.navigate("EcaStudentMobileAttendanceSubmit", {
+            externalActivityId,
+            eventId,
+        });
+    }
+
+    function toggleScheduleTypeFilter(type: ScheduleTypeFilter): void {
+        setSelectedScheduleTypes((prev) =>
+            prev.includes(type)
+                ? prev.filter((item) => item !== type)
+                : [...prev, type]
+        );
+    }
+
+    function toggleScheduleSortDirection(): void {
+        setScheduleSortDirection((prev) => prev === "asc" ? "desc" : "asc");
+    }
+
+    function getScheduleFilterLabel(): string {
+        if (selectedScheduleTypes.length === scheduleFilterOptions.length) {
+            return t(`${DASHBOARD_T}.filter.allTypes`);
+        }
+
+        if (selectedScheduleTypes.length === 0) {
+            return t(`${DASHBOARD_T}.filter.noTypes`);
+        }
+
+        return scheduleFilterOptions
+            .filter((option) => selectedScheduleTypes.includes(option.value))
+            .map((option) => option.label)
+            .join(", ");
+    }
 
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
@@ -331,12 +555,12 @@ export default function EcaStudentDashboard({
             )}
         >
             <SafeAreaView style={commonStyles.appRoot}>
-                <Header onMenuClick={() => setMenuOpen(true)} onNotificationClick={openNotification} />
+                <Header onMenuClick={() => setMenuOpen(true)} onNotificationClick={openNotification} onProfileClick={moveMyPage} userProfileImg={userProfileImg}/>
 
                 <ScrollView style={styles.main} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.titleSection}>
-                        <AppText style={styles.todayText}>{formatToday()}</AppText>
-                        <AppText style={styles.activityTitle}>{activity?.name ?? "대외활동"}</AppText>
+                        <AppText style={styles.todayText}>{formatToday(t, i18n.resolvedLanguage ?? i18n.language)}</AppText>
+                        <AppText style={styles.activityTitle}>{activity?.name ?? t(`${DASHBOARD_T}.activityFallback`)}</AppText>
                     </View>
 
                     {loading ? (
@@ -349,7 +573,7 @@ export default function EcaStudentDashboard({
                         </View>
                     ) : (
                         <>
-                            <View style={styles.progressCard}>
+                            {/* <View style={styles.progressCard}>
                                 <AppText style={styles.progressLabel}>활동 진행률</AppText>
                                 <AppText style={styles.progressValue}>{progressRate}%</AppText>
 
@@ -386,22 +610,46 @@ export default function EcaStudentDashboard({
                                 <View style={styles.metricArrow}>
                                     <ArrowRightIcon />
                                 </View>
-                            </Pressable>
+                            </Pressable> */}
 
                             <View style={styles.scheduleSection}>
-                                <AppText style={styles.scheduleTitle}>전체 일정</AppText>
-
+                                <View style={styles.scheduleHead}>
+                                    <AppText style={styles.scheduleTitle}>{t(`${DASHBOARD_T}.scheduleTitle`)}</AppText>
+                                    <View style={styles.scheduleActions}>
+                                        <Pressable style={styles.scheduleActionButton} onPress={() => setScheduleFilterOpen(true)} accessibilityLabel={getScheduleFilterLabel()}><FilterIcon /></Pressable>
+                                        <Pressable
+                                            style={styles.scheduleActionButton}
+                                            onPress={toggleScheduleSortDirection}
+                                            accessibilityLabel={
+                                                scheduleSortDirection === "asc"
+                                                    ? t(`${DASHBOARD_T}.sort.asc`)
+                                                    : t(`${DASHBOARD_T}.sort.desc`)
+                                            }
+                                        >
+                                            <SortIcon />
+                                        </Pressable>
+                                    </View>
+                                </View>
                                 <View style={styles.scheduleList}>
                                     {scheduleItems.length === 0 ? (
                                         <View style={styles.emptyWrap}>
-                                            <AppText style={styles.empty}>등록된 일정이 없습니다.</AppText>
+                                            <AppText style={styles.empty}>{t(`${DASHBOARD_T}.emptySchedule`)}</AppText>
                                         </View>
                                     ) : (
                                         scheduleItems.map((item) => (
                                             <Pressable
                                                 key={`${item.type}-${item.id}`}
                                                 style={styles.scheduleItem}
-                                                onPress={() => item.type === "assignment" ? openAssignmentSubmit(item.id) : undefined}
+                                                onPress={() => {
+                                                    if (item.type === "assignment") {
+                                                        openAssignmentSubmit(item.id);
+                                                        return;
+                                                    }
+
+                                                    if (item.type === "attendance") {
+                                                        openAttendanceSubmit(item.id);
+                                                    }
+                                                }}
                                             >
                                                 <View style={[styles.scheduleIcon, item.completed ? styles.scheduleIconCompleted : null]}>
                                                     {item.completed ? <CompletedIcon /> : <AssignmentFolderIcon />}
@@ -419,6 +667,35 @@ export default function EcaStudentDashboard({
                         </>
                     )}
                 </ScrollView>
+                <Modal
+                    visible={scheduleFilterOpen}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setScheduleFilterOpen(false)}
+                >
+                    <Pressable style={styles.filterModalBackdrop} onPress={() => setScheduleFilterOpen(false)}>
+                        <Pressable style={styles.filterModal} onPress={() => {}}>
+                            {scheduleFilterOptions.map((option) => {
+                                const selected = selectedScheduleTypes.includes(option.value);
+
+                                return (
+                                    <Pressable
+                                        key={option.value}
+                                        style={[
+                                            styles.filterModalOption,
+                                            selected ? styles.filterModalOptionSelected : null,
+                                        ]}
+                                        onPress={() => toggleScheduleTypeFilter(option.value)}
+                                    >
+                                        <AppText style={styles.filterModalOptionText}>
+                                            {option.label}
+                                        </AppText>
+                                    </Pressable>
+                                );
+                            })}
+                        </Pressable>
+                    </Pressable>
+                </Modal>
             </SafeAreaView>
         </EcaStudentApp>
     );
