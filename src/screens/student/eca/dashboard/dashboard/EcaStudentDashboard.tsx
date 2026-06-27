@@ -7,7 +7,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppText from "../../../../../../AppText";
-import { getUserDateOnly, serverKstDateTimeToUserDateOnly, } from "../../../../../theme/dateTime";
+import { getUserDateOnly, getUserTimeZone, parseServerKstDateTime, } from "../../../../../theme/dateTime";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import { API_BASE_URL } from "@env";
 import { getAccessToken } from "../../../../../auth/tokenStorage";
@@ -36,6 +36,12 @@ type MobileScheduleItem = {
     sortTime: number;
     type: ScheduleTypeFilter;
     completed: boolean;
+};
+
+type UserDateParts = {
+    year: number;
+    month: number;
+    day: number;
 };
 
 function getScheduleFilterOptions(t: TFunction): { value: ScheduleTypeFilter; label: string }[] {
@@ -69,6 +75,29 @@ function parseDateOnlyLocal(value?: string | null): Date | null {
     return date;
 }
 
+function getServerKstUserDateParts(value?: string | null): UserDateParts | null {
+    const date = parseServerKstDateTime(value);
+
+    if (!date) return null;
+
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: getUserTimeZone(),
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(date);
+
+    const year = Number(parts.find((part) => part.type === "year")?.value);
+    const month = Number(parts.find((part) => part.type === "month")?.value);
+    const day = Number(parts.find((part) => part.type === "day")?.value);
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+        return null;
+    }
+
+    return { year, month, day };
+}
+
 function formatToday(t: TFunction, language: string): string {
     const date = getUserDateOnly();
 
@@ -89,39 +118,55 @@ function formatToday(t: TFunction, language: string): string {
     });
 }
 
+function formatTargetDate(date: Date, language?: string): string {
+    if (language?.toLowerCase().startsWith("en")) {
+        return new Intl.DateTimeFormat("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+        }).format(date);
+    }
+
+    return formatDateOnlyDot(date);
+}
+
+function formatUserDateParts(parts: UserDateParts, language?: string): string {
+    if (language?.toLowerCase().startsWith("en")) {
+        return new Intl.DateTimeFormat("en-US", {
+            timeZone: "UTC",
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+        }).format(new Date(Date.UTC(parts.year, parts.month - 1, parts.day)));
+    }
+
+    const month = String(parts.month).padStart(2, "0");
+    const day = String(parts.day).padStart(2, "0");
+
+    return `${parts.year}.${month}.${day}.`;
+}
+
 function formatDate(value?: string | null, language?: string): string {
     if (!value) return "-";
 
-    const formatTargetDate = (date: Date): string => {
-        if (language?.toLowerCase().startsWith("en")) {
-            return new Intl.DateTimeFormat("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-            }).format(date);
-        }
-
-        return formatDateOnlyDot(date);
-    };
-
     if (value.includes("T")) {
-        const userDate = serverKstDateTimeToUserDateOnly(value);
+        const userDateParts = getServerKstUserDateParts(value);
 
-        return userDate ? formatTargetDate(userDate) : value;
+        return userDateParts ? formatUserDateParts(userDateParts, language) : value;
     }
 
     const date = parseDateOnlyLocal(value);
 
-    return date ? formatTargetDate(date) : value;
+    return date ? formatTargetDate(date, language) : value;
 }
 
 function getScheduleSortTime(value?: string | null): number {
     if (!value) return Number.MAX_SAFE_INTEGER;
 
     if (value.includes("T")) {
-        const userDate = serverKstDateTimeToUserDateOnly(value);
+        const userDateParts = getServerKstUserDateParts(value);
 
-        return userDate ? userDate.getTime() : Number.MAX_SAFE_INTEGER;
+        return userDateParts ? Date.UTC(userDateParts.year, userDateParts.month - 1, userDateParts.day) : Number.MAX_SAFE_INTEGER;
     }
 
     const date = parseDateOnlyLocal(value);
@@ -165,12 +210,14 @@ function isCompletedAttendance(event: MyAttendanceEventResponse): boolean {
         || event.status === "VERY_EARLY_LEAVE";
 }
 
-function formatAttendanceScheduleTitle(event: MyAttendanceEventResponse, t: TFunction): string {
-    const value = event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
-    const baseDate = serverKstDateTimeToUserDateOnly(value);
+function formatAttendanceScheduleTitle(
+    event: MyAttendanceEventResponse,
+    t: TFunction,
+    baseDateParts: UserDateParts | null
+): string {
     const typeText = t(`${DASHBOARD_T}.attendanceType.${event.type}`);
 
-    if (!baseDate) {
+    if (!baseDateParts) {
         return t(`${DASHBOARD_T}.attendanceNameWithType`, {
             name: event.name,
             type: typeText,
@@ -178,8 +225,8 @@ function formatAttendanceScheduleTitle(event: MyAttendanceEventResponse, t: TFun
     }
 
     return t(`${DASHBOARD_T}.attendanceScheduleTitle`, {
-        month: baseDate.getMonth() + 1,
-        day: baseDate.getDate(),
+        month: baseDateParts.month,
+        day: baseDateParts.day,
         type: typeText,
     });
 }
@@ -205,12 +252,13 @@ function toScheduleItems(
 
     const attendanceItems = attendanceEvents.map((event) => {
         const scheduleDate = event.type === "CLASS_END" ? event.scoreReferenceAt : event.uploadWindowStart;
+        const userDateParts = getServerKstUserDateParts(scheduleDate);
 
         return {
             id: event.eventId,
-            title: formatAttendanceScheduleTitle(event, t),
-            date: formatDate(scheduleDate, language),
-            sortTime: getScheduleSortTime(scheduleDate),
+            title: formatAttendanceScheduleTitle(event, t, userDateParts),
+            date: userDateParts ? formatUserDateParts(userDateParts, language) : formatDate(scheduleDate, language),
+            sortTime: userDateParts ? Date.UTC(userDateParts.year, userDateParts.month - 1, userDateParts.day) : getScheduleSortTime(scheduleDate),
             type: "attendance" as const,
             completed: isCompletedAttendance(event),
         };

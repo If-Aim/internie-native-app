@@ -218,41 +218,11 @@ export function serverKstDateTimeToUserDateOnly(value?: string | null): Date | n
 
     if (!parsed) return null;
 
-    const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: getUserTimeZone(),
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(parsed);
-
-    const year = Number(getDatePart(parts, "year"));
-    const month = Number(getDatePart(parts, "month"));
-    const day = Number(getDatePart(parts, "day"));
-
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-        return null;
-    }
-
-    return new Date(year, month - 1, day);
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
 export function getUserDateOnly(date: Date = new Date()): Date {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: getUserTimeZone(),
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(date);
-
-    const year = Number(getDatePart(parts, "year"));
-    const month = Number(getDatePart(parts, "month"));
-    const day = Number(getDatePart(parts, "day"));
-
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    }
-
-    return new Date(year, month - 1, day);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 export function formatServerKstDateTimeYYDotForUser(value?: string | null, fallback: string = "-"): string {

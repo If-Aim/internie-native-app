@@ -6,10 +6,12 @@ export const styles = StyleSheet.create({
     headerRightSpace: { width: 24, height: 24 },
     main: { flex: 1, paddingTop: 12, paddingRight: 20, paddingBottom: 30, paddingLeft: 20 },
     scrollContent: { paddingBottom: 80 },
+    
     titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginLeft: 4, marginBottom: 21 },
     title: { margin: 0, color: "#000000", fontSize: 20, fontWeight: "700", lineHeight: 36 },
     filterButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", gap: 5 },
     list: { gap: 10 },
+    
     card: { width: "100%", minHeight: 80, paddingTop: 17, paddingRight: 13, paddingBottom: 20, paddingLeft: 20, borderWidth: 1, borderColor: "#E3E3E3", borderRadius: 10, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center" },
     info: { flex: 1, minWidth: 0, gap: 5 },
     assignmentName: { color: "#000000", fontSize: 16, fontWeight: "700", lineHeight: 20 },
@@ -26,6 +28,7 @@ export const styles = StyleSheet.create({
     statusTextSubmitted: { color: "#0166FF" },
     statusTextLateSubmitted: { color: "#FABB05" },
     statusTextMissing: { color: "#FF0000" },
+    
     arrowWrap: { width: 28, height: 28, alignItems: "center", justifyContent: "center", flexShrink: 0 },
     emptyWrap: { minHeight: 160, alignItems: "center", justifyContent: "center" },
     emptyText: { color: "#808080", fontSize: 15, fontWeight: "700", textAlign: "center" },
