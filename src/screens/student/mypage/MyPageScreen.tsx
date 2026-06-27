@@ -66,7 +66,7 @@ function Header({ onPreviousClick }: { onPreviousClick: () => void }) {
 
 export default function MyPageScreen({ navigation }: Props) {
     const isFocused = useIsFocused();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const [me, setMe] = React.useState<UserMe | null>(null);
     const [showRejectModal, setShowRejectModal] = React.useState(false);
@@ -90,11 +90,9 @@ export default function MyPageScreen({ navigation }: Props) {
         return t("mypage_verifyUi.required");
     }, [status, schoolName, t]);
 
-    const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
-
     const handleServicePreparing = React.useCallback(() => {
-        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
-    }, [isKo]);
+        Alert.alert(t("common.preparing"));
+    }, [t]);
 
     const verifyUi = React.useMemo(() => {
         switch (status) {
@@ -112,7 +110,7 @@ export default function MyPageScreen({ navigation }: Props) {
                 };
             case "APPROVED":
                 return {
-                    label: "프로필 수정하기",
+                    label: t("mypage.editProfile"),
                     disabled: false,
                     onPress: handleServicePreparing,
                 };
@@ -275,7 +273,7 @@ export default function MyPageScreen({ navigation }: Props) {
                         </View>
 
                         <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate("Withdraw")}>
-                            <AppText style={styles.withdrawText}>{isKo ? "회원탈퇴" : "Delete account"}</AppText>
+                            <AppText style={styles.withdrawText}>{t("mypage.Withdraw")}</AppText>
                         </Pressable>
                     </View>
                     <View style={styles.logoutDock} pointerEvents="box-none">
@@ -297,7 +295,7 @@ export default function MyPageScreen({ navigation }: Props) {
 
                             <View style={styles.modalBody}>
                                 <AppText style={styles.modalTitle}>{t("mypage_modal.title")}</AppText>
-                                <AppText style={styles.modalReason}>사유:</AppText>
+                                <AppText style={styles.modalReason}>{t("mypage.rejectReasonLabel")}</AppText>
                                 <AppText style={styles.modalReason}>{rejectReasonText || "-"}</AppText>
                             </View>
 

@@ -439,7 +439,7 @@ export default function EcaStudentLeaderboard({
                 console.error(error);
                 setActivity(null);
                 setLeaderboard(null);
-                setErrorMessage(error instanceof Error ? error.message : t(`${LEADERBOARD_T}.error.leaderboardLoadFailed`, { defaultValue: "리더보드 정보를 불러오지 못했습니다." }));
+                setErrorMessage(error instanceof Error ? error.message : t(`${LEADERBOARD_T}.error.leaderboardLoadFailed`));
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -504,7 +504,7 @@ export default function EcaStudentLeaderboard({
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
             if (!token) {
-                Alert.alert("로그인이 필요합니다.", "로그인 후 이용할 수 있습니다.");
+                Alert.alert(t("login.getLoginTitle"), t("login.getLoginSub"));
                 return;
             }
 
@@ -546,20 +546,20 @@ export default function EcaStudentLeaderboard({
                 return;
             }
 
-            Alert.alert("서비스 준비중입니다.");
+            Alert.alert(t("common.preparing"));
         });
     }
 
     function moveSystemAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveJumpAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveKakaoAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function openRankingDetail(ranking: LeaderboardRankingResponse): void {
@@ -841,7 +841,7 @@ export default function EcaStudentLeaderboard({
                 <ScrollView style={styles.main} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.titleSection}>
                         <AppText style={styles.activityTitle}>
-                            {activity?.name ?? t(`${LEADERBOARD_T}.activityFallback`, { defaultValue: "대외활동" })}
+                            {activity?.name ?? t(`${LEADERBOARD_T}.activityFallback`)}
                         </AppText>
                     </View>
 

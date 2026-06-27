@@ -209,9 +209,16 @@ function getWeekdayIndex(iso: string): number {
     const js = d.getDay(); // 0 Sun .. 6 Sat
     return (js + 6) % 7; // 0=Mon ... 6=Sun
 }
-function weekdayLabels(lang: string): string[] {
-    if (lang.startsWith("ko")) return ["월", "화", "수", "목", "금", "토", "일"];
-    return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function weekdayLabels(t: ReturnType<typeof useTranslation>["t"]): string[] {
+    return [
+        t("calendar.weekdaysShort.mon"),
+        t("calendar.weekdaysShort.tue"),
+        t("calendar.weekdaysShort.wed"),
+        t("calendar.weekdaysShort.thu"),
+        t("calendar.weekdaysShort.fri"),
+        t("calendar.weekdaysShort.sat"),
+        t("calendar.weekdaysShort.sun"),
+    ];
 }
 
 function recordModalDateLabel(iso: string, lang: string): string {
@@ -870,11 +877,11 @@ export default function HomeScreen({ navigation }: Props) {
     function requireAuth(action: () => void): void {
         if (!isAuthed) {
             Alert.alert(
-                "로그인이 필요합니다.",
-                "로그인 후 이용할 수 있습니다.",
+                t("login.getLoginTitle"),
+                t("login.getLoginSub"),
                 [
-                    { text: "취소", style: "cancel" },
-                    { text: "로그인", onPress: () => rootNavigation.navigate("Auth" as never) },
+                    { text: t("common.cancel"), style: "cancel" },
+                    { text: t("common.login"), onPress: () => rootNavigation.navigate("Auth" as never) },
                 ]
             );
             return;
@@ -943,13 +950,11 @@ export default function HomeScreen({ navigation }: Props) {
 			setRecordStage("idle");
 		}
 	};
-    const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
-
     async function handleSendEmailCode() {
         const email = emailForm.email.trim();
 
         if (!email) {
-            setEmailError("이메일을 입력해주세요.");
+            setEmailError(t("home.emailVerify.emailRequired"));
             return;
         }
 
@@ -962,18 +967,18 @@ export default function HomeScreen({ navigation }: Props) {
             const res = await sendMyEmailCode(email, lang);
 
             if (res.status === "EXISTING_ACCOUNT_FOUND") {
-                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                Alert.alert(t("home.emailVerify.existingAccountTitle"), t("home.emailVerify.existingAccountDesc"));
                 return;
             }
 
-            setEmailSentMessage(`${res.maskedEmail}로 인증코드를 발송했습니다.`);
+            setEmailSentMessage(t("home.emailVerify.codeSent", { email: res.maskedEmail }));
         } catch (e) {
             if (e instanceof ApiError && e.code === "AUTH_EXISTING_ACCOUNT") {
-                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                Alert.alert(t("home.emailVerify.existingAccountTitle"), t("home.emailVerify.existingAccountDesc"));
                 return;
             }
 
-            setEmailError("인증코드 발송에 실패했습니다.");
+            setEmailError(t("home.emailVerify.codeSendFail"));
         } finally {
             setEmailSending(false);
         }
@@ -984,12 +989,12 @@ export default function HomeScreen({ navigation }: Props) {
         const code = emailForm.code.trim();
 
         if (!email) {
-            setEmailError("이메일을 입력해주세요.");
+            setEmailError(t("home.emailVerify.emailRequired"));
             return;
         }
 
         if (!code) {
-            setEmailError("인증코드를 입력해주세요.");
+            setEmailError(t("home.emailVerify.codePlaceholder"));
             return;
         }
 
@@ -1000,12 +1005,12 @@ export default function HomeScreen({ navigation }: Props) {
             const res = await verifyMyEmailCode(email, code);
 
             if (res.existingAccountFound) {
-                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                Alert.alert(t("home.emailVerify.existingAccountTitle"), t("home.emailVerify.existingAccountDesc"));
                 return;
             }
 
             if (!res.verified) {
-                setEmailError("이메일 인증에 실패했습니다.");
+                setEmailError(t("home.emailVerify.emailVerifyFailed"));
                 return;
             }
 
@@ -1021,14 +1026,14 @@ export default function HomeScreen({ navigation }: Props) {
             setEmailSentMessage(null);
             setEmailError(null);
 
-            Alert.alert("이메일 인증이 완료되었습니다.");
+            Alert.alert(t("home.emailVerify.complete"));
         } catch (e) {
             if (e instanceof ApiError && e.code === "AUTH_EXISTING_ACCOUNT") {
-                Alert.alert("이미 존재하는 계정입니다.", "해당 계정으로 로그인해주세요.");
+                Alert.alert(t("home.emailVerify.existingAccountTitle"), t("home.emailVerify.existingAccountDesc"));
                 return;
             }
 
-            setEmailError("인증코드가 올바르지 않거나 만료되었습니다.");
+            setEmailError(t("home.emailVerify.invalidOrExpiredCode"));
         } finally {
             setEmailVerifying(false);
         }
@@ -1052,7 +1057,7 @@ export default function HomeScreen({ navigation }: Props) {
 
     function moveActivityMenu(
         activityId: number,
-        menuKey: "dashboard" | "assignment" | "attendance" | "team-activity"
+        menuKey: "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity"
     ): void {
         requireAuth(() => {
             if (menuKey === "dashboard") {
@@ -1065,20 +1070,30 @@ export default function HomeScreen({ navigation }: Props) {
                 return;
             }
 
-            Alert.alert("서비스 준비중입니다.");
+            if (menuKey === "attendance") {
+                navigation.navigate("EcaStudentMobileAttendance", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "leaderboard") {
+                navigation.navigate("EcaStudentLeaderboard", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            Alert.alert(t("common.preparing"));
         });
     }
 
     function moveSystemAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveJumpAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveKakaoAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function handleCloseEmailVerifyPopup() {
@@ -1086,7 +1101,7 @@ export default function HomeScreen({ navigation }: Props) {
     }
 
     function handleServicePreparing() {
-        Alert.alert(isKo ? "서비스 준비중입니다.": "Coming Soon");
+        Alert.alert(t("common.preparing"));
     }
     return (
         <SafeAreaView style={commonStyles.appRoot}>
@@ -1262,7 +1277,7 @@ export default function HomeScreen({ navigation }: Props) {
                         )}
                         {selectedItem && (
                             <View style={styles.weekRow}>
-                                {weekdayLabels(i18n.language).map((w, idx) => {
+                                {weekdayLabels(t).map((w, idx) => {
                                     const list = eventDaysByEventId.get(String(selectedItem.eventId)) ?? [];
                                     const set = new Set<number>();
                                     for (const ed of list) if (hasRecord(ed)) set.add(getWeekdayIndex(ed.date));
@@ -1313,7 +1328,7 @@ export default function HomeScreen({ navigation }: Props) {
                     <Pressable style={styles.sheet} onPress={() => {}}>
                         <View style={styles.sheetHeader}>
                             <AppText style={styles.sheetTitle}>
-                                {t("login.getLoginTitle", "로그인이 필요해요")}
+                                {t("login.getLoginTitle")}
                             </AppText>
                             <Pressable onPress={() => setLoginGateOpen(false)}>
                                 <AppText style={styles.sheetClose}><Image source={require("../../assets/icons/x-01.png")} style={styles.editIcon} /></AppText>
@@ -1321,12 +1336,12 @@ export default function HomeScreen({ navigation }: Props) {
                         </View>
 
                         <AppText style={styles.sheetDesc}>
-                            {t("login.getLoginSub", "일정 등록과 답변 녹음은 로그인 후 이용할 수 있습니다.")}
+                            {t("login.getLoginSub")}
                         </AppText>
 
                         <Pressable style={styles.sheetPrimary} onPress={() => { setLoginGateOpen(false); rootNavigation.replace("Auth"); }} >
                             <AppText style={styles.sheetPrimaryText}>
-                                {t("common.login", "로그인")}
+                                {t("common.login")}
                             </AppText>
                         </Pressable>
                     </Pressable>
@@ -1338,21 +1353,21 @@ export default function HomeScreen({ navigation }: Props) {
                     <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseEmailVerifyPopup} />
                     <View style={styles.emailPopup}>
                         <View style={styles.emailPopupHeader}>
-                            <AppText style={styles.emailPopupTitle}>이메일 인증</AppText>
+                            <AppText style={styles.emailPopupTitle}>{t("home.emailVerify.title")}</AppText>
                             <Pressable style={styles.emailPopupClose} onPress={handleCloseEmailVerifyPopup}>
                                 <Image source={require("../../assets/icons/x-01.png")} style={commonStyles.icon24} />
                             </Pressable>
                         </View>
 
                         <AppText style={styles.emailPopupDesc}>
-                            계정 보호와 안정적인 로그인 이용을 위해 이메일 인증을 진행해주세요.
+                            {t("home.emailVerify.desc")}
                         </AppText>
 
                         <View style={styles.emailPopupBody}>
                             <TextInput
                                 value={emailForm.email}
                                 onChangeText={(text) => setEmailForm((prev) => ({ ...prev, email: text }))}
-                                placeholder="이메일을 입력해주세요"
+                                placeholder={t("home.emailVerify.emailPlaceholder")}
                                 placeholderTextColor="#9AA0A6"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -1363,7 +1378,7 @@ export default function HomeScreen({ navigation }: Props) {
                                 <TextInput
                                     value={emailForm.code}
                                     onChangeText={(text) => setEmailForm((prev) => ({ ...prev, code: text }))}
-                                    placeholder="인증코드를 입력해주세요"
+                                    placeholder={t("home.emailVerify.codePlaceholder")}
                                     placeholderTextColor="#9AA0A6"
                                     autoCapitalize="none"
                                     style={[styles.emailPopupInput, styles.emailPopupCodeInput]}
@@ -1371,7 +1386,7 @@ export default function HomeScreen({ navigation }: Props) {
 
                                 <Pressable style={[styles.emailPopupSendButton, emailSending ? styles.emailPopupSendButtonDisabled : null]} onPress={handleSendEmailCode} disabled={emailSending}>
                                     <AppText style={styles.emailPopupSendButtonText}>
-                                        {emailSending ? "전송중" : "코드 받기"}
+                                        {emailSending ? t("home.emailVerify.sending") : t("home.emailVerify.sendCode")}
                                     </AppText>
                                 </Pressable>
                             </View>
@@ -1387,12 +1402,12 @@ export default function HomeScreen({ navigation }: Props) {
 
                         <View style={styles.emailPopupFooter}>
                             <Pressable style={styles.emailPopupSecondary} onPress={handleCloseEmailVerifyPopup}>
-                                <AppText style={styles.emailPopupSecondaryText}>나중에</AppText>
+                                <AppText style={styles.emailPopupSecondaryText}>{t("home.emailVerify.later")}</AppText>
                             </Pressable>
 
                             <Pressable style={[styles.emailPopupPrimary, emailVerifying || !emailForm.email.trim() || !emailForm.code.trim() ? styles.emailPopupPrimaryDisabled : null]} onPress={handleVerifyEmailCode} disabled={emailVerifying || !emailForm.email.trim() || !emailForm.code.trim()}>
                                 <AppText style={styles.emailPopupPrimaryText}>
-                                    {emailVerifying ? "확인중" : "인증하기"}
+                                    {emailVerifying ? t("home.emailVerify.verifying") : t("home.emailVerify.verify")}
                                 </AppText>
                             </Pressable>
                         </View>

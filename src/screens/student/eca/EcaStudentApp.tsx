@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 
 import AppText from "../../../../AppText";
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
@@ -21,15 +22,15 @@ type EcaStudentAppProps = {
 
 type BottomNavItem = {
     key: EcaStudentTab;
-    label: string;
+    labelKey: string;
     disabled: boolean;
 };
 
 const bottomNavItems: BottomNavItem[] = [
-    { key: "dashboard", label: "대시보드", disabled: false },
-    { key: "assignment", label: "과제 제출", disabled: false },
-    { key: "attendance", label: "출석 확인", disabled: false },
-    { key: "leaderboard", label: "리더보드", disabled: false },
+    { key: "dashboard", labelKey: "ecaStudent.appPage.bottomNav.dashboard", disabled: false },
+    { key: "assignment", labelKey: "ecaStudent.appPage.bottomNav.assignment", disabled: false },
+    { key: "attendance", labelKey: "ecaStudent.appPage.bottomNav.attendance", disabled: false },
+    { key: "leaderboard", labelKey: "ecaStudent.appPage.bottomNav.leaderboard", disabled: false },
 ];
 
 function BottomNavIcon({
@@ -86,10 +87,11 @@ export default function EcaStudentApp({
     hideBottomNav = false,
 }: EcaStudentAppProps): React.ReactElement {
     const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
+    const { t } = useTranslation();
 
     function handlePress(item: BottomNavItem): void {
         if (item.disabled) {
-            Alert.alert("서비스 준비중입니다.");
+            Alert.alert(t("common.preparing"));
             return;
         }
 
@@ -142,7 +144,7 @@ export default function EcaStudentApp({
                                         </View>
 
                                         <AppText style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
-                                            {item.label}
+                                            {t(item.labelKey)}
                                         </AppText>
                                     </Pressable>
                                 );

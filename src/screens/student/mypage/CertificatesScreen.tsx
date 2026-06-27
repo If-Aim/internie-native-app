@@ -195,7 +195,7 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                     return next;
                 });
             } catch (e) {
-                console.error("미리보기 로딩 실패", e);
+                console.error("Certificate preview loading failed", e);
             }
         })();
 
@@ -216,21 +216,21 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                 const openPath = Platform.OS === "ios" ? `file://${localPath}` : localPath;
 
                 Alert.alert(
-                    "수료증",
-                    "어떻게 처리할까요?",
+                    t("mypage.certs"),
+                    t("mypage.certificates.actionMessage"),
                     [
                         {
-                            text: "미리보기",
+                            text: t("mypage.certificates.preview"),
                             onPress: async () => {
                                 try {
                                     await FileViewer.open(openPath, { showOpenWithDialog: true });
                                 } catch {
-                                    Alert.alert("미리보기 실패", "파일을 열 수 없습니다.");
+                                    Alert.alert(t("mypage.certificates.previewFailed"), t("mypage.certificates.fileOpenFailed"));
                                 }
                             },
                         },
                         {
-                            text: "공유",
+                            text: t("mypage.certificates.share"),
                             onPress: async () => {
                                 try {
                                     const mime = getMimeByExt(ext);
@@ -240,17 +240,17 @@ export default function CertificatesScreen({ navigation }: NativeStackScreenProp
                                         failOnCancel: false,
                                     });
                                 } catch {
-                                    Alert.alert("공유 실패", "공유를 진행할 수 없습니다.");
+                                    Alert.alert(t("mypage.certificates.shareFailed"), t("mypage.certificates.shareUnavailable"));
                                 }
                             },
                         },
-                        { text: "닫기", style: "cancel" },
+                        { text: t("common.close"), style: "cancel" },
                     ], { cancelable: true }
                 );
             } catch (e) {
                 if (e instanceof ApiError) {
-                    if (e.status === 404) Alert.alert("발급된 수료증이 없습니다.");
-                    else Alert.alert("다운로드 실패", e.bodyText ? e.bodyText : t("error.failToDownload"));
+                    if (e.status === 404) Alert.alert(t("mypage.noCerts"));
+                    else Alert.alert(t("error.failToDownload"), e.bodyText ? e.bodyText : t("error.failToDownload"));
                 } else {
                     Alert.alert(t("error.failToDownload"));
                 }

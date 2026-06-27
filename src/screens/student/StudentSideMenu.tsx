@@ -143,12 +143,11 @@ export default function StudentMobileSideMenu({
     
     if (!mounted) return null;
 
-    const activityMenus: Array<{ key: ActivityMenuKey; label: string; disabled: boolean }> = [
-        { key: "dashboard", label: isKo ? "대시보드" : "Dashboard", disabled: false },
-        { key: "assignment", label: isKo ? "과제 제출 현황" : "Assignment Status", disabled: false },
-        { key: "attendance", label: isKo ? "출석 현황" : "Attendance", disabled: false },
-        { key: "leaderboard", label: isKo ? "리더보드" : "Leaderboard", disabled: false },
-        // { key: "team-activity", label: isKo ? "팀 활동" : "Team Activity", disabled: true },
+    const activityMenus: Array<{ key: ActivityMenuKey; labelKey: string; disabled: boolean }> = [
+        { key: "dashboard", labelKey: "ecaStudent.appPage.bottomNav.dashboard", disabled: false },
+        { key: "assignment", labelKey: "ecaStudent.appPage.bottomNav.assignment", disabled: false },
+        { key: "attendance", labelKey: "ecaStudent.appPage.bottomNav.attendance", disabled: false },
+        { key: "leaderboard", labelKey: "ecaStudent.appPage.bottomNav.leaderboard", disabled: false },
     ];
 
     const hasActivities = activities.length > 0;
@@ -161,7 +160,7 @@ export default function StudentMobileSideMenu({
     }
 
     function showPreparing(): void {
-        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
+        Alert.alert(t("common.preparing"));
     }
 
     function closeAfter(action: () => void): void {
@@ -252,7 +251,7 @@ export default function StudentMobileSideMenu({
                                                                 }}
                                                             >
                                                                 <AppText style={[sideMenuStyles.activityMenuText, active ? sideMenuStyles.activityMenuTextActive : null]}>
-                                                                    {menu.label}
+                                                                    {t(menu.labelKey)}
                                                                 </AppText>
                                                             </Pressable>
                                                         );

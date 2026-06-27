@@ -114,7 +114,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
             }
         } catch {
             setInstitutions([]);
-            setOrgLoadError("센터 목록을 불러오지 못했습니다.");
+            setOrgLoadError(t("mypage.verifyCodePage.centerLoadFailed"));
         } finally {
             setOrgLoading(false);
         }
@@ -144,13 +144,13 @@ export default function VerifyCodeScreen({ navigation }: Props) {
             setJumpOrganizationId(updated.jumpOrganization?.id ?? null);
             setJumpOrganizationName(updated.jumpOrganization?.name ?? "");
             setOrgSaveError(null);
-            setOrgSaveMessage("센터 저장이 완료되었습니다.");
+            setOrgSaveMessage(t("mypage.verifyCodePage.centerSaveComplete"));
             syncClientPopups(updated);
         } catch (e) {
             if (e instanceof ApiError) {
-                setOrgSaveError("센터 저장에 실패했습니다.");
+                setOrgSaveError(t("mypage.verifyCodePage.centerSaveFailed"));
             } else {
-                setOrgSaveError("센터 저장에 실패했습니다.");
+                setOrgSaveError(t("mypage.verifyCodePage.centerSaveFailed"));
             }
         } finally {
             setSavingJumpCenter(false);
@@ -161,7 +161,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
         const trimmedStudentNumber = studentNumber.trim();
 
         if (!trimmedStudentNumber) {
-            setStudentNumberError("학번을 입력해주세요.");
+            setStudentNumberError(t("mypage.verifyCodePage.studentNumberRequired"));
             return;
         }
 
@@ -177,13 +177,13 @@ export default function VerifyCodeScreen({ navigation }: Props) {
             setMe(updated);
             setStudentNumber((updated.studentNumber ?? "").trim());
             setStudentNumberError(null);
-            setStudentNumberMessage("학번 저장이 완료되었습니다.");
+            setStudentNumberMessage(t("mypage.verifyCodePage.studentNumberSaveComplete"));
             syncClientPopups(updated);
         } catch (e) {
             if (e instanceof ApiError) {
-                setStudentNumberError("학번 저장에 실패했습니다.");
+                setStudentNumberError(t("mypage.verifyCodePage.studentNumberSaveFailed"));
             } else {
-                setStudentNumberError("학번 저장에 실패했습니다.");
+                setStudentNumberError(t("mypage.verifyCodePage.studentNumberSaveFailed"));
             }
         } finally {
             setSavingStudentNumber(false);
@@ -194,7 +194,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
         const trimmed = code.trim();
 
         if (!trimmed) {
-            setError("인증코드를 입력해주세요.");
+            setError(t("mypage.verifyCodePage.codeRequired"));
             return;
         }
 
@@ -212,9 +212,9 @@ export default function VerifyCodeScreen({ navigation }: Props) {
             setError(null);
 
             if (addedRoles.length === 0) {
-                triggerVerifiedMessage("이미 인증된 코드입니다.");
+                triggerVerifiedMessage(t("mypage.verifyCodePage.alreadyVerified"));
             } else {
-                triggerVerifiedMessage("인증이 완료되었습니다.");
+                triggerVerifiedMessage(t("mypage.verifyCodePage.verifyComplete"));
             }
 
             if (nextRoleSet.includes("ROLE_JUMP_STUDENT")) {
@@ -314,7 +314,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 setShowKakaoPopup(false);
                             }}
                         >
-                            <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>점프 센터 선택</Text>
+                            <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("mypage.verifyCodePage.selectJumpCenter")}</Text>
                         </Pressable>
                     ) : null}
 
@@ -328,7 +328,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 setShowJumpPopup(false);
                             }}
                         >
-                            <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>학번 수정</Text>
+                            <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("mypage.verifyCodePage.editStudentNumber")}</Text>
                         </Pressable>
                     ) : null}
                 </View>
@@ -343,7 +343,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                         disabled={verifyingCode}
                     >
                         <Text style={[userModifyStyles.verifySaveBtnText, verifyingCode && userModifyStyles.verifySaveBtnTextDisabled]}>
-                            {verifyingCode ? "확인 중..." : t("common.done")}
+                            {verifyingCode ? t("mypage.verifyCodePage.checking") : t("common.done")}
                         </Text>
                     </Pressable>
                 </View>
@@ -353,19 +353,19 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                 <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 }}>
                     <View style={{ width: "100%", maxWidth: 360, backgroundColor: "#F0F6FF", borderRadius: 20, paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20 }}>
                         <View style={{ position: "relative", flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 12 }}>
-                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>센터 선택</Text>
+                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("mypage.verifyCodePage.selectCenterTitle")}</Text>
                             <Pressable style={{ position: "absolute", top: 0, right: 0 }} onPress={() => setShowJumpPopup(false)}>
                                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                             </Pressable>
                         </View>
 
                         <Text style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
-                            소속된 점프 센터를 선택해주세요.
+                            {t("mypage.verifyCodePage.selectCenterDesc")}
                         </Text>
 
                         <View style={{ gap: 12 }}>
                             {orgLoading ? (
-                                <Text style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0,0,0,0.6)" }}>불러오는 중...</Text>
+                                <Text style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0,0,0,0.6)" }}>{t("mypage.verifyCodePage.loading")}</Text>
                             ) : orgLoadError ? (
                                 <Text style={{ fontSize: 14, fontWeight: "500", lineHeight: 20, color: "#d64545" }}>{orgLoadError}</Text>
                             ) : (
@@ -376,7 +376,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                         disabled={savingJumpCenter}
                                     >
                                         <Text style={[userModifyStyles.selectBoxText, !jumpOrganizationName && userModifyStyles.selectPlaceholderText]}>
-                                            {jumpOrganizationName || "센터 선택"}
+                                            {jumpOrganizationName || t("mypage.verifyCodePage.selectCenterPlaceholder")}
                                         </Text>
 
                                         <Image
@@ -420,7 +420,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 onPress={() => setShowJumpPopup(false)}
                                 disabled={savingJumpCenter}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>닫기</Text>
+                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("mypage.verifyCodePage.close")}</Text>
                             </Pressable>
 
                             <Pressable
@@ -429,7 +429,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 disabled={savingJumpCenter || !jumpOrganizationId}
                             >
                                 <Text style={{ fontSize: 16, fontWeight: "700", color: savingJumpCenter || !jumpOrganizationId ? "#707070" : "#FFFFFF" }}>
-                                    {savingJumpCenter ? "저장 중..." : "저장"}
+                                    {savingJumpCenter ? t("mypage.verifyCodePage.saving") : t("mypage.verifyCodePage.save")}
                                 </Text>
                             </Pressable>
                         </View>
@@ -441,14 +441,14 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                 <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center", paddingHorizontal: 20 }}>
                     <View style={{ width: "100%", maxWidth: 360, backgroundColor: "#F0F6FF", borderRadius: 20, paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20 }}>
                         <View style={{ position: "relative", flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 12 }}>
-                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>학번 입력</Text>
+                            <Text style={{ fontSize: 24, fontWeight: "700", color: "#000000", lineHeight: 28, textAlign: "center" }}>{t("mypage.verifyCodePage.studentNumberTitle")}</Text>
                             <Pressable style={{ position: "absolute", top: 0, right: 0 }} onPress={() => setShowKakaoPopup(false)}>
                                 <Image source={require("../../../assets/icons/x-01.png")} style={commonStyles.icon24} resizeMode="contain" />
                             </Pressable>
                         </View>
 
                         <Text style={{ fontSize: 16, color: "rgba(0,0,0,0.5)", fontWeight: "500", lineHeight: 24, textAlign: "center", marginBottom: 20 }}>
-                            카카오 인증 사용자는 학번을 입력해주세요.
+                            {t("mypage.verifyCodePage.studentNumberDesc")}
                         </Text>
 
                         <View style={{ gap: 12 }}>
@@ -460,7 +460,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                     setStudentNumberError(null);
                                     setStudentNumberMessage(null);
                                 }}
-                                placeholder="학번 입력"
+                                placeholder={t("mypage.verifyCodePage.studentNumberPlaceholder")}
                                 editable={!savingStudentNumber}
                             />
 
@@ -474,7 +474,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 onPress={() => setShowKakaoPopup(false)}
                                 disabled={savingStudentNumber}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>닫기</Text>
+                                <Text style={{ fontSize: 16, fontWeight: "700", color: "#000000" }}>{t("mypage.verifyCodePage.close")}</Text>
                             </Pressable>
 
                             <Pressable
@@ -483,7 +483,7 @@ export default function VerifyCodeScreen({ navigation }: Props) {
                                 disabled={savingStudentNumber || !studentNumber.trim()}
                             >
                                 <Text style={{ fontSize: 16, fontWeight: "700", color: savingStudentNumber || !studentNumber.trim() ? "#707070" : "#FFFFFF" }}>
-                                    {savingStudentNumber ? "저장 중..." : "저장"}
+                                    {savingStudentNumber ? t("mypage.verifyCodePage.saving") : t("mypage.verifyCodePage.save")}
                                 </Text>
                             </Pressable>
                         </View>

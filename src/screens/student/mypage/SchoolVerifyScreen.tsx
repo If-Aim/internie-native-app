@@ -3,6 +3,7 @@ import React from "react";
 import { View, Pressable, Image, FlatList, ActivityIndicator, Keyboard, } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { launchCamera, launchImageLibrary, type Asset } from "react-native-image-picker";
 
 import type { StudentStackParamList } from "../../../navigation/StudentNavigator";
@@ -18,6 +19,8 @@ import AppTextInput from "../../../../AppTextInput";
 type Props = NativeStackScreenProps<StudentStackParamList, "SchoolVerify">;
 
 type Step = "SCHOOL_SEARCH" | "UPLOAD" | "DONE" | "SUBMITTED";
+const ALREADY_APPROVED_RESPONSE = String.fromCharCode(51060, 48120, 32, 49849, 51064, 46108, 32, 49324, 50857, 51088);
+const USER_NOT_FOUND_RESPONSE = String.fromCharCode(49324, 50857, 51088, 47484, 32, 52286, 51012, 32, 49688, 32, 50630, 49845, 45768, 45796);
 
 function assetToUploadFile(a: Asset): UploadFileLike | null {
     const uri = a.uri;
@@ -46,6 +49,7 @@ function Header({
 }
 
 export default function SchoolVerifyScreen({ navigation }: Props) {
+    const { t } = useTranslation();
     const [step, setStep] = React.useState<Step>("SCHOOL_SEARCH");
 
     const [query, setQuery] = React.useState("");
@@ -88,13 +92,13 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
             if (e instanceof ApiError) {
                 const msg =
                     e.status === 404
-                        ? "찾을 수 없는 학교입니다."
+                        ? t("mypage.schoolVerifyPage.schoolNotFound")
                         : e.status === 400
-                        ? "학교 정보가 올바르지 않습니다."
-                        : "학교 선택에 실패했습니다.";
+                        ? t("mypage.schoolVerifyPage.invalidSchool")
+                        : t("mypage.schoolVerifyPage.schoolSelectFailed");
                 setErrorMsg(msg);
             } else {
-                setErrorMsg("학교 선택에 실패했습니다.");
+                setErrorMsg(t("mypage.schoolVerifyPage.schoolSelectFailed"));
             }
         } finally {
             setSubmitting(false);
@@ -124,12 +128,12 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
 
         const file = assetToUploadFile(a);
         if (!file) {
-            setErrorMsg("이미지 파일을 불러오지 못했습니다.");
+            setErrorMsg(t("error.imageLoadFail"));
             return;
         }
 
         if (!(file.type || "").startsWith("image/")) {
-            setErrorMsg("이미지 파일만 업로드할 수 있습니다.");
+            setErrorMsg(t("error.imageRequired"));
             return;
         }
 
@@ -152,12 +156,12 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
 
         const file = assetToUploadFile(a);
         if (!file) {
-            setErrorMsg("사진을 불러오지 못했습니다.");
+            setErrorMsg(t("error.imageLoadFail"));
             return;
         }
 
         if (!(file.type || "").startsWith("image/")) {
-            setErrorMsg("이미지 파일만 업로드할 수 있습니다.");
+            setErrorMsg(t("error.imageRequired"));
             return;
         }
 
@@ -192,11 +196,11 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                 if (e instanceof ApiError) {
                     setErrorMsg(
                         e.status === 400
-                            ? "검색어를 입력해주세요."
-                            : "학교 검색에 실패했습니다."
+                            ? t("mypage.schoolVerifyPage.queryRequired")
+                            : t("mypage.schoolVerifyPage.schoolSearchFailed")
                     );
                 } else {
-                    setErrorMsg("학교 검색에 실패했습니다.");
+                    setErrorMsg(t("mypage.schoolVerifyPage.schoolSearchFailed"));
                 }
                 setSchools([]);
             } finally {
@@ -208,7 +212,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [query, selectedSchool]);
+    }, [query, selectedSchool, t]);
 
     async function onSubmit() {
         if (!picked) return;
@@ -226,15 +230,15 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                 console.log("bodyText:", e.bodyText);
 
                 const msg =
-                    e.bodyText?.includes("이미 승인된 사용자")
-                        ? "이미 승인된 사용자입니다."
-                        : e.bodyText?.includes("사용자를 찾을 수 없습니다")
-                        ? "사용자를 찾을 수 없습니다."
-                        : "업로드에 실패했습니다. 다시 시도해주세요.";
+                    e.bodyText?.includes(ALREADY_APPROVED_RESPONSE)
+                        ? t("mypage.schoolVerifyPage.alreadyApproved")
+                        : e.bodyText?.includes(USER_NOT_FOUND_RESPONSE)
+                        ? t("mypage.schoolVerifyPage.userNotFound")
+                        : t("mypage.schoolVerifyPage.uploadFailed");
                 setErrorMsg(msg);
             } else {
                 console.log("unknown error:", e);
-                setErrorMsg("업로드에 실패했습니다. 다시 시도해주세요.");
+                setErrorMsg(t("mypage.schoolVerifyPage.uploadFailed"));
             }
         } finally {
             setSubmitting(false);
@@ -248,7 +252,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                 {step === "SCHOOL_SEARCH" && (
                     <>
                         <View style={styles.body}>
-                            <AppText style={styles.title}>학교를 선택해주세요</AppText>
+                            <AppText style={styles.title}>{t("mypage.schoolVerifyPage.title")}</AppText>
 
                             <View style={[ styles.searchWrap, isDropdownOpen ? styles.searchWrapOpen : null, ]} >
                                 <AppTextInput
@@ -285,11 +289,11 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                     <View style={styles.dropdown} accessibilityRole="list">
                                         {searching ? (
                                             <View style={styles.item}>
-                                                <AppText style={styles.itemText}>검색 중...</AppText>
+                                                <AppText style={styles.itemText}>{t("mypage.schoolVerifyPage.searching")}</AppText>
                                             </View>
                                         ) : schools.length === 0 ? (
                                             <View style={styles.item}>
-                                                <AppText style={styles.itemText}>검색 결과가 없습니다.</AppText>
+                                                <AppText style={styles.itemText}>{t("mypage.schoolVerifyPage.noSearchResults")}</AppText>
                                             </View>
                                         ) : (
                                             <FlatList
@@ -325,7 +329,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                 onPress={() => {onNextFromSchool().catch(console.error);}}
                             >
                                 <AppText style={styles.primaryBtnText}>
-                                    {submitting ? "저장 중..." : "다음"}
+                                    {submitting ? t("mypage.schoolVerifyPage.saving") : t("mypage.schoolVerifyPage.next")}
                                 </AppText>
                             </Pressable>
                         </View>
@@ -336,13 +340,13 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                     <>
                         <View style={styles.body}>
                             <AppText style={styles.uploadTitle}>
-                                재학생 인증을 위한{"\n"}학생증 사진이 필요해요
+                                {t("mypage.schoolVerifyPage.uploadTitle")}
                             </AppText>
 
                             <View style={styles.cardPreview}>
                                 <Image source={require("../../../assets/images/studentcard_guide.png")} style={styles.previewGuide} resizeMode="contain" />
                                 <AppText style={styles.cardPreviewText}>
-                                    개인정보 보호를 위해{"\n"}카드 번호 등을 가려서 올려주세요!
+                                    {t("mypage.schoolVerifyPage.uploadGuide")}
                                 </AppText>
                             </View>
 
@@ -353,11 +357,11 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
 
                         <View style={[styles.footer, styles.footerUpload]}>
                             <Pressable style={[styles.secondaryBtn, styles.footerBtn]} onPress={() => {pickFromLibrary().catch(console.error);}} >
-                                <AppText style={styles.secondaryBtnText}>사진 선택하기</AppText>
+                                <AppText style={styles.secondaryBtnText}>{t("mypage.schoolVerifyPage.pickPhoto")}</AppText>
                             </Pressable>
 
                             <Pressable style={[styles.primaryAltBtn, styles.footerBtn]} onPress={() => {takePhoto().catch(console.error);}} >
-                                <AppText style={styles.primaryBtnText}>학생증 촬영하기</AppText>
+                                <AppText style={styles.primaryBtnText}>{t("mypage.schoolVerifyPage.takeStudentCardPhoto")}</AppText>
                             </Pressable>
                         </View>
                     </>
@@ -366,7 +370,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                 {step === "DONE" && (
                     <>
                         <View style={styles.body}>
-                            <AppText style={styles.doneTitle}>학생증 업로드 완료!</AppText>
+                            <AppText style={styles.doneTitle}>{t("mypage.schoolVerifyPage.uploadComplete")}</AppText>
 
                             <View style={styles.doneBox}>
                                 {picked?.uri ? (
@@ -377,13 +381,13 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                     />
                                 ) : (
                                     <View style={styles.doneCard}>
-                                        <AppText style={styles.doneCardText}>(학생증 사진)</AppText>
+                                        <AppText style={styles.doneCardText}>{t("mypage.schoolVerifyPage.studentCardPhotoLabel")}</AppText>
                                     </View>
                                 )}
                             </View>
 
                             <AppText style={styles.hint}>
-                                재학생 인증까지{"\n"}약 1주일 정도 소요될 수 있어요.
+                                {t("mypage.schoolVerifyPage.reviewHint")}
                             </AppText>
 
                             {errorMsg ? <AppText style={styles.errorText}>{errorMsg}</AppText> : null}
@@ -391,7 +395,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
 
                         <View style={[styles.footer, styles.footerUpload]}>
                             <Pressable style={[styles.secondaryBtn, styles.footerBtn]} onPress={resetFile} >
-                                <AppText style={styles.secondaryBtnText}>사진 다시 선택하기</AppText>
+                                <AppText style={styles.secondaryBtnText}>{t("mypage.schoolVerifyPage.repickPhoto")}</AppText>
                             </Pressable>
 
                             <Pressable
@@ -406,10 +410,10 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                                 {submitting ? (
                                     <View style={styles.submittingRow}>
                                         <ActivityIndicator />
-                                        <AppText style={styles.primaryBtnText}>제출 중...</AppText>
+                                        <AppText style={styles.primaryBtnText}>{t("mypage.schoolVerifyPage.submitting")}</AppText>
                                     </View>
                                 ) : (
-                                    <AppText style={styles.primaryBtnText}>제출하기</AppText>
+                                    <AppText style={styles.primaryBtnText}>{t("mypage.schoolVerifyPage.submit")}</AppText>
                                 )}
                             </Pressable>
                         </View>
@@ -422,7 +426,7 @@ export default function SchoolVerifyScreen({ navigation }: Props) {
                             <View style={styles.checkCircle}>
                                 <Image source={require("../../../assets/icons/check-02.png")} style={styles.submittedCheckIcon} />
                             </View>
-                            <AppText style={styles.submittedTitle}>제출완료!</AppText>
+                            <AppText style={styles.submittedTitle}>{t("mypage.schoolVerifyPage.submitted")}</AppText>
                         </View>
                     </View>
                 )}

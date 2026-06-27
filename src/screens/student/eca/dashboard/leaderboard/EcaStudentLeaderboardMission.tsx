@@ -341,7 +341,7 @@ export default function EcaStudentLeaderboardMission({
             const validFiles = selectedFiles.filter((file) => Number(file.size ?? 1) > 0);
 
             if (validFiles.length === 0) {
-                Alert.alert("비어 있는 파일은 제출할 수 없습니다.");
+                Alert.alert(t(`${LEADERBOARD_MISSION_T}.alert.emptyFile`));
                 return;
             }
 
@@ -354,8 +354,8 @@ export default function EcaStudentLeaderboardMission({
 
             if (invalidFile) {
                 Alert.alert(
-                    t(`${LEADERBOARD_MISSION_T}.alert.invalidFileTypeTitle`, { defaultValue: "파일 형식 확인" }),
-                    t(`${LEADERBOARD_MISSION_T}.alert.invalidFileType`, { defaultValue: "선택한 파일 중 허용되지 않는 형식이 포함되어 있습니다." })
+                    t(`${LEADERBOARD_MISSION_T}.alert.invalidFileTypeTitle`),
+                    t(`${LEADERBOARD_MISSION_T}.alert.invalidFileType`)
                 );
                 return;
             }
@@ -575,7 +575,7 @@ export default function EcaStudentLeaderboardMission({
                     ) : (
                         <View style={styles.emptyWrap}>
                             <AppText style={styles.emptyText}>
-                                {t(`${LEADERBOARD_MISSION_T}.empty`, { defaultValue: "표시할 미션이 없습니다." })}
+                                {t(`${LEADERBOARD_MISSION_T}.empty`)}
                             </AppText>
                         </View>
                     )}

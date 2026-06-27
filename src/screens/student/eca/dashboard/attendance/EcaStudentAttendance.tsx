@@ -183,7 +183,7 @@ export default function EcaStudentAttendance({
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
             if (!token) {
-                Alert.alert("로그인이 필요합니다.", "로그인 후 이용할 수 있습니다.");
+                Alert.alert(t("login.getLoginTitle"), t("login.getLoginSub"));
                 return;
             }
 
@@ -225,20 +225,20 @@ export default function EcaStudentAttendance({
                 return;
             }
 
-            Alert.alert("서비스 준비중입니다.");
+            Alert.alert(t("common.preparing"));
         });
     }
 
     function moveSystemAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveJumpAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveKakaoAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function openAttendance(event: MyAttendanceEventResponse): void {

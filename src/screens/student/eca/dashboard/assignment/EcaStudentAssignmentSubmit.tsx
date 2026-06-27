@@ -131,10 +131,14 @@ function isAllowedAssignmentFile(resultForms?: AssignmentResultForm[] | null, ex
         });
 }
 
-function getAssignmentFileWarning(resultForms?: AssignmentResultForm[] | null, extension?: string | null): string {
+function getAssignmentFileWarning(
+    resultForms: AssignmentResultForm[] | null | undefined,
+    extension: string | null | undefined,
+    t: TranslationFunction
+): string {
     if (isAllowedAssignmentFile(resultForms, extension)) return "";
 
-    return "과제 형식을 확인해주세요!";
+    return t(`${ASSIGNMENT_SUBMIT_T}.fileTypeWarning`);
 }
 
 function isValidHttpUrl(value: string): boolean {
@@ -413,7 +417,7 @@ export default function EcaStudentAssignmentSubmit({
             const validFiles = selectedFiles.filter((file) => Number(file.size ?? 1) > 0);
 
             if (validFiles.length === 0) {
-                Alert.alert("비어 있는 파일은 제출할 수 없습니다.");
+                Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.emptyFile`));
                 return;
             }
 
@@ -464,14 +468,14 @@ export default function EcaStudentAssignmentSubmit({
 
     async function handleOpenExistingLink(link: SubmissionFileResponse): Promise<void> {
         if (!link.url) {
-            Alert.alert("링크 정보가 없습니다.");
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.linkNoInfo`));
             return;
         }
 
         const canOpen = await Linking.canOpenURL(link.url);
 
         if (!canOpen) {
-            Alert.alert("링크를 열 수 없습니다.");
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.linkOpenFailed`));
             return;
         }
 
@@ -480,7 +484,7 @@ export default function EcaStudentAssignmentSubmit({
 
     async function handleDownloadExistingFile(file: SubmissionFileResponse): Promise<void> {
         if (!file.url) {
-            Alert.alert("파일 URL 정보가 없습니다.");
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.fileUrlMissing`));
             return;
         }
 
@@ -488,7 +492,7 @@ export default function EcaStudentAssignmentSubmit({
             await Linking.openURL(file.url);
         } catch (e) {
             console.error(e);
-            Alert.alert("파일을 열 수 없습니다.");
+            Alert.alert(t(`${ASSIGNMENT_SUBMIT_T}.alert.fileOpenFailed`));
         }
     }
 
@@ -558,7 +562,7 @@ export default function EcaStudentAssignmentSubmit({
     function requireAuth(action: () => void): void {
         void getAccessToken().then((token) => {
             if (!token) {
-                Alert.alert("로그인이 필요합니다.", "로그인 후 이용할 수 있습니다.");
+                Alert.alert(t("login.getLoginTitle"), t("login.getLoginSub"));
                 return;
             }
 
@@ -599,20 +603,20 @@ export default function EcaStudentAssignmentSubmit({
                 return;
             }
 
-            Alert.alert("서비스 준비중입니다.");
+            Alert.alert(t("common.preparing"));
         });
     }
 
     function moveSystemAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveJumpAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveKakaoAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     return (
@@ -644,7 +648,7 @@ export default function EcaStudentAssignmentSubmit({
                 <Header activityName={activity?.name ?? ""} onMenuClick={() => setMenuOpen(true)} />
                 <ScrollView style={styles.main} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.titleRow}>
-                        <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="뒤로가기">
+                        <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.back`)}>
                             <BackIcon />
                         </Pressable>
 
@@ -667,7 +671,7 @@ export default function EcaStudentAssignmentSubmit({
                                 <ReadonlyField label={t(`${ASSIGNMENT_SUBMIT_T}.assignmentName`)} value={assignment?.name ?? ""} />
 
                                 <View style={styles.period}>
-                                    <AppText style={styles.fieldLabel}>과제 수행 기간</AppText>
+                                    <AppText style={styles.fieldLabel}>{t(`${ASSIGNMENT_SUBMIT_T}.assignmentPeriod`)}</AppText>
 
                                     <View style={styles.periodRow}>
                                         <View style={styles.periodInput}>
@@ -684,14 +688,14 @@ export default function EcaStudentAssignmentSubmit({
 
                                 <View style={styles.grid}>
                                     <View style={styles.gridItem}>
-                                        <AppText style={styles.fieldLabel}>팀/개인</AppText>
+                                        <AppText style={styles.fieldLabel}>{t(`${ASSIGNMENT_SUBMIT_T}.teamOrIndividual`)}</AppText>
                                         <View style={styles.readonlyInput}>
                                             <AppText style={styles.readonlyInputText}>{getStudentAssignmentFormLabel(assignment, studentAssignment, t)}</AppText>
                                         </View>
                                     </View>
 
                                     <View style={styles.gridItem}>
-                                        <AppText style={styles.fieldLabel}>과제 형태</AppText>
+                                        <AppText style={styles.fieldLabel}>{t(`${ASSIGNMENT_SUBMIT_T}.resultFormLabel`)}</AppText>
                                         <View style={styles.readonlyInput}>
                                             <AppText style={styles.readonlyInputText} numberOfLines={1}>{getResultFormsLabel(assignment?.resultForms, t)}</AppText>
                                         </View>
@@ -700,7 +704,7 @@ export default function EcaStudentAssignmentSubmit({
                             </View>
 
                             <View style={styles.card}>
-                                <AppText style={styles.cardTitle}>과제 업로드</AppText>
+                                <AppText style={styles.cardTitle}>{t(`${ASSIGNMENT_SUBMIT_T}.uploadTitle`)}</AppText>
 
                                 {acceptsFile ? (
                                     <View style={styles.submissionMeta}>
@@ -745,7 +749,7 @@ export default function EcaStudentAssignmentSubmit({
                                         {existingLinks.map((link) => (
                                             <View style={styles.linkItem} key={link.submissionFileId}>
                                                 <Pressable style={{ flex: 1 }} onPress={() => void handleOpenExistingLink(link)}>
-                                                    <AppText style={styles.linkText} numberOfLines={1}>{link.url ?? "링크 정보 없음"}</AppText>
+                                                    <AppText style={styles.linkText} numberOfLines={1}>{link.url ?? t(`${ASSIGNMENT_SUBMIT_T}.linkNoInfo`)}</AppText>
                                                 </Pressable>
 
                                                 {!evaluationCompleted ? (
@@ -757,7 +761,7 @@ export default function EcaStudentAssignmentSubmit({
                                         ))}
 
                                         {hasInvalidLink ? (
-                                            <AppText style={styles.linkError}>http 또는 https로 시작하는 링크를 입력해주세요.</AppText>
+                                            <AppText style={styles.linkError}>{t(`${ASSIGNMENT_SUBMIT_T}.alert.invalidLink`)}</AppText>
                                         ) : null}
                                     </View>
                                 ) : null}
@@ -775,7 +779,7 @@ export default function EcaStudentAssignmentSubmit({
                                         {existingFiles.map((file) => {
                                             const fileName = file.originalFileName ?? `submission-file-${file.submissionFileId}`;
                                             const extension = getFileExtension(fileName);
-                                            const warning = getAssignmentFileWarning(assignment?.resultForms, extension);
+                                            const warning = getAssignmentFileWarning(assignment?.resultForms, extension, t);
 
                                             return (
                                                 <View style={styles.fileItem} key={file.submissionFileId}>
@@ -791,11 +795,11 @@ export default function EcaStudentAssignmentSubmit({
                                                     </View>
 
                                                     <View style={styles.fileActions}>
-                                                        <Pressable style={styles.fileActionButton} onPress={() => void handleDownloadExistingFile(file)} accessibilityLabel="파일 열기">
+                                                        <Pressable style={styles.fileActionButton} onPress={() => void handleDownloadExistingFile(file)} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.fileDownload`)}>
                                                             <DownloadIcon />
                                                         </Pressable>
 
-                                                        <Pressable style={styles.fileActionButton} onPress={() => removeExistingFile(file.submissionFileId)} accessibilityLabel="파일 삭제">
+                                                        <Pressable style={styles.fileActionButton} onPress={() => removeExistingFile(file.submissionFileId)} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.fileDelete`)}>
                                                             <CloseIcon />
                                                         </Pressable>
                                                     </View>
@@ -808,7 +812,7 @@ export default function EcaStudentAssignmentSubmit({
                                 {files.length > 0 ? (
                                     <View style={styles.fileList}>
                                         {files.map((item) => {
-                                            const warning = getAssignmentFileWarning(assignment?.resultForms, item.extension);
+                                            const warning = getAssignmentFileWarning(assignment?.resultForms, item.extension, t);
 
                                             return (
                                                 <View style={styles.fileItem} key={item.id}>
@@ -823,7 +827,7 @@ export default function EcaStudentAssignmentSubmit({
                                                         </View>
                                                     </View>
 
-                                                    <Pressable style={styles.fileRemoveButton} onPress={() => removeFile(item.id)} accessibilityLabel="파일 삭제">
+                                                    <Pressable style={styles.fileRemoveButton} onPress={() => removeFile(item.id)} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.fileDelete`)}>
                                                         <CloseIcon />
                                                     </Pressable>
                                                 </View>
@@ -896,10 +900,10 @@ export default function EcaStudentAssignmentSubmit({
                                 <ResultIcon success={submitResult === "success"} />
                             </View>
 
-                            <AppText style={styles.modalTitle}>{submitResult === "success" ? "제출 완료" : "제출 실패"}</AppText>
+                            <AppText style={styles.modalTitle}>{submitResult === "success" ? t(`${ASSIGNMENT_SUBMIT_T}.submitSuccessTitle`) : t(`${ASSIGNMENT_SUBMIT_T}.submitFailTitle`)}</AppText>
 
                             <Pressable style={styles.modalButton} onPress={() => setSubmitResultModalOpen(false)}>
-                                <AppText style={styles.modalButtonText}>{submitResult === "success" ? "확인" : "다시 시도"}</AppText>
+                                <AppText style={styles.modalButtonText}>{submitResult === "success" ? t(`${ASSIGNMENT_SUBMIT_T}.confirmButton`) : t(`${ASSIGNMENT_SUBMIT_T}.retryButton`)}</AppText>
                             </Pressable>
                         </View>
                     </View>

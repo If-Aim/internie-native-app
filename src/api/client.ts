@@ -949,9 +949,13 @@ export type UpdateMyProfileJsonInput = {
     name?: string | null;
     nickname?: string | null;
     linkedinUrl?: string | null;
+    studentNumber?: string | null;
+    major?: string | null;
+    campus?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
 };
+
 export type AdminUserFile = {
     fileId: number;
     url: string;
@@ -1076,15 +1080,16 @@ export async function applyMyVerification(
     );
 }
 // 프로필 수정 (텍스트)
-export async function updateMyProfile(
-    input: UpdateMyProfileJsonInput
-): Promise<UserMe> {
+export async function updateMyProfile(input: UpdateMyProfileJsonInput): Promise<UserMe> {
     return api<UserMe>("/users/me", {
         method: "PATCH",
         body: JSON.stringify({
             name: input.name ?? null,
             nickname: input.nickname ?? null,
             linkedinUrl: input.linkedinUrl ?? null,
+            studentNumber: input.studentNumber ?? null,
+            major: input.major ?? null,
+            campus: input.campus ?? null,
             interestJob: input.interestJob ?? null,
             interestCompany: input.interestCompany ?? null,
         }),

@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, Pressable, Vi
 import { CommonActions } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { createThumbnail } from "react-native-create-thumbnail";
 import Svg, { Path } from "react-native-svg";
 import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
@@ -99,12 +100,14 @@ function RightIcon(): React.ReactElement {
 }
 
 function Header({ onClose }: { onClose: () => void }): React.ReactElement {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.topbarRow}>
             <View style={styles.headerLeftSpace} />
-            <AppText style={styles.appTitle}>인턴십 추가하기</AppText>
+            <AppText style={styles.appTitle}>{t("vlog.addInternship")}</AppText>
             <View style={commonStyles.iconbtn}>
-                <Pressable style={commonStyles.iconbtn} onPress={onClose} accessibilityLabel="닫기">
+                <Pressable style={commonStyles.iconbtn} onPress={onClose} accessibilityLabel={t("common.close")}>
                     <CloseIcon />
                 </Pressable>
             </View>
@@ -113,9 +116,11 @@ function Header({ onClose }: { onClose: () => void }): React.ReactElement {
 }
 
 function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: number; right?: number; onClose: () => void }): React.ReactElement {
+    const { t } = useTranslation();
+
     return (
         <View style={[styles.cameraCloseButtonWrap, { top, left, right }]}>
-            <Pressable style={styles.cameraCloseIconBox} onPress={onClose} accessibilityLabel="카메라 닫기">
+            <Pressable style={styles.cameraCloseIconBox} onPress={onClose} accessibilityLabel={t("vlog.cameraClose")}>
                 <CameraCloseIcon />
             </Pressable>
         </View>
@@ -123,6 +128,7 @@ function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: 
 }
 
 export default function NewVlogScreen({ navigation }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
     const isLandscape = width > height;
@@ -176,7 +182,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             console.error("[NEW_VLOG] load companies error:", error);
             setCompanies([]);
             setSelectedCompanyCode(null);
-            Alert.alert("불러오기 실패", "회사 목록을 불러오지 못했습니다.");
+            Alert.alert(t("vlog.loadFailedTitle"), t("vlog.new.companyLoadFailed"));
         } finally {
             setCompanyLoading(false);
         }
@@ -227,7 +233,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
     function handleNext(): void {
         if (!canNext) {
-            Alert.alert("회사를 선택해주세요.", "인턴십을 진행하는 회사를 먼저 선택해주세요.");
+            Alert.alert(t("vlog.new.selectCompanyTitle"), t("vlog.new.selectCompanyDesc"));
             return;
         }
 
@@ -241,12 +247,12 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
 
         if (!cameraGranted || !microphoneGranted) {
-            Alert.alert("권한이 필요합니다.", "브이로그 촬영을 위해 카메라와 마이크 권한이 필요합니다.");
+            Alert.alert(t("vlog.permissionRequiredTitle"), t("vlog.cameraMicPermissionDesc"));
             return;
         }
 
         if (!cameraDevice) {
-            Alert.alert("카메라 오류", "사용 가능한 카메라를 찾지 못했습니다.");
+            Alert.alert(t("vlog.cameraErrorTitle"), t("vlog.cameraUnavailable"));
             return;
         }
 
@@ -281,14 +287,14 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                     console.error("[NEW_VLOG] recording error:", error);
                     recorderRef.current = null;
                     setRecording(false);
-                    Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+                    Alert.alert(t("vlog.recordFailedTitle"), t("vlog.recordFailedDesc"));
                 }
             );
         } catch (error) {
             console.error("[NEW_VLOG] start recording error:", error);
             recorderRef.current = null;
             setRecording(false);
-            Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+            Alert.alert(t("vlog.recordFailedTitle"), t("vlog.recordFailedDesc"));
         }
     }
 
@@ -320,10 +326,10 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             setOnboardingThumbnailRenderKey((prev) => prev + 1);
             setOnboardingRecorded(true);
 
-            Alert.alert("촬영 완료", "테스트 촬영이 완료되었습니다.");
+            Alert.alert(t("vlog.recordCompleteTitle"), t("vlog.new.testRecordComplete"));
         } catch (error) {
             console.error("[NEW_VLOG] create thumbnail error:", error);
-            Alert.alert("촬영 실패", "촬영한 영상의 썸네일을 만들지 못했습니다.");
+            Alert.alert(t("vlog.recordFailedTitle"), t("vlog.thumbnailCreateFailed"));
         } finally {
             setRecording(false);
         }
@@ -331,7 +337,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
     function handleCloseCamera(): void {
         if (recording) {
-            Alert.alert("촬영 중입니다.", "촬영 중에는 카메라를 닫을 수 없습니다.");
+            Alert.alert(t("vlog.recordingTitle"), t("vlog.cannotCloseCameraWhileRecording"));
             return;
         }
 
@@ -345,7 +351,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         const nextCameraDevice = nextPosition === "front" ? frontCameraDevice : backCameraDevice;
 
         if (!nextCameraDevice) {
-            Alert.alert("카메라 오류", "전환할 수 있는 카메라를 찾지 못했습니다.");
+            Alert.alert(t("vlog.cameraErrorTitle"), t("vlog.cameraSwitchUnavailable"));
             return;
         }
 
@@ -363,7 +369,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
     async function handleSave(): Promise<void> {
         if (!canSave || !selectedCompanyCode || !selectedCompany) {
-            Alert.alert("입력값을 확인해주세요.", "회사를 선택해주세요.");
+            Alert.alert(t("vlog.new.checkInputTitle"), t("vlog.new.selectCompanyTitle"));
             return;
         }
 
@@ -374,20 +380,20 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
             await startVlogProject({
                 companyCode: selectedCompanyCode,
-                title: `${selectedCompany.name} 인턴십`,
+                title: t("vlog.new.projectTitle", { company: selectedCompany.name }),
                 startDate: FIXED_START_DATE,
                 endDate: FIXED_END_DATE,
             });
 
-            Alert.alert("저장되었습니다.", "브이로그 인턴십이 추가되었습니다.", [
+            Alert.alert(t("common.saved"), t("vlog.new.savedDesc"), [
                 {
-                    text: "확인",
+                    text: t("common.confirm"),
                     onPress: resetToVlogHome,
                 },
             ]);
         } catch (error) {
             console.error("[NEW_VLOG] save error:", error);
-            Alert.alert("저장 실패", "브이로그 인턴십을 추가하지 못했습니다.");
+            Alert.alert(t("vlog.saveFailedTitle"), t("vlog.new.saveFailedDesc"));
         } finally {
             setSaving(false);
         }
@@ -416,7 +422,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
         return (
             <View style={styles.content}>
                 <View style={styles.section}>
-                    <AppText style={styles.sectionTitle}>나의 회사</AppText>
+                    <AppText style={styles.sectionTitle}>{t("vlog.new.myCompany")}</AppText>
 
                     {companyLoading ? (
                         <View style={styles.companyLoadingBox}>
@@ -424,7 +430,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                         </View>
                     ) : companies.length === 0 ? (
                         <View style={styles.companyEmptyBox}>
-                            <AppText style={styles.companyEmptyText}>선택 가능한 회사가 없습니다.</AppText>
+                            <AppText style={styles.companyEmptyText}>{t("vlog.new.companyEmpty")}</AppText>
                         </View>
                     ) : (
                         <View style={styles.companyDropdownWrap}>
@@ -436,7 +442,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                                 onPress={toggleCompanyDropdown}
                             >
                             <AppText style={[styles.companyDropdownText, selectedCompany ? styles.companyDropdownTextSelected : null]}>
-                                    {selectedCompany ? selectedCompany.name : "회사를 선택하세요"}
+                                    {selectedCompany ? selectedCompany.name : t("vlog.new.companyPlaceholder")}
                                 </AppText>
 
                                 <Animated.View style={{ transform: [{ rotate: dropdownRotate }] }}>
@@ -496,12 +502,12 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
 
     function renderOnboardingStep(): React.ReactElement {
         const recordButtonActive = onboardingRecorded;
-        const recordButtonText = onboardingRecorded ? "다시 촬영하기" : "촬영하기";
+        const recordButtonText = onboardingRecorded ? t("vlog.recordAgain") : t("vlog.recordAction");
         return (
             <View style={styles.content}>
                 <View style={styles.section}>
-                    <AppText style={styles.sectionTitle}>인턴십 소개</AppText>
-                    <AppText style={styles.sectionDescription}>테스트로 촬영해보세요!</AppText>
+                    <AppText style={styles.sectionTitle}>{t("vlog.new.internshipIntro")}</AppText>
+                    <AppText style={styles.sectionDescription}>{t("vlog.new.testRecordPrompt")}</AppText>
 
                     <View style={styles.introCard}>
                         <View style={styles.introTopRow}>
@@ -522,8 +528,8 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                             </View>
 
                             <View style={styles.introTextWrap}>
-                                <AppText style={styles.introLabel}>{onboardingRecorded ? "스타트업 인턴십 OT 촬영 완료" : "스타트업 인턴십 OT 촬영하기"}</AppText>
-                                <AppText style={styles.introDuration}>6초</AppText>
+                                <AppText style={styles.introLabel}>{onboardingRecorded ? t("vlog.new.otRecordComplete") : t("vlog.new.otRecord")}</AppText>
+                                <AppText style={styles.introDuration}>{t("vlog.sixSeconds")}</AppText>
                             </View>
                         </View>
 
@@ -677,11 +683,11 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                                 ]}
                             >
                                 <AppText style={styles.cameraMissionTitle}>
-                                    인턴십 온보딩 현장 촬영하기
+                                    {t("vlog.new.onboardingMission")}
                                 </AppText>
 
                                 <AppText style={styles.cameraMissionDuration}>
-                                    6초
+                                    {t("vlog.sixSeconds")}
                                 </AppText>
                             </Animated.View>
                         ) : null}
@@ -732,7 +738,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                                 ]}
                                 onPress={toggleCameraPosition}
                                 disabled={recording}
-                                accessibilityLabel="카메라 전후면 전환"
+                                accessibilityLabel={t("vlog.cameraSwitch")}
                             >
                                 <CameraSwitchIcon />
                             </Pressable>
@@ -752,7 +758,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
             <View style={styles.bottomBar}>
                 {step === 1 ? (
                     <Pressable style={[styles.saveButton, canNext ? styles.nextButtonActive : null]} onPress={handleNext}>
-                        <AppText style={[styles.saveButtonText, canNext ? styles.nextButtonTextActive : null]}>다음으로</AppText>
+                        <AppText style={[styles.saveButtonText, canNext ? styles.nextButtonTextActive : null]}>{t("vlog.next")}</AppText>
                     </Pressable>
                 ) : (
                     <Pressable
@@ -763,7 +769,7 @@ export default function NewVlogScreen({ navigation }: Props): React.ReactElement
                         }}
                     >
                         <AppText style={[styles.saveButtonText, canSave ? styles.saveButtonTextActive : null]}>
-                            {saving ? "저장 중..." : "저장하기"}
+                            {saving ? t("vlog.saving") : t("common.save")}
                         </AppText>
                     </Pressable>
                 )}

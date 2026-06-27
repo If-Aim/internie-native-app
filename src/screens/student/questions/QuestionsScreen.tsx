@@ -16,6 +16,7 @@ import { replaceExperienceName } from "../../../theme/josa";
 import AppText from "../../../../AppText";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "Questions">;
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
 
 type Stage = "asking" | "completed";
 type RecordStage = "closed" | "preparing" | "recording";
@@ -35,15 +36,15 @@ const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 const OUTRO_VISIBLE_MS = 1200;
 const OUTRO_FADE_MS = 220;
 
-async function ensureRecordPermissionAndroid(): Promise<boolean> {
+async function ensureRecordPermissionAndroid(t: TranslationFunction): Promise<boolean> {
     if (Platform.OS !== "android") return true;
     const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
-            title: "마이크 권한",
-            message: "녹음을 위해 마이크 권한이 필요합니다.",
-            buttonPositive: "허용",
-            buttonNegative: "거부",
+            title: t("questions.permissionTitle"),
+            message: t("questions.permissionMessage"),
+            buttonPositive: t("questions.allow"),
+            buttonNegative: t("questions.deny"),
         }
     );
 
@@ -181,7 +182,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
     const uploadAudioToSTT = React.useCallback(
         async (filePath: string): Promise<boolean> => {
             if (!Number.isFinite(eventDayIdNum)) {
-                console.error("eventDayId가 유효하지 않습니다:", eventDayIdNum);
+                console.error("Invalid eventDayId:", eventDayIdNum);
                 return false;
             }
 
@@ -193,8 +194,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
                 if (fileSize > MAX_AUDIO_BYTES) {
                     Alert.alert(
-                        "업로드 불가",
-                        "녹음 파일이 너무 커서 업로드할 수 없어요.\n조금 더 짧게 녹음한 뒤 다시 시도해 주세요."
+                        t("questions.uploadTooLargeTitle"),
+                        t("questions.uploadTooLargeMessage")
                     );
                     return false;
                 }
@@ -220,24 +221,24 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     }
 
                     Alert.alert(
-                        "STT 업로드 실패",
+                        t("questions.sttUploadFailedTitle"),
                         `${err.status}\n${err.bodyText ?? ""}`
                     );
                     return false;
                 }
 
-                Alert.alert("오류", "STT 업로드 중 네트워크 오류가 발생했습니다.");
+                Alert.alert(t("questions.errorTitle"), t("questions.sttNetworkError"));
                 return false;
             } finally {
                 setIsUploading(false);
             }
         },
-        [eventDayIdNum]
+        [eventDayIdNum, t]
     );
 
     React.useEffect(() => {
         if (!Number.isFinite(eventDayIdNum)) {
-            console.error("eventDayId가 유효하지 않습니다:", route.params?.eventDayId);
+            console.error("Invalid eventDayId:", route.params?.eventDayId);
             return;
         }
 
@@ -269,7 +270,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 setQuestions(mapped);
 
                 if (mapped.length === 0) {
-                    Alert.alert("안내", "표시할 질문이 없습니다.");
+                    Alert.alert(t("questions.noticeTitle"), t("questions.emptyQuestions"));
                 }
 
                 const answeredCount = Array.isArray(day.transcriptions) ? day.transcriptions.length : 0;
@@ -288,20 +289,20 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     }
                     if (err.status === 404) {
                         Alert.alert(
-                            "안내",
-                            "모든 질문을 완료했습니다.\n다음 일정에서 다시 진행해 주세요."
+                            t("questions.noticeTitle"),
+                            t("questions.completedQuestions")
                         );
                         return;
                     }
 
                     Alert.alert(
-                        "질문 조회 실패",
+                        t("questions.questionFetchFailedTitle"),
                         `${err.status}\n${err.bodyText ?? ""}`
                     );
                     return;
                 }
 
-                Alert.alert("오류", "질문 조회 중 네트워크 오류가 발생했습니다.");
+                Alert.alert(t("questions.errorTitle"), t("questions.questionNetworkError"));
             } finally {
                 if (!cancelled) {
                     setIsLoadingQuestions(false);
@@ -314,7 +315,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [eventDayIdNum, route.params?.eventDayId]);
+    }, [eventDayIdNum, route.params?.eventDayId, t]);
 
     const current = questions[index] ?? null;
     const total = isLoadingQuestions
@@ -391,9 +392,9 @@ export default function QuestionsScreen({ navigation, route }: Props) {
             setRecorderBusy(true);
 
             try {
-                const ok = await ensureRecordPermissionAndroid();
+                const ok = await ensureRecordPermissionAndroid(t);
                 if (!ok) {
-                    Alert.alert("안내", "마이크 권한을 허용해 주셔야 녹음할 수 있어요.");
+                    Alert.alert(t("questions.noticeTitle"), t("questions.micPermissionRequired"));
                     setRecordStage("closed");
                     return;
                 }
@@ -434,8 +435,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                     stopRecordingAndUpload().catch(console.error);
                 }, AUTO_STOP_MS);
             } catch (err) {
-                console.error("마이크 접근 실패", err);
-                Alert.alert("안내", "마이크 권한을 허용해 주셔야 녹음할 수 있어요.");
+                console.error("Microphone access failed", err);
+                Alert.alert(t("questions.noticeTitle"), t("questions.micPermissionRequired"));
                 setRecordStage("closed");
             } finally {
                 setRecorderBusy(false);
@@ -447,7 +448,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [recordStage]);
+    }, [recordStage, t]);
 
     React.useEffect(() => {
         if (recordStage === "recording" && isMicOn) {
@@ -494,8 +495,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 setLastUploadOk(null);
 
                 Alert.alert(
-                    "업로드 실패",
-                    "업로드에 실패했습니다.\n네트워크를 확인하고 다시 시도해 주세요."
+                    t("questions.uploadFailedTitle"),
+                    t("questions.uploadFailedMessage")
                 );
             });
             return;
@@ -553,7 +554,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
                         <View style={styles.headerCenter}>
                             <AppText style={styles.topbarTitle} numberOfLines={1}>
-                                {eventDayTitle || "기록"}
+                                {eventDayTitle || t("questions.fallbackTitle")}
                             </AppText>
                         </View>
 
@@ -575,7 +576,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                 </View>
 
                                 <View style={styles.progressLabelRow}>
-                                    <AppText style={styles.progressLabelText}>진행률</AppText>
+                                    <AppText style={styles.progressLabelText}>{t("questions.progress")}</AppText>
                                     <AppText style={styles.progressLabelText}>
                                         {currentNo}/{total}
                                     </AppText>
@@ -590,7 +591,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
                                     <AppText style={styles.questionText}>
                                         {isLoadingQuestions
-                                            ? "질문을 불러오는 중이에요…"
+                                            ? t("questions.loadingQuestion")
                                             : current?.text ?? ""}
                                     </AppText>
                                 </View>
@@ -604,9 +605,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                             onPress={() => {
                                 setRecordStage("preparing");
                             }}
-                            accessibilityLabel={t("questions.micStart", {
-                                defaultValue: "녹음 시작",
-                            })}
+                            accessibilityLabel={t("questions.micStart")}
                         >
                             <Image source={require("../../../assets/icons/microphone-01.png")} style={styles.micIcon} />
                         </Pressable>
@@ -631,8 +630,8 @@ export default function QuestionsScreen({ navigation, route }: Props) {
 
                                 <AppText style={styles.recordingText}>
                                     {recordStage === "recording" && isMicOn
-                                        ? "지금 말하세요"
-                                        : "인터니가 기록을\n준비하고 있어요!"}
+                                        ? t("questions.recordingNow")
+                                        : t("questions.preparingRecord")}
                                 </AppText>
 
                                 <View style={styles.recordingMicRing}>
@@ -662,9 +661,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                         onPress={() => {
                                             stopRecordingAndUpload().catch(console.error);
                                         }}
-                                        accessibilityLabel={t("questions.micStop", {
-                                            defaultValue: "녹음 종료",
-                                        })}
+                                        accessibilityLabel={t("questions.micStop")}
                                     >
                                         <Image
                                             source={
@@ -691,7 +688,7 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                                 style={styles.outroIconImg}
                             />
                         </View>
-                        <AppText style={styles.outroText}>기록완료!</AppText>
+                        <AppText style={styles.outroText}>{t("questions.recordComplete")}</AppText>
                     </Animated.View>
                 </Animated.View>
             )}
@@ -700,10 +697,9 @@ export default function QuestionsScreen({ navigation, route }: Props) {
                 <View style={styles.completedWrap}>
                     <View style={styles.completionContent}>
                         <LoadingDots />
-                        <AppText style={styles.completionTitle}>역량 분석 중</AppText>
+                        <AppText style={styles.completionTitle}>{t("questions.analyzingTitle")}</AppText>
                         <AppText style={styles.completionDesc}>
-                            인터니가 답변을 분석 중이에요!{"\n"}
-                            완료까지 약 5분 정도 소요될 수 있어요
+                            {t("questions.analyzingDesc")}
                         </AppText>
                         <View style={styles.completionMargin} />
                         <ActivityIndicator />

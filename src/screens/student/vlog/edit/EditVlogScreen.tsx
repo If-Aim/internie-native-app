@@ -8,6 +8,7 @@ import Video, { type VideoRef } from "react-native-video";
 import LinearGradient from "react-native-linear-gradient";
 import { createThumbnail } from "react-native-create-thumbnail";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import Svg, { Circle, Path } from "react-native-svg";
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from "react-native-draggable-flatlist";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -22,6 +23,7 @@ import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./EditVlogScreen.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "EditVlog">;
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
 const EXPORT_DISABLED = true; // 내보내기 기능 제한
 
 function BackIcon(): React.ReactElement {
@@ -153,32 +155,32 @@ function formatDuration(seconds?: number | null): string {
     return `${String(minutes).padStart(2, "0")}:${String(remainSeconds).padStart(2, "0")}`;
 }
 
-function getActualClipDurationText(clip: VlogClipResponse): string {
+function getActualClipDurationText(clip: VlogClipResponse, t: TranslationFunction): string {
     const seconds = Math.floor(Math.max(0, clip.durationSeconds ?? 0));
 
-    return `${seconds}초`;
+    return t("vlog.seconds", { seconds });
 }
 
-function getRecordWeeksText(subText: string): string {
-    const weeks = [...subText.matchAll(/(\d+)\s*주차/g)].map((match) => Number(match[1]));
+function getRecordWeeksText(subText: string, t: TranslationFunction): string {
+    const weeks = [...subText.matchAll(/(\d+)\s*\uC8FC\uCC28/g)].map((match) => Number(match[1]));
     const week = weeks.length > 0 ? Math.max(...weeks) : 8;
 
-    return `${week}주 간의 기록이에요`;
+    return t("vlog.edit.recordWeeks", { week });
 }
 
-function getClipTitle(clip: VlogClipResponse): string {
-    return clip.customTitle ?? clip.displayTitle ?? clip.originalTitle ?? "브이로그 클립";
+function getClipTitle(clip: VlogClipResponse, t: TranslationFunction): string {
+    return clip.customTitle ?? clip.displayTitle ?? clip.originalTitle ?? t("vlog.edit.defaultClipTitle");
 }
 
-function getWeekText(clip: VlogClipResponse): string {
-    if (clip.type === "EXTRA") return "추가 영상";
-    if (clip.type === "FREE_RECORD") return "자유 촬영";
-    if (clip.week) return `${clip.week}주차`;
+function getWeekText(clip: VlogClipResponse, t: TranslationFunction): string {
+    if (clip.type === "EXTRA") return t("vlog.edit.extraVideo");
+    if (clip.type === "FREE_RECORD") return t("vlog.freeCapture");
+    if (clip.week) return t("vlog.week", { week: clip.week });
 
     return "";
 }
 
-function toVideoAssetInput(asset: Asset): Omit<VlogClipCompleteInput, "fileKey"> | null {
+function toVideoAssetInput(asset: Asset, t: TranslationFunction): Omit<VlogClipCompleteInput, "fileKey"> | null {
     if (!asset.uri) return null;
 
     return {
@@ -187,7 +189,7 @@ function toVideoAssetInput(asset: Asset): Omit<VlogClipCompleteInput, "fileKey">
         sizeBytes: asset.fileSize ?? null,
         durationSeconds: Math.ceil(asset.duration ?? 0),
         thumbnailKey: null,
-        customTitle: asset.fileName?.replace(/\.[^/.]+$/, "") ?? "추가 영상",
+        customTitle: asset.fileName?.replace(/\.[^/.]+$/, "") ?? t("vlog.edit.extraVideo"),
     };
 }
 
@@ -303,11 +305,11 @@ async function saveLocalVideoToCameraRoll(localPath: string): Promise<void> {
     }
 }
 
-async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Promise<void> {
+async function saveVideoUrlToDevice(downloadUrl: string, fileName: string, t: TranslationFunction): Promise<void> {
     const hasPermission = await requestSaveVideoPermission();
 
     if (!hasPermission) {
-        throw new Error("영상 저장 권한이 필요합니다.");
+        throw new Error(t("vlog.edit.savePermissionRequired"));
     }
 
     const safeFileName = sanitizeFileName(fileName.endsWith(".mp4") ? fileName : `${fileName}.mp4`);
@@ -319,7 +321,7 @@ async function saveVideoUrlToDevice(downloadUrl: string, fileName: string): Prom
     }).promise;
 
     if (result.statusCode < 200 || result.statusCode >= 300) {
-        throw new Error(`영상 다운로드 실패: ${result.statusCode}`);
+        throw new Error(t("vlog.edit.downloadFailedWithStatus", { status: result.statusCode }));
     }
 
     await saveLocalVideoToCameraRoll(localPath);
@@ -330,10 +332,11 @@ function Header({
 }: {
     onBackClick: () => void;
 }): React.ReactElement {
+    const { t } = useTranslation();
 
     return (
         <View style={styles.topbarRow}>
-            <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel="뒤로가기">
+            <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel={t("common.prev")}>
                 <BackIcon />
             </Pressable>
             <View style={commonStyles.iconbtn} />
@@ -342,9 +345,10 @@ function Header({
 }
 
 export default function EditVlogScreen({ navigation, route }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { width, height } = useWindowDimensions();
     const projectId = route.params.projectId;
-    const [title, setTitle] = React.useState(route.params?.title ?? "인턴십 브이로그");
+    const [title, setTitle] = React.useState(route.params?.title ?? t("vlog.edit.defaultTitle"));
     const [subText, setSubText] = React.useState(route.params?.subText ?? "");
     const [clips, setClips] = React.useState<VlogClipResponse[]>([]);
     const [excludedClips, setExcludedClips] = React.useState<VlogClipResponse[]>([]);
@@ -394,7 +398,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
     React.useEffect(() => {
         void loadEditing();
-    }, [projectId]);
+    }, [projectId, t]);
 
     async function loadEditing(): Promise<void> {
         try {
@@ -403,12 +407,12 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             const response = await getVlogEditing(projectId);
 
             setTitle(response.title ?? title);
-            setSubText(response.lastWeek ? `${response.lastWeek}주차` : subText);
+            setSubText(response.lastWeek ? t("vlog.week", { week: response.lastWeek }) : subText);
             setClips(response.clips ?? []);
             setExcludedClips(response.excludedClips ?? []);
         } catch (error) {
             console.error("[EDIT_VLOG] load error:", error);
-            Alert.alert("불러오기 실패", "편집 정보를 불러오지 못했습니다.");
+            Alert.alert(t("vlog.loadFailedTitle"), t("vlog.edit.detailLoadFailed"));
         } finally {
             setLoading(false);
         }
@@ -474,7 +478,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             }
 
             if (!response.url) {
-                throw new Error("영상 재생 URL을 불러오지 못했습니다.");
+                throw new Error(t("vlog.videoUrlLoadFailed"));
             }
 
             setLoadedPreviewClipId(clip.clipId);
@@ -494,7 +498,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         const clip = visibleClips[previewClipIndex];
 
         if (!clip?.clipId) {
-            Alert.alert("재생할 영상이 없습니다.", "편집에 포함된 클립이 없습니다.");
+            Alert.alert(t("vlog.noVideoTitle"), t("vlog.edit.noIncludedClip"));
             return;
         }
 
@@ -507,7 +511,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             await loadPreviewClipAt(previewClipIndex, previewCurrentSeconds, true);
         } catch (error) {
             console.error("[EDIT_VLOG] play url error:", error);
-            Alert.alert("재생 실패", "영상 재생 URL을 불러오지 못했습니다.");
+            Alert.alert(t("vlog.videoPlayFailedTitle"), t("vlog.videoUrlLoadFailed"));
         }
     }
 
@@ -632,7 +636,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         loadPreviewClipAt(target.clipIndex, target.clipSeconds, shouldPlay)
                 .catch((error) => {
                     console.error("[EDIT_VLOG] seek preview error:", error);
-                    Alert.alert("이동 실패", "해당 구간으로 이동하지 못했습니다.");
+                    Alert.alert(t("vlog.edit.seekFailedTitle"), t("vlog.edit.seekFailedDesc"));
                 })
                 .finally(() => {
                     finishPreviewSeek();
@@ -729,8 +733,8 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
 
                     {previewPlaying ? (
                         <View style={styles.previewCenter} pointerEvents="none">
-                            <AppText style={styles.previewWeek}>{currentClip ? getWeekText(currentClip) : "브이로그"}</AppText>
-                            <AppText style={styles.previewTitle}>{currentClip ? getClipTitle(currentClip) : "클립 없음"}</AppText>
+                            <AppText style={styles.previewWeek}>{currentClip ? getWeekText(currentClip, t) : t("vlog.defaultSubText")}</AppText>
+                            <AppText style={styles.previewTitle}>{currentClip ? getClipTitle(currentClip, t) : t("vlog.edit.noClip")}</AppText>
                         </View>
                     ) : (
                         <View style={styles.previewPlayOnlyCenter} pointerEvents="none">
@@ -773,7 +777,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             }
         } catch (error) {
             console.error("[EDIT_VLOG] exclude clip error:", error);
-            Alert.alert("삭제 실패", "클립을 편집 목록에서 제외하지 못했습니다.");
+            Alert.alert(t("vlog.deleteFailedTitle"), t("vlog.edit.excludeFailedDesc"));
         }
     }
 
@@ -790,7 +794,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             setAddClipModalOpen(false);
         } catch (error) {
             console.error("[EDIT_VLOG] include clip error:", error);
-            Alert.alert("추가 실패", "제외한 영상을 다시 추가하지 못했습니다.");
+            Alert.alert(t("vlog.addFailedTitle"), t("vlog.edit.includeFailedDesc"));
         } finally {
             setIncludingClipId(null);
         }
@@ -827,7 +831,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             }));
         } catch (error) {
             console.error("[EDIT_VLOG] reorder error:", error);
-            Alert.alert("정렬 저장 실패", "클립 순서를 저장하지 못했습니다.");
+            Alert.alert(t("vlog.edit.reorderFailedTitle"), t("vlog.edit.reorderFailedDesc"));
             await loadEditing();
             resetPreviewPlayer();
         }
@@ -837,7 +841,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
         if (!clip.clipId) return;
 
         setEditingClipId(clip.clipId);
-        setEditingTitle(getClipTitle(clip));
+        setEditingTitle(getClipTitle(clip, t));
     }
 
     function cancelInlineTitleEdit(): void {
@@ -863,7 +867,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             setClips((prev) => prev.map((item) => item.clipId === clip.clipId ? updated : item));
         } catch (error) {
             console.error("[EDIT_VLOG] title edit error:", error);
-            Alert.alert("수정 실패", "클립 제목을 수정하지 못했습니다.");
+            Alert.alert(t("common.saveFail"), t("vlog.edit.titleEditFailed"));
         } finally {
             cancelInlineTitleEdit();
         }
@@ -880,7 +884,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     }
     async function handlePressExport(): Promise<void> {
         if (EXPORT_DISABLED) {
-            Alert.alert("준비 중", "내보내기 서비스는 준비중입니다.");
+            Alert.alert(t("common.preparing"), t("vlog.edit.exportPreparingDesc"));
             return;
         }
         if (exporting) return;
@@ -896,7 +900,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             const finalVideoId = response.finalVideoId;
 
             if (!finalVideoId) {
-                throw new Error("최종 영상 ID를 받지 못했습니다.");
+                throw new Error(t("vlog.edit.finalVideoIdMissing"));
             }
 
             const downloadResponse = await waitVlogFinalVideoDone(projectId, finalVideoId, {
@@ -905,12 +909,13 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             });
 
             if (!downloadResponse.url) {
-                throw new Error("최종 영상 다운로드 URL을 받지 못했습니다.");
+                throw new Error(t("vlog.edit.finalVideoDownloadUrlMissing"));
             }
 
             await saveVideoUrlToDevice(
                 downloadResponse.url,
-                downloadResponse.fileName ?? response.finalVideoTitle ?? `${title} 브이로그.mp4`
+                downloadResponse.fileName ?? response.finalVideoTitle ?? t("vlog.edit.finalFileName", { title }),
+                t
             );
 
             setExportStep("DONE");
@@ -918,8 +923,8 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             console.error("[EDIT_VLOG] export error:", error);
             setExportStep("IDLE");
             Alert.alert(
-                "내보내기 실패",
-                error instanceof Error ? error.message : "브이로그를 내보내지 못했습니다."
+                t("vlog.edit.exportFailedTitle"),
+                error instanceof Error ? error.message : t("vlog.edit.exportFailedDesc")
             );
         } finally {
             setExporting(false);
@@ -946,10 +951,10 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 return;
             }
 
-            const inputBase = toVideoAssetInput(asset);
+            const inputBase = toVideoAssetInput(asset, t);
 
             if (!inputBase || !inputBase.contentType?.startsWith("video/")) {
-                Alert.alert("파일 오류", "영상 파일만 추가할 수 있습니다.");
+                Alert.alert(t("vlog.edit.fileErrorTitle"), t("vlog.edit.videoOnly"));
                 return;
             }
 
@@ -961,7 +966,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             });
 
             if (!upload.uploadUrl || !upload.fileKey) {
-                Alert.alert("업로드 실패", "영상 업로드 URL을 발급받지 못했습니다.");
+                Alert.alert(t("vlog.uploadFailedTitle"), t("vlog.record.videoUploadUrlMissing"));
                 return;
             }
 
@@ -994,7 +999,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             setClips((prev) => [...prev, created]);
         } catch (error) {
             console.error("[EDIT_VLOG] add clip error:", error);
-            Alert.alert("추가 실패", "영상을 추가하지 못했습니다.");
+            Alert.alert(t("vlog.addFailedTitle"), t("vlog.edit.addClipFailed"));
         } finally {
             setAddingClip(false);
         }
@@ -1029,14 +1034,14 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                                 />
                             ) : (
                                 <Pressable onPress={() => startInlineTitleEdit(item)}>
-                                    <AppText style={styles.clipTitle} numberOfLines={1}>{getClipTitle(item)}</AppText>
+                                    <AppText style={styles.clipTitle} numberOfLines={1}>{getClipTitle(item, t)}</AppText>
                                 </Pressable>
                             )}
 
-                            <AppText style={styles.clipWeek}>{getWeekText(item)}</AppText>
+                            <AppText style={styles.clipWeek}>{getWeekText(item, t)}</AppText>
                         </View>
 
-                        <AppText style={styles.clipDuration}>{getActualClipDurationText(item)}</AppText>
+                        <AppText style={styles.clipDuration}>{getActualClipDurationText(item, t)}</AppText>
 
                         <Pressable style={styles.dragHandle} onLongPress={drag} delayLongPress={120}>
                             <DragHandleIcon />
@@ -1050,7 +1055,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
     function renderRightActions(clip: VlogClipResponse): React.ReactElement {
         return (
             <Pressable style={styles.deleteActionButton} onPress={() => { handleExcludeClip(clip).catch(console.error); }}>
-                <AppText style={styles.deleteActionText}>삭제</AppText>
+                <AppText style={styles.deleteActionText}>{t("common.delete")}</AppText>
             </Pressable>
         );
     }
@@ -1076,7 +1081,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
             >
                 <Pressable style={styles.addClipModalBackdrop} onPress={() => setAddClipModalOpen(false)}>
                     <Pressable style={styles.addClipModalBox} onPress={(event) => event.stopPropagation()}>
-                        <AppText style={styles.addClipModalTitle}>영상 추가하기</AppText>
+                        <AppText style={styles.addClipModalTitle}>{t("vlog.edit.addVideo")}</AppText>
 
                         <Pressable
                             style={styles.addClipModalButton}
@@ -1086,18 +1091,18 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                                 setAddClipModalOpen(false);
                             }}
                         >
-                            <AppText style={styles.addClipModalButtonText}>{addingClip ? "추가 중..." : "내 갤러리에서 추가하기"}</AppText>
+                            <AppText style={styles.addClipModalButtonText}>{addingClip ? t("vlog.adding") : t("vlog.edit.addFromGallery")}</AppText>
                         </Pressable>
 
                         <Pressable style={styles.addClipModalButton} onPress={() => { setAddClipModalOpen(false); resetToRecordVlog(); }}>
-                            <AppText style={styles.addClipModalButtonText}>미션 영상 촬영하러 가기</AppText>
+                            <AppText style={styles.addClipModalButtonText}>{t("vlog.edit.goRecordMission")}</AppText>
                         </Pressable>
 
                         <View style={styles.excludedClipSection}>
-                            <AppText style={styles.excludedClipTitle}>제외한 영상 다시 추가</AppText>
+                            <AppText style={styles.excludedClipTitle}>{t("vlog.edit.addExcludedAgain")}</AppText>
 
                             {excludedClips.length === 0 ? (
-                                <AppText style={styles.excludedClipEmptyText}>제외한 영상이 없습니다.</AppText>
+                                <AppText style={styles.excludedClipEmptyText}>{t("vlog.edit.noExcludedClip")}</AppText>
                             ) : (
                                 <ScrollView style={styles.excludedClipList} showsVerticalScrollIndicator={false}>
                                     {excludedClips.map((clip) => (
@@ -1109,11 +1114,11 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                                             </View>
 
                                             <View style={styles.excludedClipTextWrap}>
-                                                <AppText style={styles.excludedClipName} numberOfLines={1}>{getClipTitle(clip)}</AppText>
-                                                <AppText style={styles.excludedClipMeta}>{getWeekText(clip)} · {getActualClipDurationText(clip)}</AppText>
+                                                <AppText style={styles.excludedClipName} numberOfLines={1}>{getClipTitle(clip, t)}</AppText>
+                                                <AppText style={styles.excludedClipMeta}>{getWeekText(clip, t)} · {getActualClipDurationText(clip, t)}</AppText>
                                             </View>
 
-                                            <AppText style={styles.excludedClipAddText}>{includingClipId === clip.clipId ? "추가 중" : "추가"}</AppText>
+                                            <AppText style={styles.excludedClipAddText}>{includingClipId === clip.clipId ? t("vlog.addingShort") : t("common.add")}</AppText>
                                         </Pressable>
                                     ))}
                                 </ScrollView>
@@ -1121,7 +1126,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                         </View>
 
                         <Pressable style={styles.addClipModalCancelButton} onPress={() => setAddClipModalOpen(false)}>
-                            <AppText style={styles.addClipModalCancelText}>닫기</AppText>
+                            <AppText style={styles.addClipModalCancelText}>{t("common.close")}</AppText>
                         </Pressable>
                     </Pressable>
                 </Pressable>
@@ -1137,7 +1142,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 <View style={styles.exportOverlay}>
                     <View style={styles.exportLoadingCenter}>
                         <ExportSavingDots />
-                        <AppText style={styles.exportLoadingText}>브이로그 저장중</AppText>
+                        <AppText style={styles.exportLoadingText}>{t("vlog.record.savingVlog")}</AppText>
                     </View>
                 </View>
             );
@@ -1148,13 +1153,13 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 <View style={styles.exportDoneCenter}>
                     <Image source={require("../../../../assets/images/internie_mascot_normal.png")} style={styles.exportMascot} resizeMode="contain" />
 
-                    <AppText style={styles.exportDoneTitle}>브이로그가{"\n"}저장되었어요</AppText>
-                    <AppText style={styles.exportDoneSubText}>{title} {getRecordWeeksText(subText)}</AppText>
+                    <AppText style={styles.exportDoneTitle}>{t("vlog.edit.savedTitle")}</AppText>
+                    <AppText style={styles.exportDoneSubText}>{title} {getRecordWeeksText(subText, t)}</AppText>
                 </View>
 
                 <View style={styles.exportDoneBottomBar}>
                     <Pressable style={styles.exportDoneButton} onPress={() => { setExportStep("IDLE"); resetToRecordVlog(); }}>
-                        <AppText style={styles.exportDoneButtonText}>확인</AppText>
+                        <AppText style={styles.exportDoneButtonText}>{t("common.confirm")}</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -1180,12 +1185,12 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                 ListHeaderComponent={renderPreviewHeader()}
                 ListEmptyComponent={() => (
                     <View style={styles.loadingWrap}>
-                        {loading ? <ActivityIndicator /> : <AppText style={styles.emptyText}>편집할 클립이 없습니다.</AppText>}
+                        {loading ? <ActivityIndicator /> : <AppText style={styles.emptyText}>{t("vlog.edit.emptyClip")}</AppText>}
                     </View>
                 )}
                 ListFooterComponent={() => (
                     <Pressable style={styles.addClipButton} onPress={() => setAddClipModalOpen(true)} disabled={addingClip}>
-                        <AppText style={styles.addClipText}>{addingClip ? "추가 중..." : "촬영 추가하기"}</AppText>
+                        <AppText style={styles.addClipText}>{addingClip ? t("vlog.adding") : t("vlog.edit.addRecording")}</AppText>
                     </Pressable>
                 )}
             />
@@ -1200,7 +1205,7 @@ export default function EditVlogScreen({ navigation, route }: Props): React.Reac
                         handlePressExport().catch(console.error);
                     }}
                 >
-                    <AppText style={styles.exportButtonText}>{EXPORT_DISABLED ? "내보내기 준비 중" : exporting ? "내보내는 중" : "내보내기"}</AppText>
+                    <AppText style={styles.exportButtonText}>{EXPORT_DISABLED ? t("vlog.edit.exportPreparing") : exporting ? t("vlog.edit.exporting") : t("vlog.edit.export")}</AppText>
                 </Pressable>
             </View>
             {renderAddClipModal()}

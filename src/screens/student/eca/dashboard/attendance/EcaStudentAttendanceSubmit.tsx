@@ -388,11 +388,7 @@ export default function EcaStudentAttendanceSubmit({
         }
 
         if (!cameraDevice) {
-            Alert.alert(
-                t(`${ATTENDANCE_SUBMIT_T}.alert.cameraNotSupported`, {
-                    defaultValue: "사용 가능한 카메라를 찾지 못했습니다.",
-                })
-            );
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.cameraUnavailable`));
             return;
         }
 
@@ -423,11 +419,7 @@ export default function EcaStudentAttendanceSubmit({
         const nextDevice = nextPosition === "front" ? frontCameraDevice : backCameraDevice;
 
         if (!nextDevice) {
-            Alert.alert(
-                t(`${ATTENDANCE_SUBMIT_T}.alert.cameraNotSupported`, {
-                    defaultValue: "전환할 수 있는 카메라를 찾지 못했습니다.",
-                })
-            );
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.cameraSwitchUnavailable`));
             return;
         }
 
@@ -469,7 +461,10 @@ export default function EcaStudentAttendanceSubmit({
         if (response.didCancel) return;
 
         if (response.errorCode) {
-            Alert.alert("사진을 선택할 수 없습니다.", response.errorMessage ?? "사진 접근 권한을 확인해주세요.");
+            Alert.alert(
+                t(`${ATTENDANCE_SUBMIT_T}.alert.galleryOpenFailed`),
+                response.errorMessage ?? t(`${ATTENDANCE_SUBMIT_T}.alert.galleryPermissionRequired`)
+            );
             return;
         }
 
@@ -514,7 +509,7 @@ export default function EcaStudentAttendanceSubmit({
         if (!eventId || !event || saving) return;
 
         if (alreadyChecked || !isNowInUploadWindow(event, now)) {
-            Alert.alert("현재 출석 가능한 시간이 아닙니다.");
+            Alert.alert(t(`${ATTENDANCE_SUBMIT_T}.alert.notAvailableTime`));
             return;
         }
 
@@ -600,9 +595,7 @@ export default function EcaStudentAttendanceSubmit({
                         <>
                             <View style={[styles.cameraGuide, { top: insets.top + 62 }]}>
                                 <AppText style={styles.cameraGuideText}>
-                                    {t(`${ATTENDANCE_SUBMIT_T}.cameraGuide`, {
-                                        defaultValue: "얼굴이 잘 보이도록 촬영해주세요.",
-                                    })}
+                                    {t(`${ATTENDANCE_SUBMIT_T}.cameraGuide`)}
                                 </AppText>
                             </View>
 

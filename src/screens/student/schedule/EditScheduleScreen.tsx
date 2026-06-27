@@ -807,10 +807,10 @@ export default function EditScheduleScreen(): React.ReactElement {
             navigation.goBack();
 
         } catch (err: any) {
-            const msg = err instanceof Error ? err.message : t("error.unknown", "알 수 없는 오류");
+            const msg = err instanceof Error ? err.message : t("error.unknown");
             Alert.alert(
-                t("common.error", "오류"),
-                t("schedule_edit.editeFailedWithMessage", { message: msg, defaultValue: "수정에 실패했어요" })
+                t("common.error"),
+                t("schedule_edit.editFailedWithMessage", { message: msg })
             );
         }
     };
@@ -897,13 +897,12 @@ export default function EditScheduleScreen(): React.ReactElement {
                             const msg =
                                 err instanceof Error
                                     ? err.message
-                                    : t("error.unknown", "알 수 없는 오류");
+                                    : t("error.unknown");
 
                             Alert.alert(
-                                t("common.error", "오류"),
+                                t("common.error"),
                                 t("schedule_edit.deleteFailedWithMessage", {
                                     message: msg,
-                                    defaultValue: "삭제에 실패했어요",
                                 })
                             );
                         }

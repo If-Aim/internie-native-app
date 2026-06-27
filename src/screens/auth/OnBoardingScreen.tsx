@@ -353,7 +353,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                                                                 </Pressable>
                                                             )}
                                                             ListEmptyComponent={
-                                                                <AppText style={styles.dropdownEmptyText}>선택 가능한 센터가 없습니다.</AppText>
+                                                                <AppText style={styles.dropdownEmptyText}>{t("onboarding.institutionEmpty")}</AppText>
                                                             }
                                                         />
                                                     </View>
@@ -365,14 +365,14 @@ export default function OnboardingScreen({ navigation }: Props) {
 
                                 {isKakaoVerified && (
                                     <>
-                                        <AppText style={styles.title}>학번을 입력해주세요</AppText>
+                                        <AppText style={styles.title}>{t("onboarding.studentNumberTitle")}</AppText>
 
                                         <View style={styles.field}>
                                             <AppTextInput
                                                 style={styles.input}
                                                 value={form.studentNumber}
                                                 onChangeText={(text) => setForm((prev) => ({ ...prev, studentNumber: text }))}
-                                                placeholder="학번"
+                                                placeholder={t("onboarding.studentNumberLabel")}
                                                 placeholderTextColor="#5F5F5F"
                                                 autoCapitalize="none"
                                                 autoCorrect={false}

@@ -1,4 +1,4 @@
-import messaging from "@react-native-firebase/messaging";
+import messaging, { type RemoteMessage } from "@react-native-firebase/messaging";
 import { PermissionsAndroid, Platform } from "react-native";
 import { registerPushDeviceToken } from "../api/ea";
 
@@ -45,4 +45,14 @@ export function subscribeForegroundPush(onReceive?: () => void): () => void {
         console.log("foreground push", remoteMessage);
         onReceive?.();
     });
+}
+
+export function subscribePushNotificationOpen(onOpen: (remoteMessage: RemoteMessage) => void): () => void {
+    return messaging().onNotificationOpenedApp((remoteMessage) => {
+        onOpen(remoteMessage);
+    });
+}
+
+export async function getInitialPushNotification(): Promise<RemoteMessage | null> {
+    return messaging().getInitialNotification();
 }
