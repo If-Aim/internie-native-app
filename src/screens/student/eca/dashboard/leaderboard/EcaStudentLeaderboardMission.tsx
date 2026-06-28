@@ -123,17 +123,8 @@ function isMissionMaxedOut(mission: LeaderboardMissionResponse, usedCountMap: Ma
     return (usedCountMap.get(mission.missionId) ?? 0) >= mission.maximumPerStudent;
 }
 
-function toEvidenceUploadFile(file: PickedDocumentLike, index: number): EvidenceUploadFile {
-    const fallbackName = `evidence-${Date.now()}-${index}`;
-    const name = file.name?.trim() || fallbackName;
-
-    return {
-        uri: file.uri,
-        name,
-        type: file.type || "application/octet-stream",
-        key: `${file.uri}-${name}-${file.size ?? 0}`,
-        size: file.size ?? null,
-    };
+function getExistingEvidenceKey(evidence: LeaderboardSubmissionEvidenceResponse, index: number): string {
+    return String(evidence.evidenceId ?? evidence.evidenceUrl ?? index);
 }
 
 function BackIcon(): React.ReactElement {
@@ -240,6 +231,7 @@ export default function EcaStudentLeaderboardMission({
     const [selectedMission, setSelectedMission] = React.useState<LeaderboardMissionResponse | null>(null);
     const [editingSubmission, setEditingSubmission] = React.useState<LeaderboardSubmissionResponse | null>(null);
     const [existingEvidences, setExistingEvidences] = React.useState<LeaderboardSubmissionEvidenceResponse[]>([]);
+    const [removedExistingEvidenceKeys, setRemovedExistingEvidenceKeys] = React.useState<string[]>([]);
     const [evidenceFiles, setEvidenceFiles] = React.useState<EvidenceUploadFile[]>([]);
     const [evidenceUrlText, setEvidenceUrlText] = React.useState("");
     const [loading, setLoading] = React.useState(true);
@@ -323,6 +315,7 @@ export default function EcaStudentLeaderboardMission({
                     setSelectedMission(nextSelectedMission);
                     setEvidenceFiles([]);
                     setEvidenceUrlText(nextLinkText);
+                    setRemovedExistingEvidenceKeys([]);
                     setStep("submit");
                 }
             } catch (error) {
@@ -373,6 +366,7 @@ export default function EcaStudentLeaderboardMission({
 
         setEditingSubmission(null);
         setExistingEvidences([]);
+        setRemovedExistingEvidenceKeys([]);
         setEvidenceFiles([]);
         setEvidenceUrlText("");
         setStep("submit");
@@ -380,6 +374,12 @@ export default function EcaStudentLeaderboardMission({
 
     function removeEvidenceFile(fileKey: string): void {
         setEvidenceFiles((prev) => prev.filter((file) => file.key !== fileKey));
+    }
+
+    function removeExistingEvidence(evidence: LeaderboardSubmissionEvidenceResponse, index: number): void {
+        const key = getExistingEvidenceKey(evidence, index);
+
+        setRemovedExistingEvidenceKeys((prev) => prev.includes(key) ? prev : [...prev, key]);
     }
     
     async function pickEvidenceFiles(): Promise<void> {
@@ -659,7 +659,8 @@ export default function EcaStudentLeaderboardMission({
             (acceptsFile && evidenceFiles.length === 0) ||
             (acceptsLink && (evidenceUrls.length === 0 || hasInvalidLink));
         const existingFileEvidences = existingEvidences.filter((evidence) => evidence.submitType !== "LINK");
-
+        const visibleExistingFileEvidences = existingFileEvidences.filter((evidence, index) => !removedExistingEvidenceKeys.includes(getExistingEvidenceKey(evidence, index)));
+        
         return (
             <>
                 <View style={styles.missionUploadTitle}>
@@ -705,30 +706,6 @@ export default function EcaStudentLeaderboardMission({
                         {acceptsFile ? (
                             <>
                                 <AppText style={styles.missionFileLabel}>File</AppText>
-
-                                {isEditMode && existingFileEvidences.length > 0 ? (
-                                    <View style={styles.missionFileList}>
-                                        {existingFileEvidences.map((evidence, index) => {
-                                            const fileName = evidence.originalFileName || evidence.evidenceUrl.split("/").pop() || `evidence-${index + 1}`;
-                                            const extension = getFileExtension(fileName);
-
-                                            return (
-                                                <View style={styles.missionFileItem} key={`${evidence.evidenceId ?? index}-${evidence.evidenceUrl}`}>
-                                                    <View style={styles.missionFileMain}>
-                                                        <View style={styles.missionFileIcon}>
-                                                            {getFileIconByExtension(extension)}
-                                                        </View>
-
-                                                        <AppText style={styles.missionFileName} numberOfLines={1}>
-                                                            {fileName}
-                                                        </AppText>
-                                                    </View>
-                                                </View>
-                                            );
-                                        })}
-                                    </View>
-                                ) : null}
-
                                 <Pressable style={styles.missionUploadBox} onPress={pickEvidenceFiles}>
                                     <UploadIcon />
                                     <AppText style={styles.missionUploadGuide}>
@@ -756,6 +733,31 @@ export default function EcaStudentLeaderboardMission({
                                                     </View>
 
                                                     <Pressable style={styles.missionFileRemove} onPress={() => removeEvidenceFile(file.key)}>
+                                                        <XIcon />
+                                                    </Pressable>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                ) : isEditMode && visibleExistingFileEvidences.length > 0 ? (
+                                    <View style={styles.missionFileList}>
+                                        {visibleExistingFileEvidences.map((evidence, index) => {
+                                            const fileName = evidence.originalFileName || evidence.evidenceUrl.split("/").pop() || `evidence-${index + 1}`;
+                                            const extension = getFileExtension(fileName);
+
+                                            return (
+                                                <View style={styles.missionFileItem} key={`${getExistingEvidenceKey(evidence, index)}-${evidence.evidenceUrl}`}>
+                                                    <View style={styles.missionFileMain}>
+                                                        <View style={styles.missionFileIcon}>
+                                                            {getFileIconByExtension(extension)}
+                                                        </View>
+
+                                                        <AppText style={styles.missionFileName} numberOfLines={1}>
+                                                            {fileName}
+                                                        </AppText>
+                                                    </View>
+
+                                                    <Pressable style={styles.missionFileRemove} onPress={() => removeExistingEvidence(evidence, index)}>
                                                         <XIcon />
                                                     </Pressable>
                                                 </View>
