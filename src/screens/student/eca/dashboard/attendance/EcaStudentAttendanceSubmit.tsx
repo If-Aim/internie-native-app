@@ -16,6 +16,7 @@ import type { StudentStackParamList } from "../../../../../navigation/StudentNav
 import { checkInAttendance, getAttendanceCheckInEligibility, getMyAttendanceEventDetail, getMyAttendanceEvents } from "../../../../../api/ea";
 import type { MyAttendanceEventDetailResponse, MyAttendanceSelfieResponse, MyAttendanceEventResponse } from "../../../../../api/ea";
 import type { UploadFileLike } from "../../../../../api/client";
+import { EcaBackExitTransitionView, useEcaBackExitTransition } from "../../EcaBackExitTransition";
 import { styles } from "./EcaStudentAttendanceSubmit.style";
 
 const ATTENDANCE_SUBMIT_T = "ecaStudent.attendanceSubmitPage";
@@ -106,32 +107,20 @@ function Header({
             {pickerOpen ? (
                 <View style={styles.iconSpacer} />
             ) : (
-                <Pressable
-                    style={styles.iconButton}
-                    accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.back`)}
-                    onPress={onBackClick}
-                >
+                <Pressable style={styles.iconButton} accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.back`)} onPress={onBackClick}>
                     <BackIcon />
                 </Pressable>
             )}
 
             <View style={styles.appTitle}>
-                <AppText style={styles.appTitleText} numberOfLines={1}>
-                    {titleDate}
-                </AppText>
+                <AppText style={styles.appTitleText} numberOfLines={1}>{titleDate}</AppText>
                 {titleType ? (
-                    <AppText style={styles.appTitleStatus} numberOfLines={1}>
-                        {titleType}
-                    </AppText>
+                    <AppText style={styles.appTitleStatus} numberOfLines={1}>{titleType}</AppText>
                 ) : null}
             </View>
 
             {pickerOpen ? (
-                <Pressable
-                    style={styles.iconButton}
-                    accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.close`)}
-                    onPress={onPickerClose}
-                >
+                <Pressable style={styles.iconButton} accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.close`)} onPress={onPickerClose}>
                     <CloseIcon />
                 </Pressable>
             ) : (
@@ -214,6 +203,7 @@ export default function EcaStudentAttendanceSubmit({
     const { t } = useTranslation();
     const { externalActivityId, eventId } = route.params;
     const initialEvent = route.params.event ?? null;
+    const { screenExitStyle, runBackExitTransition } = useEcaBackExitTransition(() => navigation.goBack());
 
     const [event, setEvent] = React.useState<MyAttendanceEventResponse | null>(initialEvent);
     const [detail, setDetail] = React.useState<MyAttendanceEventDetailResponse | null>(null);
@@ -346,7 +336,7 @@ export default function EcaStudentAttendanceSubmit({
     }, [success, finishSuccessOverlay]);
 
     function goBack(): void {
-        navigation.goBack();
+        runBackExitTransition();
     }
 
     function closePicker(): void {
@@ -558,19 +548,10 @@ export default function EcaStudentAttendanceSubmit({
 
     function renderCameraModal(): React.ReactElement {
         return (
-            <Modal
-                visible={cameraOpen}
-                animationType="fade"
-                presentationStyle="fullScreen"
-                onRequestClose={closeCamera}
-            >
+            <Modal visible={cameraOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={closeCamera}>
                 <View style={styles.cameraRoot}>
                     {capturedCameraPreviewUri ? (
-                        <Image
-                            source={{ uri: capturedCameraPreviewUri }}
-                            style={styles.cameraReviewImage}
-                            resizeMode="cover"
-                        />
+                        <Image source={{ uri: capturedCameraPreviewUri }} style={styles.cameraReviewImage} resizeMode="cover"/>
                     ) : cameraDevice ? (
                         <Camera
                             key={cameraDevice.id}
@@ -583,20 +564,14 @@ export default function EcaStudentAttendanceSubmit({
                         <View style={styles.cameraLayer} />
                     )}
 
-                    <Pressable
-                        style={[styles.cameraClose, { top: insets.top + 11 }]}
-                        accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.closeCamera`)}
-                        onPress={closeCamera}
-                    >
+                    <Pressable style={[styles.cameraClose, { top: insets.top + 11 }]} accessibilityLabel={t(`${ATTENDANCE_SUBMIT_T}.aria.closeCamera`)} onPress={closeCamera}>
                         <CloseIcon color="#FFFFFF" />
                     </Pressable>
 
                     {!capturedCameraPreviewUri ? (
                         <>
                             <View style={[styles.cameraGuide, { top: insets.top + 62 }]}>
-                                <AppText style={styles.cameraGuideText}>
-                                    {t(`${ATTENDANCE_SUBMIT_T}.cameraGuide`)}
-                                </AppText>
+                                <AppText style={styles.cameraGuideText}>{t(`${ATTENDANCE_SUBMIT_T}.cameraGuide`)}</AppText>
                             </View>
 
                             <Pressable
@@ -617,21 +592,11 @@ export default function EcaStudentAttendanceSubmit({
                         </>
                     ) : (
                         <View style={[styles.cameraReviewActions, { bottom: insets.bottom + 50 }]}>
-                            <Pressable
-                                style={[styles.cameraReviewButton, styles.cameraRetakeButton]}
-                                disabled={saving}
-                                onPress={retakeCameraPhoto}
-                            >
-                                <AppText style={styles.cameraRetakeText}>
-                                    {t(`${ATTENDANCE_SUBMIT_T}.retake`)}
-                                </AppText>
+                            <Pressable style={[styles.cameraReviewButton, styles.cameraRetakeButton]} disabled={saving} onPress={retakeCameraPhoto}>
+                                <AppText style={styles.cameraRetakeText}>{t(`${ATTENDANCE_SUBMIT_T}.retake`)}</AppText>
                             </Pressable>
 
-                            <Pressable
-                                style={[styles.cameraReviewButton, styles.cameraCheckInButton]}
-                                disabled={saving}
-                                onPress={() => void confirmCameraPhoto()}
-                            >
+                            <Pressable style={[styles.cameraReviewButton, styles.cameraCheckInButton]} disabled={saving} onPress={() => void confirmCameraPhoto()}>
                                 <AppText style={styles.cameraCheckInText}>
                                     {saving
                                         ? t(`${ATTENDANCE_SUBMIT_T}.uploading`)
@@ -646,7 +611,8 @@ export default function EcaStudentAttendanceSubmit({
     }
 
     return (
-        <SafeAreaView style={styles.page} edges={["top", "bottom"]}>
+        <EcaBackExitTransitionView exitStyle={screenExitStyle}>
+            <SafeAreaView style={styles.page} edges={["top", "bottom"]}>
             <Header titleDate={titleParts.dateText} titleType={titleParts.typeText} pickerOpen={pickerOpen} onBackClick={goBack} onPickerClose={closePicker} t={t}/>
 
             {loading ? (
@@ -669,9 +635,7 @@ export default function EcaStudentAttendanceSubmit({
                                 {selectedFile?.uri && !selectedFileInGallery ? (
                                     <View style={[styles.photoTile, styles.selectedTile]}>
                                         <Image source={{ uri: selectedFile.uri }} style={styles.photoImage} />
-                                        <View style={styles.selectedIconWrap}>
-                                            <CheckIcon />
-                                        </View>
+                                        <View style={styles.selectedIconWrap}><CheckIcon /></View>
                                     </View>
                                 ) : null}
 
@@ -682,9 +646,7 @@ export default function EcaStudentAttendanceSubmit({
                                         <Pressable key={item.id} style={[styles.photoTile, selected ? styles.selectedTile : null]} onPress={() => selectGalleryItem(item.file)}>
                                             <Image source={{ uri: item.uri }} style={styles.photoImage} />
                                             {selected ? (
-                                                <View style={styles.selectedIconWrap}>
-                                                    <CheckIcon />
-                                                </View>
+                                                <View style={styles.selectedIconWrap}><CheckIcon /></View>
                                             ) : null}
                                         </Pressable>
                                     );
@@ -733,6 +695,7 @@ export default function EcaStudentAttendanceSubmit({
                     </Modal>
                 </>
             )}
-        </SafeAreaView>
+            </SafeAreaView>
+        </EcaBackExitTransitionView>
     );
 }

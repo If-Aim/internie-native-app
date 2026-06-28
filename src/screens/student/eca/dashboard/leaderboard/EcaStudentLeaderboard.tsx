@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -17,6 +17,7 @@ import type { LeaderboardApprovalStatus, LeaderboardCompletedMissionResponse, Le
 
 import { formatServerKstDateTimeDotForUser } from "../../../../../theme/dateTime";
 import EcaStudentApp from "../../EcaStudentApp";
+import { EcaBackExitTransitionView, useEcaBackExitTransition } from "../../EcaBackExitTransition";
 import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { commonStyles } from "../../../../../theme/common.Style";
 import { styles } from "./EcaStudentLeaderboard.style";
@@ -199,7 +200,7 @@ function MenuIcon(): React.ReactElement {
 function BackIcon(): React.ReactElement {
     return (
         <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-            <Path d="M14 17L9 12L14 7" stroke="#000000" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M14 17L9 12L14 7" stroke="#000000" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -323,51 +324,33 @@ function MissionLogRow({
 }
 
 function Header({
-    mode = "menu",
     title,
     userProfileImg,
     onMenuClick,
-    onBackClick,
     onProfileClick,
 }: {
-    mode?: "menu" | "back";
     title?: string;
     userProfileImg: string | null;
-    onMenuClick?: () => void;
-    onBackClick?: () => void;
+    onMenuClick: () => void;
     onProfileClick: () => void;
 }): React.ReactElement {
     const { t } = useTranslation();
 
     return (
         <View style={styles.topbarRow}>
-            {mode === "back" ? (
-                <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel={t(`${LEADERBOARD_T}.aria.back`)}>
-                    <BackIcon />
-                </Pressable>
-            ) : (
-                <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
-                    <MenuIcon />
-                </Pressable>
-            )}
+            <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
+                <MenuIcon />
+            </Pressable>
 
             <AppText style={styles.appTitle} numberOfLines={1}>
                 {title ?? ""}
             </AppText>
 
-            <Pressable style={styles.profileButton} onPress={onProfileClick} accessibilityLabel={t("menu.profile")}>
+            <Pressable style={styles.profileButton} onPress={onProfileClick} accessibilityLabel={t("menu.settings")}>
                 {userProfileImg ? (
-                    <View style={styles.profileImageOuter}>
-                        <Svg width={32} height={32} viewBox="0 0 32 32">
-                            <Path d="M16 16C18.7614 16 21 13.7614 21 11C21 8.23858 18.7614 6 16 6C13.2386 6 11 8.23858 11 11C11 13.7614 13.2386 16 16 16ZM7 27C7.8 22.5 11.3 20 16 20C20.7 20 24.2 22.5 25 27" stroke="#808080" strokeWidth={2} strokeLinecap="round" />
-                        </Svg>
-                    </View>
+                    <Image source={{ uri: userProfileImg }} style={styles.profileImage} />
                 ) : (
-                    <View style={styles.profilePlaceholder}>
-                        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                            <Path d="M20 21C20 17.6863 16.4183 15 12 15C7.58172 15 4 17.6863 4 21M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="#808080" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                        </Svg>
-                    </View>
+                    <Image source={require("../../../../../assets/images/internie_mascot_normal.png")} style={styles.profileImage} />
                 )}
             </Pressable>
         </View>
@@ -395,6 +378,11 @@ export default function EcaStudentLeaderboard({
     const [selectedMissionLogCategories, setSelectedMissionLogCategories] = React.useState<MissionLogCategoryFilter[]>(() => getAllMissionLogCategories());
     const [isLogFilterOpen, setIsLogFilterOpen] = React.useState(false);
     const [selectedMissionLog, setSelectedMissionLog] = React.useState<DetailMissionLog | null>(null);
+    const {
+        screenExitStyle: detailScreenExitStyle,
+        runBackExitTransition: runDetailBackExitTransition,
+        resetBackExitTransition: resetDetailBackExitTransition,
+    } = useEcaBackExitTransition(closeDetail);
 
     const userName = (me?.name ?? "").trim() || "User";
     const userEmail = (me?.email ?? "").trim();
@@ -563,6 +551,7 @@ export default function EcaStudentLeaderboard({
     }
 
     function openRankingDetail(ranking: LeaderboardRankingResponse): void {
+        resetDetailBackExitTransition();
         setSelectedMissionLog(null);
         setSelectedMissionLogCategories(getAllMissionLogCategories());
         setDetailLogs([]);
@@ -579,6 +568,7 @@ export default function EcaStudentLeaderboard({
     function openMyDetail(): void {
         if (!leaderboard) return;
 
+        resetDetailBackExitTransition();
         setSelectedMissionLog(null);
         setSelectedMissionLogCategories(getAllMissionLogCategories());
         setDetailLogs([]);
@@ -602,6 +592,14 @@ export default function EcaStudentLeaderboard({
         navigation.navigate("EcaStudentLeaderboardMission", { externalActivityId });
     }
 
+    function goToLeaderboardMissionEdit(log: DetailMissionLog): void {
+        navigation.navigate("EcaStudentLeaderboardMission", {
+            externalActivityId,
+            editSubmissionId: log.submissionId,
+            editMissionId: log.missionId,
+        });
+    }
+    
     function toggleMissionLogCategoryFilter(category: MissionLogCategoryFilter): void {
         setSelectedMissionLogCategories((prev) =>
             prev.includes(category)
@@ -619,6 +617,11 @@ export default function EcaStudentLeaderboard({
     }
 
     function openMissionLogDetail(log: DetailMissionLog): void {
+        if (detailTarget?.type === "me" && log.status === "pending") {
+            goToLeaderboardMissionEdit(log);
+            return;
+        }
+
         setIsLogFilterOpen(false);
         setSelectedMissionLog(log);
     }
@@ -753,20 +756,23 @@ export default function EcaStudentLeaderboard({
         const filterActive = !isAllMissionLogCategorySelected();
 
         return (
-            <SafeAreaView style={commonStyles.appRoot}>
-                <Header
-                    mode="back"
-                    title=""
-                    userProfileImg={userProfileImg}
-                    onBackClick={closeDetail}
-                    onProfileClick={moveMyPage}
-                />
+            <EcaBackExitTransitionView exitStyle={detailScreenExitStyle}>
+                <SafeAreaView style={commonStyles.appRoot}>
+                    <Header
+                        title=""
+                        userProfileImg={userProfileImg}
+                        onMenuClick={() => setMenuOpen(true)}
+                        onProfileClick={moveMyPage}
+                    />
 
                 <ScrollView style={styles.detailMain} contentContainerStyle={styles.detailScrollContent} showsVerticalScrollIndicator={false}>
+                    <Pressable style={styles.detailInlineBackButton} onPress={runDetailBackExitTransition} accessibilityLabel={t(`${LEADERBOARD_T}.aria.back`)}>
+                        <BackIcon />
+                    </Pressable>
                     <View style={styles.myPointCard}>
                         <AppText style={styles.myPointLabel}>
                             {isMyDetail
-                                ? t(`${LEADERBOARD_T}.myPoint`, { defaultValue: "My Point" })
+                                ? t(`${LEADERBOARD_T}.myPoint`, { defaultValue: "My Points" })
                                 : detailTarget.name}
                         </AppText>
 
@@ -824,7 +830,8 @@ export default function EcaStudentLeaderboard({
 
                 {renderMissionLogFilterModal()}
                 {renderMissionLogDetailModal()}
-            </SafeAreaView>
+                </SafeAreaView>
+            </EcaBackExitTransitionView>
         );
     }
 
@@ -832,7 +839,6 @@ export default function EcaStudentLeaderboard({
         return (
             <SafeAreaView style={commonStyles.appRoot}>
                 <Header
-                    mode="menu"
                     userProfileImg={userProfileImg}
                     onMenuClick={() => setMenuOpen(true)}
                     onProfileClick={moveMyPage}

@@ -891,10 +891,11 @@
             "fileUploadGuide": "파일을 업로드해주세요",
             "filesSelected": "{{fileCount}}개 파일 선택됨",
             "link": "링크",
-            "linkPlaceholder": "링크를 한 줄에 하나씩 붙여주세요",
+            "linkPlaceholder": "링크를 붙여주세요",
             "saving": "저장 중",
             "submit": "제출하기",
-            "completed": "완료되었습니다!",
+            "editSubmit": "수정하기",
+            "completed": "완료!",
             "approvalNotice": "관리자 승인 후 점수가 반영됩니다",
             "save": "저장",
             "categoryFallback": "카테고리",
@@ -908,12 +909,12 @@
                 "maxedOut": "제출 완료 ({{missionCount}})"
             },
             "category": {
-                "ELICIT": "도출",
-                "DISCOVER": "탐색",
-                "INSIGHT": "인사이트",
-                "SYNTHESIZE": "종합",
-                "OWN": "주도",
-                "NURTURE": "육성"
+                "ELICIT": "Elicit",
+                "DISCOVER": "Discover",
+                "INSIGHT": "Insight",
+                "SYNTHESIZE": "Synthesizze",
+                "OWN": "Own",
+                "NURTURE": "Nurture"
             },
             "evidenceType": {
                 "IMAGE": "사진",

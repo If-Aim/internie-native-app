@@ -10,11 +10,12 @@ import { pick } from "@react-native-documents/picker";
 import AppText from "../../../../../../AppText";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import type { UploadFileLike } from "../../../../../api/client";
-import { LEADERBOARD_MISSION_CATEGORY_OPTIONS, getMyLeaderboardMissionLogs, getMyLeaderboardMissions, submitLeaderboardMission, } from "../../../../../api/ea";
-import type { LeaderboardMissionCategory, LeaderboardMissionResponse, StudentLeaderboardLogResponse, } from "../../../../../api/ea";
+import { LEADERBOARD_MISSION_CATEGORY_OPTIONS, getMyLeaderboardMissionLogs, getMyLeaderboardMissions, getMyLeaderboardSubmissions, submitLeaderboardMission, updateMyLeaderboardEvidence } from "../../../../../api/ea";
+import type { LeaderboardMissionCategory, LeaderboardMissionResponse, LeaderboardSubmissionEvidenceResponse, LeaderboardSubmissionResponse, StudentLeaderboardLogResponse } from "../../../../../api/ea";
 
 import { getFileIconByExtension } from "../assignment/FileIcons";
 import EcaStudentApp from "../../EcaStudentApp";
+import { EcaBackExitTransitionView, useEcaBackExitTransition } from "../../EcaBackExitTransition";
 import { styles } from "./EcaStudentLeaderboard.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentLeaderboardMission">;
@@ -138,7 +139,7 @@ function toEvidenceUploadFile(file: PickedDocumentLike, index: number): Evidence
 function BackIcon(): React.ReactElement {
     return (
         <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-            <Path d="M14 17L9 12L14 7" stroke="#000000" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M14 17L9 12L14 7" stroke="#000000" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -215,7 +216,17 @@ export default function EcaStudentLeaderboardMission({
     navigation,
 }: Props): React.ReactElement {
     const { t } = useTranslation();
-    const { externalActivityId } = route.params;
+    const { externalActivityId, editSubmissionId, editMissionId } = route.params;
+    const isEditMode = editSubmissionId !== undefined;
+    const backActionRef = React.useRef<"goBack" | "replaceLeaderboard">("goBack");
+    const { screenExitStyle, runBackExitTransition } = useEcaBackExitTransition(() => {
+        if (backActionRef.current === "replaceLeaderboard") {
+            navigation.replace("EcaStudentLeaderboard", { externalActivityId });
+            return;
+        }
+
+        navigation.goBack();
+    });
 
     const [step, setStep] = React.useState<MissionStep>("select");
     const [filter, setFilter] = React.useState<MissionFilter>("ALL");
@@ -227,6 +238,8 @@ export default function EcaStudentLeaderboardMission({
     const [missions, setMissions] = React.useState<LeaderboardMissionResponse[]>([]);
     const [logs, setLogs] = React.useState<StudentLeaderboardLogResponse[]>([]);
     const [selectedMission, setSelectedMission] = React.useState<LeaderboardMissionResponse | null>(null);
+    const [editingSubmission, setEditingSubmission] = React.useState<LeaderboardSubmissionResponse | null>(null);
+    const [existingEvidences, setExistingEvidences] = React.useState<LeaderboardSubmissionEvidenceResponse[]>([]);
     const [evidenceFiles, setEvidenceFiles] = React.useState<EvidenceUploadFile[]>([]);
     const [evidenceUrlText, setEvidenceUrlText] = React.useState("");
     const [loading, setLoading] = React.useState(true);
@@ -273,15 +286,45 @@ export default function EcaStudentLeaderboardMission({
                 setLoading(true);
                 setErrorMessage("");
 
-                const [missionResponse, logResponse] = await Promise.all([
+                const [missionResponse, logResponse, pendingSubmissionResponse] = await Promise.all([
                     getMyLeaderboardMissions(externalActivityId),
                     getMyLeaderboardMissionLogs(externalActivityId, { page: 0, size: 1000 }),
+                    isEditMode
+                        ? getMyLeaderboardSubmissions(externalActivityId, { status: "pending", page: 0, size: 1000 })
+                        : Promise.resolve(null),
                 ]);
 
                 if (!mounted) return;
 
                 setMissions(missionResponse.missions);
                 setLogs(logResponse.logs);
+
+                if (isEditMode) {
+                    const pendingSubmissions = pendingSubmissionResponse?.submissions ?? [];
+                    const nextEditingSubmission = pendingSubmissions.find((submission) => String(submission.submissionId) === String(editSubmissionId)) ?? null;
+
+                    const missionList = missionResponse.missions ?? [];
+                    const nextSelectedMission = missionList.find((mission) => String(mission.missionId) === String(editMissionId ?? nextEditingSubmission?.missionId)) ?? null;
+
+                    if (!nextEditingSubmission || !nextSelectedMission) {
+                        setErrorMessage(t(`${LEADERBOARD_MISSION_T}.error.editSubmissionNotFound`, { defaultValue: "수정할 수 있는 제출물을 찾을 수 없습니다." }));
+                        return;
+                    }
+
+                    const nextEvidences = nextEditingSubmission.evidences ?? [];
+                    const nextLinkText = nextEvidences
+                        .filter((evidence) => evidence.submitType === "LINK" || nextSelectedMission.evidenceType === "LINK")
+                        .map((evidence) => evidence.evidenceUrl?.trim() ?? "")
+                        .filter(Boolean)
+                        .join("\n");
+
+                    setEditingSubmission(nextEditingSubmission);
+                    setExistingEvidences(nextEvidences);
+                    setSelectedMission(nextSelectedMission);
+                    setEvidenceFiles([]);
+                    setEvidenceUrlText(nextLinkText);
+                    setStep("submit");
+                }
             } catch (error) {
                 if (!mounted) return;
 
@@ -301,11 +344,18 @@ export default function EcaStudentLeaderboardMission({
         return () => {
             mounted = false;
         };
-    }, [externalActivityId, t]);
+    }, [editMissionId, editSubmissionId, externalActivityId, isEditMode, t]);
 
     function handleBackClick(): void {
         if (step === "complete") {
-            navigation.replace("EcaStudentLeaderboard", { externalActivityId });
+            backActionRef.current = "replaceLeaderboard";
+            runBackExitTransition();
+            return;
+        }
+
+        if (step === "submit" && isEditMode) {
+            backActionRef.current = "goBack";
+            runBackExitTransition();
             return;
         }
 
@@ -314,12 +364,15 @@ export default function EcaStudentLeaderboardMission({
             return;
         }
 
-        navigation.goBack();
+        backActionRef.current = "goBack";
+        runBackExitTransition();
     }
 
     function handleNextClick(): void {
         if (!selectedMission) return;
 
+        setEditingSubmission(null);
+        setExistingEvidences([]);
         setEvidenceFiles([]);
         setEvidenceUrlText("");
         setStep("submit");
@@ -394,8 +447,17 @@ export default function EcaStudentLeaderboardMission({
             .map((url) => url.trim())
             .filter(Boolean);
 
+       if (isEditMode && !editingSubmission) {
+            Alert.alert(t(`${LEADERBOARD_MISSION_T}.alert.submitFailed`));
+            return;
+        }
+
         if (acceptsFile && evidenceFiles.length === 0) {
-            Alert.alert(t(`${LEADERBOARD_MISSION_T}.alert.fileRequired`));
+            Alert.alert(
+                isEditMode
+                    ? t(`${LEADERBOARD_MISSION_T}.alert.fileRequiredForEdit`, { defaultValue: "수정할 파일을 선택해주세요." })
+                    : t(`${LEADERBOARD_MISSION_T}.alert.fileRequired`)
+            );
             return;
         }
 
@@ -412,10 +474,17 @@ export default function EcaStudentLeaderboardMission({
         try {
             setSubmitting(true);
 
-            await submitLeaderboardMission(externalActivityId, selectedMission.missionId, {
-                files: acceptsFile ? evidenceFiles : null,
-                evidenceUrls: acceptsLink ? evidenceUrls : null,
-            });
+            if (isEditMode && editingSubmission) {
+                await updateMyLeaderboardEvidence(externalActivityId, editingSubmission.submissionId, {
+                    files: acceptsFile ? evidenceFiles : null,
+                    evidenceUrls: acceptsLink ? evidenceUrls : null,
+                });
+            } else {
+                await submitLeaderboardMission(externalActivityId, selectedMission.missionId, {
+                    files: acceptsFile ? evidenceFiles : null,
+                    evidenceUrls: acceptsLink ? evidenceUrls : null,
+                });
+            }
 
             setStep("complete");
         } catch (error) {
@@ -509,28 +578,19 @@ export default function EcaStudentLeaderboardMission({
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.missionFilterTabs}
                 >
-                    <Pressable
-                        style={[styles.missionFilterTab, filter === "ALL" ? styles.missionFilterTabActive : null]}
-                        onPress={() => setFilter("ALL")}
-                    >
+                    <Pressable style={[styles.missionFilterTab, filter === "ALL" ? styles.missionFilterTabActive : null]} onPress={() => setFilter("ALL")}>
                         <AppText style={[styles.missionFilterTabText, filter === "ALL" ? styles.missionFilterTabTextActive : null]}>
                             {t(`${LEADERBOARD_MISSION_T}.missionFilter.all`, { missionCount: missionItems.length })}
                         </AppText>
                     </Pressable>
 
-                    <Pressable
-                        style={[styles.missionFilterTab, filter === "AVAILABLE" ? styles.missionFilterTabActive : null]}
-                        onPress={() => setFilter("AVAILABLE")}
-                    >
+                    <Pressable style={[styles.missionFilterTab, filter === "AVAILABLE" ? styles.missionFilterTabActive : null]} onPress={() => setFilter("AVAILABLE")}>
                         <AppText style={[styles.missionFilterTabText, filter === "AVAILABLE" ? styles.missionFilterTabTextActive : null]}>
                             {t(`${LEADERBOARD_MISSION_T}.missionFilter.available`, { missionCount: availableCount })}
                         </AppText>
                     </Pressable>
 
-                    <Pressable
-                        style={[styles.missionFilterTab, filter === "MAXED_OUT" ? styles.missionFilterTabActive : null]}
-                        onPress={() => setFilter("MAXED_OUT")}
-                    >
+                    <Pressable style={[styles.missionFilterTab, filter === "MAXED_OUT" ? styles.missionFilterTabActive : null]} onPress={() => setFilter("MAXED_OUT")}>
                         <AppText style={[styles.missionFilterTabText, filter === "MAXED_OUT" ? styles.missionFilterTabTextActive : null]}>
                             {t(`${LEADERBOARD_MISSION_T}.missionFilter.maxedOut`, { missionCount: maxedOutCount })}
                         </AppText>
@@ -580,16 +640,6 @@ export default function EcaStudentLeaderboardMission({
                         </View>
                     )}
                 </View>
-
-                <Pressable
-                    style={[styles.missionNextButton, !selectedMission ? styles.missionNextButtonDisabled : null]}
-                    disabled={!selectedMission}
-                    onPress={handleNextClick}
-                >
-                    <AppText style={styles.missionNextButtonText}>
-                        {t(`${LEADERBOARD_MISSION_T}.next`)}
-                    </AppText>
-                </Pressable>
             </>
         );
     }
@@ -608,6 +658,7 @@ export default function EcaStudentLeaderboardMission({
             submitting ||
             (acceptsFile && evidenceFiles.length === 0) ||
             (acceptsLink && (evidenceUrls.length === 0 || hasInvalidLink));
+        const existingFileEvidences = existingEvidences.filter((evidence) => evidence.submitType !== "LINK");
 
         return (
             <>
@@ -654,6 +705,29 @@ export default function EcaStudentLeaderboardMission({
                         {acceptsFile ? (
                             <>
                                 <AppText style={styles.missionFileLabel}>File</AppText>
+
+                                {isEditMode && existingFileEvidences.length > 0 ? (
+                                    <View style={styles.missionFileList}>
+                                        {existingFileEvidences.map((evidence, index) => {
+                                            const fileName = evidence.originalFileName || evidence.evidenceUrl.split("/").pop() || `evidence-${index + 1}`;
+                                            const extension = getFileExtension(fileName);
+
+                                            return (
+                                                <View style={styles.missionFileItem} key={`${evidence.evidenceId ?? index}-${evidence.evidenceUrl}`}>
+                                                    <View style={styles.missionFileMain}>
+                                                        <View style={styles.missionFileIcon}>
+                                                            {getFileIconByExtension(extension)}
+                                                        </View>
+
+                                                        <AppText style={styles.missionFileName} numberOfLines={1}>
+                                                            {fileName}
+                                                        </AppText>
+                                                    </View>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                ) : null}
 
                                 <Pressable style={styles.missionUploadBox} onPress={pickEvidenceFiles}>
                                     <UploadIcon />
@@ -722,10 +796,12 @@ export default function EcaStudentLeaderboardMission({
                             disabled={submitDisabled}
                             onPress={handleSubmit}
                         >
-                            <AppText style={styles.missionSubmitButtonText}>
+                            <AppText style={[styles.missionSubmitButtonText, submitDisabled ? styles.missionSubmitButtonDisabledText : null]}>
                                 {submitting
                                     ? t(`${LEADERBOARD_MISSION_T}.saving`)
-                                    : t(`${LEADERBOARD_MISSION_T}.submit`)}
+                                    : isEditMode
+                                        ? t(`${LEADERBOARD_MISSION_T}.editSubmit`, { defaultValue: "edit" })
+                                        : t(`${LEADERBOARD_MISSION_T}.submit`)}
                             </AppText>
                         </Pressable>
                     </View>
@@ -744,21 +820,6 @@ export default function EcaStudentLeaderboardMission({
                 <AppText style={styles.missionCompleteTitle}>
                     {t(`${LEADERBOARD_MISSION_T}.completed`)}
                 </AppText>
-
-                <View style={styles.missionCompleteBottom}>
-                    <AppText style={styles.missionCompleteNotice}>
-                        {t(`${LEADERBOARD_MISSION_T}.approvalNotice`)}
-                    </AppText>
-
-                    <Pressable
-                        style={styles.missionCompleteButton}
-                        onPress={() => navigation.replace("EcaStudentLeaderboard", { externalActivityId })}
-                    >
-                        <AppText style={styles.missionCompleteButtonText}>
-                            {t(`${LEADERBOARD_MISSION_T}.save`)}
-                        </AppText>
-                    </Pressable>
-                </View>
             </View>
         );
     }
@@ -791,8 +852,9 @@ export default function EcaStudentLeaderboardMission({
     }
 
     return (
-        <EcaStudentApp externalActivityId={externalActivityId} activeTab="leaderboard" hideBottomNav>
-            <SafeAreaView style={styles.missionPage}>
+        <EcaBackExitTransitionView exitStyle={screenExitStyle}>
+            <EcaStudentApp externalActivityId={externalActivityId} activeTab="leaderboard" hideBottomNav>
+                <SafeAreaView style={styles.missionPage}>
                 <Header title={t(`${LEADERBOARD_MISSION_T}.title`)} onBackClick={handleBackClick} />
 
                 <ScrollView
@@ -804,8 +866,31 @@ export default function EcaStudentLeaderboardMission({
                     {renderBody()}
                 </ScrollView>
 
+                {!loading && !errorMessage && step === "select" ? (
+                    <Pressable style={[styles.missionNextButton, !selectedMission ? styles.missionNextButtonDisabled : null]} disabled={!selectedMission} onPress={handleNextClick}>
+                        <AppText style={[styles.missionNextButtonText, !selectedMission ? styles.missionNextButtonDisabledText : null]}>
+                            {t(`${LEADERBOARD_MISSION_T}.next`)}
+                        </AppText>
+                    </Pressable>
+                ) : null}
+
+                {!loading && !errorMessage && step === "complete" ? (
+                    <View style={styles.missionCompleteFloatingBottom}>
+                        <AppText style={styles.missionCompleteNotice}>
+                            {t(`${LEADERBOARD_MISSION_T}.approvalNotice`)}
+                        </AppText>
+
+                        <Pressable style={styles.missionCompleteButton} onPress={() => navigation.replace("EcaStudentLeaderboard", { externalActivityId })}>
+                            <AppText style={styles.missionCompleteButtonText}>
+                                {t(`${LEADERBOARD_MISSION_T}.save`)}
+                            </AppText>
+                        </Pressable>
+                    </View>
+                ) : null}
+
                 {renderMissionCategoryFilterModal()}
-            </SafeAreaView>
-        </EcaStudentApp>
+                </SafeAreaView>
+            </EcaStudentApp>
+        </EcaBackExitTransitionView>
     );
 }

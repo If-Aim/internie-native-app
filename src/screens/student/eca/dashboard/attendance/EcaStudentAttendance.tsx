@@ -283,20 +283,14 @@ export default function EcaStudentAttendance({
                     {loading ? (
                         <View style={styles.emptyWrap}>
                             <ActivityIndicator color="#0166FF" />
-                            <AppText style={styles.emptyText}>
-                                {t(`${ATTENDANCE_T}.loading`)}
-                            </AppText>
+                            <AppText style={styles.emptyText}>{t(`${ATTENDANCE_T}.loading`)}</AppText>
                         </View>
                     ) : error ? (
                         <View style={styles.emptyWrap}>
                             <AppText style={styles.emptyText}>{error}</AppText>
                         </View>
                     ) : events.length === 0 ? (
-                        <View style={styles.emptyWrap}>
-                            <AppText style={styles.emptyText}>
-                                {t(`${ATTENDANCE_T}.empty`)}
-                            </AppText>
-                        </View>
+                        <View style={styles.emptyWrap}><AppText style={styles.emptyText}>{t(`${ATTENDANCE_T}.empty`)}</AppText></View>
                     ) : (
                         events.map((event) => {
                             const displayTime = getEventDisplayTime(event);
@@ -304,32 +298,21 @@ export default function EcaStudentAttendance({
                             return (
                                 <Pressable key={String(event.eventId)} style={styles.card} onPress={() => openAttendance(event)}>
                                     <View style={styles.cardText}>
-                                        <AppText style={styles.cardTitle} numberOfLines={1}>
-                                            {formatEventDate(event)}
-                                        </AppText>
-
+                                        <AppText style={styles.cardTitle} numberOfLines={1}>{formatEventDate(event)}</AppText>
                                         <View style={styles.cardSubRow}>
-                                            <AppText style={styles.cardSubText}>
-                                                {getTypeLabel(event.type, t)}
-                                            </AppText>
+                                            <AppText style={styles.cardSubText}>{getTypeLabel(event.type, t)}</AppText>
 
                                             {displayTime ? (
-                                                <AppText style={styles.cardTime}>
-                                                    {displayTime}
-                                                </AppText>
+                                                <AppText style={styles.cardTime}>{displayTime}</AppText>
                                             ) : null}
                                         </View>
                                     </View>
 
                                     <View style={[styles.statusBox, getStatusBoxStyle(event.status)]}>
-                                        <AppText style={[styles.statusText, getStatusTextStyle(event.status)]}>
-                                            {getStatusLabel(event.status, t)}
-                                        </AppText>
+                                        <AppText style={[styles.statusText, getStatusTextStyle(event.status)]}>{getStatusLabel(event.status, t)}</AppText>
                                     </View>
 
-                                    <View style={styles.chevronWrap}>
-                                        <ArrowRightIcon />
-                                    </View>
+                                    <View style={styles.chevronWrap}><ArrowRightIcon /></View>
                                 </Pressable>
                             );
                         })

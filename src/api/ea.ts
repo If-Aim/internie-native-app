@@ -819,10 +819,12 @@ export async function getMyLeaderboardSubmissions(
         size: query?.size ?? 20,
     });
 
-    return api<LeaderboardApprovalsResponse>(
+    const response = await api<LeaderboardApiResponse<LeaderboardApprovalsResponse>>(
         `/student/externalActivities/${externalActivityId}/submissions${queryString}`,
         { method: "GET" }
     );
+
+    return response.data;
 }
 
 export async function submitLeaderboardMission(

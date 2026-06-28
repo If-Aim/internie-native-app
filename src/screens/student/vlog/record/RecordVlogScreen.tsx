@@ -1,5 +1,6 @@
 import React from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, PixelRatio, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, Animated, AppState, Easing, Image, InteractionManager, Modal, PixelRatio, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import type { GestureResponderEvent } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Video, { type VideoRef } from "react-native-video";
@@ -406,6 +407,8 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const recordingStartedAtRef = React.useRef<number | null>(null);
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
     const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+    const isFocused = useIsFocused();
+    const permissionRequestingRef = React.useRef(false);
 
     const projectId = route.params.projectId;
     const [title, setTitle] = React.useState(route.params?.title ?? t("vlog.record.defaultTitle"));
@@ -813,13 +816,48 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return Math.max(1, Math.min(elapsedSeconds, maxSeconds));
     }
 
+    async function requestCapturePermissions(): Promise<boolean> {
+        if (permissionRequestingRef.current) return false;
+        if (!isFocused || AppState.currentState !== "active") return false;
+
+        permissionRequestingRef.current = true;
+
+        try {
+            return await new Promise<boolean>((resolve) => {
+                InteractionManager.runAfterInteractions(async () => {
+                    try {
+                        if (!isFocused || AppState.currentState !== "active") {
+                            resolve(false);
+                            return;
+                        }
+
+                        const cameraGranted = hasCameraPermission || await requestCameraPermission();
+
+                        if (!cameraGranted) {
+                            resolve(false);
+                            return;
+                        }
+
+                        const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
+
+                        resolve(Boolean(microphoneGranted));
+                    } catch (error) {
+                        console.error("[RECORD_VLOG] permission request error:", error);
+                        resolve(false);
+                    }
+                });
+            });
+        } finally {
+            permissionRequestingRef.current = false;
+        }
+    }
+
     async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null; freeClip: FreeCaptureItem | null }): Promise<void> {
         if (recording || savingClip) return;
 
-        const cameraGranted = hasCameraPermission || await requestCameraPermission();
-        const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
+        const permissionGranted = await requestCapturePermissions();
 
-        if (!cameraGranted || !microphoneGranted) {
+        if (!permissionGranted) {
             Alert.alert(t("vlog.permissionRequiredTitle"), t("vlog.cameraMicPermissionDesc"));
             return;
         }

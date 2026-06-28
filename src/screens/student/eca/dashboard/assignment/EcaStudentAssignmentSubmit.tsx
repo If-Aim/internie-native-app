@@ -17,6 +17,7 @@ import { formatServerKstDateAndTimeCompactForUser, formatServerKstDateTimeDotFor
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
 import { commonStyles } from "../../../../../theme/common.Style";
 import EcaStudentApp from "../../EcaStudentApp";
+import { EcaBackExitTransitionView, useEcaBackExitTransition } from "../../EcaBackExitTransition";
 import StudentMobileSideMenu from "../../../StudentSideMenu";
 import { getFileIconByExtension } from "./FileIcons";
 import { styles } from "./EcaStudentAssignmentSubmit.style";
@@ -269,6 +270,7 @@ export default function EcaStudentAssignmentSubmit({
 }: Props): React.ReactElement {
     const { t } = useTranslation();
     const { externalActivityId, assignmentId } = route.params;
+    const { screenExitStyle, runBackExitTransition } = useEcaBackExitTransition(() => navigation.goBack());
 
     const [menuOpen, setMenuOpen] = React.useState(false);
     const [me, setMe] = React.useState<UserMe | null>(null);
@@ -620,35 +622,36 @@ export default function EcaStudentAssignmentSubmit({
     }
 
     return (
-        <EcaStudentApp
-            externalActivityId={externalActivityId}
-            activeTab="assignment"
-            overlay={(
-                <StudentMobileSideMenu
-                    isOpen={menuOpen}
-                    onClose={() => setMenuOpen(false)}
-                    userName={userName}
-                    userEmail={userEmail}
-                    userProfileImg={userProfileImg}
-                    userRoleSet={userRoleSet}
-                    activities={myActivities}
-                    currentActivityId={Number(externalActivityId)}
-                    currentActivityMenu="assignment"
-                    onMoveHome={moveHome}
-                    onMoveMyPage={moveMyPage}
-                    onMoveActivityMenu={moveActivityMenu}
-                    onMoveSystemAdmin={moveSystemAdmin}
-                    onMoveJumpAdmin={moveJumpAdmin}
-                    onMoveKakaoAdmin={moveKakaoAdmin}
-                    onMoveVlogHome={moveVlogHome}
-                />
-            )}
-        >
+        <EcaBackExitTransitionView exitStyle={screenExitStyle}>
+            <EcaStudentApp
+                externalActivityId={externalActivityId}
+                activeTab="assignment"
+                overlay={(
+                    <StudentMobileSideMenu
+                        isOpen={menuOpen}
+                        onClose={() => setMenuOpen(false)}
+                        userName={userName}
+                        userEmail={userEmail}
+                        userProfileImg={userProfileImg}
+                        userRoleSet={userRoleSet}
+                        activities={myActivities}
+                        currentActivityId={Number(externalActivityId)}
+                        currentActivityMenu="assignment"
+                        onMoveHome={moveHome}
+                        onMoveMyPage={moveMyPage}
+                        onMoveActivityMenu={moveActivityMenu}
+                        onMoveSystemAdmin={moveSystemAdmin}
+                        onMoveJumpAdmin={moveJumpAdmin}
+                        onMoveKakaoAdmin={moveKakaoAdmin}
+                        onMoveVlogHome={moveVlogHome}
+                    />
+                )}
+            >
             <SafeAreaView style={commonStyles.appRoot}>
                 <Header activityName={activity?.name ?? ""} onMenuClick={() => setMenuOpen(true)} />
                 <ScrollView style={styles.main} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.titleRow}>
-                        <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.back`)}>
+                        <Pressable style={styles.backButton} onPress={runBackExitTransition} accessibilityLabel={t(`${ASSIGNMENT_SUBMIT_T}.back`)}>
                             <BackIcon />
                         </Pressable>
 
@@ -708,10 +711,7 @@ export default function EcaStudentAssignmentSubmit({
 
                                 {acceptsFile ? (
                                     <View style={styles.submissionMeta}>
-                                        <AppText style={styles.submissionMetaLabel}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileLabel`)}
-                                        </AppText>
-
+                                        <AppText style={styles.submissionMetaLabel}>{t(`${ASSIGNMENT_SUBMIT_T}.fileLabel`)}</AppText>
                                         {mySubmission ? (
                                             <AppText style={styles.submissionMetaDate} numberOfLines={1}>
                                                 {t(`${ASSIGNMENT_SUBMIT_T}.lastModifiedAt`)} {formatSubmittedAt(getLatestSubmittedAt(mySubmission))}
@@ -721,15 +721,9 @@ export default function EcaStudentAssignmentSubmit({
                                 ) : null}
 
                                 {acceptsFile ? (
-                                    <Pressable
-                                        style={[styles.uploadBox, evaluationCompleted ? styles.uploadBoxDisabled : null]}
-                                        onPress={openFilePicker}
-                                        disabled={evaluationCompleted}
-                                    >
+                                    <Pressable style={[styles.uploadBox, evaluationCompleted ? styles.uploadBoxDisabled : null]} onPress={openFilePicker} disabled={evaluationCompleted}>
                                         <UploadIcon />
-                                        <AppText style={styles.uploadText}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.fileUploadGuide`)}
-                                        </AppText>
+                                        <AppText style={styles.uploadText}>{t(`${ASSIGNMENT_SUBMIT_T}.fileUploadGuide`)}</AppText>
                                     </Pressable>
                                 ) : null}
 
@@ -768,9 +762,7 @@ export default function EcaStudentAssignmentSubmit({
 
                                 {evaluationCompleted ? (
                                     <View style={styles.evaluatedBar}>
-                                        <AppText style={styles.evaluatedBarText}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.evaluatedNotice`)}
-                                        </AppText>
+                                        <AppText style={styles.evaluatedBarText}>{t(`${ASSIGNMENT_SUBMIT_T}.evaluatedNotice`)}</AppText>
                                     </View>
                                 ) : null}
                                 
@@ -784,9 +776,7 @@ export default function EcaStudentAssignmentSubmit({
                                             return (
                                                 <View style={styles.fileItem} key={file.submissionFileId}>
                                                     <View style={styles.fileMain}>
-                                                        <View style={styles.fileIcon}>
-                                                            {getFileIconByExtension(extension)}
-                                                        </View>
+                                                        <View style={styles.fileIcon}>{getFileIconByExtension(extension)}</View>
 
                                                         <View style={styles.fileNameWrap}>
                                                             <AppText style={styles.fileName} numberOfLines={1}>{fileName}</AppText>
@@ -817,9 +807,7 @@ export default function EcaStudentAssignmentSubmit({
                                             return (
                                                 <View style={styles.fileItem} key={item.id}>
                                                     <View style={styles.fileMain}>
-                                                        <View style={styles.fileIcon}>
-                                                            {getFileIconByExtension(item.extension)}
-                                                        </View>
+                                                        <View style={styles.fileIcon}>{getFileIconByExtension(item.extension)}</View>
 
                                                         <View style={styles.fileNameWrap}>
                                                             <AppText style={styles.fileName} numberOfLines={1}>{item.file.name}</AppText>
@@ -839,39 +827,25 @@ export default function EcaStudentAssignmentSubmit({
                             {evaluationCompleted && evaluation ? (
                                 <>
                                     <View style={[styles.card, styles.evaluationCard]}>
-                                        <AppText style={styles.cardTitle}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.evaluationTitle`)}
-                                        </AppText>
+                                        <AppText style={styles.cardTitle}>{t(`${ASSIGNMENT_SUBMIT_T}.evaluationTitle`)}</AppText>
 
                                         <View style={[styles.evaluationRow, styles.evaluationRowTotal]}>
-                                            <AppText style={styles.evaluationLabel}>
-                                                {t(`${ASSIGNMENT_SUBMIT_T}.totalScore`)}
-                                            </AppText>
-                                            <AppText style={[styles.evaluationScore, styles.evaluationScoreTotal]}>
-                                                {evaluationTotalScore}/{evaluationTotalMaxScore}
-                                            </AppText>
+                                            <AppText style={styles.evaluationLabel}>{t(`${ASSIGNMENT_SUBMIT_T}.totalScore`)}</AppText>
+                                            <AppText style={[styles.evaluationScore, styles.evaluationScoreTotal]}>{evaluationTotalScore}/{evaluationTotalMaxScore}</AppText>
                                         </View>
 
                                         {evaluation.criteria.map((criterion) => (
                                             <View style={styles.evaluationRow} key={criterion.criterionId}>
-                                                <AppText style={styles.evaluationLabel} numberOfLines={1}>
-                                                    {criterion.name}
-                                                </AppText>
-                                                <AppText style={styles.evaluationScore}>
-                                                    {criterion.score}/{criterion.maxScore}
-                                                </AppText>
+                                                <AppText style={styles.evaluationLabel} numberOfLines={1}>{criterion.name}</AppText>
+                                                <AppText style={styles.evaluationScore}>{criterion.score}/{criterion.maxScore}</AppText>
                                             </View>
                                         ))}
                                     </View>
 
                                     <View style={[styles.card, styles.feedbackCard]}>
-                                        <AppText style={styles.cardTitle}>
-                                            {t(`${ASSIGNMENT_SUBMIT_T}.feedbackTitle`)}
-                                        </AppText>
+                                        <AppText style={styles.cardTitle}>{t(`${ASSIGNMENT_SUBMIT_T}.feedbackTitle`)}</AppText>
 
-                                        <AppText style={styles.feedbackText}>
-                                            {evaluation.feedback?.trim() || t(`${ASSIGNMENT_SUBMIT_T}.noFeedback`)}
-                                        </AppText>
+                                        <AppText style={styles.feedbackText}>{evaluation.feedback?.trim() || t(`${ASSIGNMENT_SUBMIT_T}.noFeedback`)}</AppText>
                                     </View>
                                 </>
                             ) : null}
@@ -896,9 +870,7 @@ export default function EcaStudentAssignmentSubmit({
                 <Modal visible={submitResultModalOpen} transparent animationType="fade" onRequestClose={() => setSubmitResultModalOpen(false)}>
                     <View style={styles.modalBackdrop}>
                         <View style={styles.modal}>
-                            <View style={styles.modalIcon}>
-                                <ResultIcon success={submitResult === "success"} />
-                            </View>
+                            <View style={styles.modalIcon}><ResultIcon success={submitResult === "success"} /></View>
 
                             <AppText style={styles.modalTitle}>{submitResult === "success" ? t(`${ASSIGNMENT_SUBMIT_T}.submitSuccessTitle`) : t(`${ASSIGNMENT_SUBMIT_T}.submitFailTitle`)}</AppText>
 
@@ -909,6 +881,7 @@ export default function EcaStudentAssignmentSubmit({
                     </View>
                 </Modal>
             </SafeAreaView>
-        </EcaStudentApp>
+            </EcaStudentApp>
+        </EcaBackExitTransitionView>
     );
 }

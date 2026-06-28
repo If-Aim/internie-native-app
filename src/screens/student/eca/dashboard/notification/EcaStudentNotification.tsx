@@ -9,18 +9,12 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import AppText from "../../../../../../AppText";
 import type { StudentStackParamList } from "../../../../../navigation/StudentNavigator";
-import {
-    deleteAllNotifications,
-    getNotifications,
-    markNotificationRead,
-} from "../../../../../api/ea";
+import { deleteAllNotifications, getNotifications, markNotificationRead, } from "../../../../../api/ea";
 import type { NotificationResponse } from "../../../../../api/ea";
-import {
-    getUserTimeZone,
-    parseServerKstDateTime,
-} from "../../../../../theme/dateTime";
+import { getUserTimeZone, parseServerKstDateTime, } from "../../../../../theme/dateTime";
 
 import EcaStudentApp from "../../EcaStudentApp";
+import { EcaBackExitTransitionView, useEcaBackExitTransition } from "../../EcaBackExitTransition";
 import { styles } from "./EcaStudentNotification.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "EcaStudentNotification">;
@@ -212,6 +206,7 @@ export default function EcaStudentNotification({
 }: Props): React.ReactElement {
     const { t, i18n } = useTranslation();
     const externalActivityId = route.params?.externalActivityId;
+    const { screenExitStyle, runBackExitTransition } = useEcaBackExitTransition(() => navigation.goBack());
 
     const [notifications, setNotifications] = React.useState<NotificationResponse[]>([]);
     const [deleting, setDeleting] = React.useState(false);
@@ -261,7 +256,7 @@ export default function EcaStudentNotification({
     }, [fetchNotifications]);
 
     function handleBackClick(): void {
-        navigation.goBack();
+        runBackExitTransition();
     }
 
     function navigateNotificationTarget(notification: NotificationResponse): void {
@@ -386,8 +381,9 @@ export default function EcaStudentNotification({
     }
 
     return (
-        <EcaStudentApp externalActivityId={externalActivityId ?? ""} activeTab="dashboard" hideBottomNav>
-            <SafeAreaView style={styles.page}>
+        <EcaBackExitTransitionView exitStyle={screenExitStyle}>
+            <EcaStudentApp externalActivityId={externalActivityId ?? ""} activeTab="dashboard" hideBottomNav>
+                <SafeAreaView style={styles.page}>
                 <Header
                     title={t("ecaStudent.notificationPage.title")}
                     deleting={deleting}
@@ -440,7 +436,8 @@ export default function EcaStudentNotification({
                 </ScrollView>
 
                 {renderDeleteConfirmModal()}
-            </SafeAreaView>
-        </EcaStudentApp>
+                </SafeAreaView>
+            </EcaStudentApp>
+        </EcaBackExitTransitionView>
     );
 }

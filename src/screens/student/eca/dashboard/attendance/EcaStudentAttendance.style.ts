@@ -9,6 +9,7 @@ export const styles = StyleSheet.create({
     menuIcon: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
     menuIconLine: { width: 18, height: 2, marginVertical: 2, borderRadius: 1, backgroundColor: "#000" },
     list: { flexGrow: 1, paddingTop: 14, paddingHorizontal: 20, paddingBottom: 40 },
+    
     card: { width: "100%", minHeight: 80, marginBottom: 11, paddingLeft: 23, paddingRight: 17, borderWidth: 1, borderColor: "#E3E3E3", borderRadius: 10, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", },
     cardText: { flex: 1, minWidth: 0, gap: 5, },
     cardSubRow: { flexDirection: "row", alignItems: "center", gap: 4, },
@@ -17,15 +18,17 @@ export const styles = StyleSheet.create({
     cardTitle: { marginBottom: 5, fontSize: 16, fontWeight: "700", lineHeight: 20, color: "#000" },
     cardSubText: { marginRight: 4, fontSize: 14, fontWeight: "500", lineHeight: 20, color: "rgba(0, 0, 0, 0.50)" },
     cardTime: { fontSize: 14, fontWeight: "500", lineHeight: 20, color: "#848484" },
-    statusPresent: { backgroundColor: "#BDD8FF" },
-    statusAbsent: { backgroundColor: "#F6DBDB" },
-    statusLate: { backgroundColor: "#FFE7C7" },
-    statusNotChecked: { backgroundColor: "#EAEAEA" },
+    
     statusText: { fontSize: 16, fontWeight: "700", lineHeight: 18, },
+    statusPresent: { backgroundColor: "#BDD8FF" },
     statusTextPresent: { color: "#0166FF", },
+    statusAbsent: { backgroundColor: "#F6DBDB" },
     statusTextAbsent: { color: "#FF0000",},
+    statusLate: { backgroundColor: "#FFE7C7" },
     statusTextLate: { color: "#FF8A00", },
+    statusNotChecked: { backgroundColor: "#EAEAEA" },
     statusTextNotChecked: { color: "#777777", },
+
     emptyWrap: { marginTop: 80, alignItems: "center" },
     emptyText: { marginTop: 10, fontSize: 12, fontWeight: "700", lineHeight: 18, color: "#808080", textAlign: "center" },
 });
