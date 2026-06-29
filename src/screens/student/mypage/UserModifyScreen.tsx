@@ -20,10 +20,20 @@ type Props = NativeStackScreenProps<StudentStackParamList, "UserModify">;
 type ProfileForm = {
     name: string;
     email: string;
+    nickname: string;
+    linkedinUrl: string;
+    studentNumber: string;
+    major: string;
+    campus: string;
 };
 
 function normalizeText(v: string) {
     return (v ?? "").trim();
+}
+
+function normalizeOptionalText(v: string): string | null {
+    const trimmed = (v ?? "").trim();
+    return trimmed ? trimmed : null;
 }
 
 function getApiOrigin(url: string) {
@@ -58,7 +68,15 @@ export default function UserModifyScreen({ navigation }: Props) {
     const { t, i18n } = useTranslation();
 
     const [me, setMe] = React.useState<UserMe | null>(null);
-    const [form, setForm] = React.useState<ProfileForm>({ name: "", email: "" });
+    const [form, setForm] = React.useState<ProfileForm>({
+        name: "",
+        email: "",
+        nickname: "",
+        linkedinUrl: "",
+        studentNumber: "",
+        major: "",
+        campus: "",
+    });
     const [initialForm, setInitialForm] = React.useState<ProfileForm | null>(null);
 
     const [selectedImage, setSelectedImage] = React.useState<UploadFileLike | null>(null);
@@ -90,6 +108,11 @@ export default function UserModifyScreen({ navigation }: Props) {
                 const loaded: ProfileForm = {
                     name: data.name ?? "",
                     email: data.email ?? "",
+                    nickname: data.nickname ?? "",
+                    linkedinUrl: data.linkedinUrl ?? "",
+                    studentNumber: data.studentNumber ?? "",
+                    major: data.major ?? "",
+                    campus: data.campus ?? "",
                 };
 
                 setForm(loaded);
@@ -121,22 +144,21 @@ export default function UserModifyScreen({ navigation }: Props) {
                     : require("../../../assets/images/internie_mascot_normal.png");
 
     const displayEmail = form.email.trim() || "";
-    const birth = (me as any)?.birth ?? t("mypage.birth");
-    const schoolMajor = me?.status === "APPROVED" ? (me.school?.name ?? t("mypage.noSchool")) : t("mypage.needStudentVerification");
+    const isStudentUser = (me?.roleSet ?? []).some((role) => role === "ROLE_STUDENT" || role.endsWith("_STUDENT"));
 
     const isDirty = React.useMemo(() => {
         if (!initialForm) return false;
         if (normalizeText(form.name) !== normalizeText(initialForm.name)) return true;
         if (normalizeText(form.email) !== normalizeText(initialForm.email)) return true;
+        if (normalizeText(form.nickname) !== normalizeText(initialForm.nickname)) return true;
+        if (normalizeText(form.linkedinUrl) !== normalizeText(initialForm.linkedinUrl)) return true;
+        if (normalizeText(form.studentNumber) !== normalizeText(initialForm.studentNumber)) return true;
+        if (normalizeText(form.major) !== normalizeText(initialForm.major)) return true;
+        if (normalizeText(form.campus) !== normalizeText(initialForm.campus)) return true;
         if (selectedImage) return true;
         if (removeProfileImage) return true;
         return false;
     }, [form, initialForm, selectedImage, removeProfileImage]);
-
-    const handleServicePreparing = React.useCallback(() => {
-        const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
-        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
-    }, [i18n.language, i18n.resolvedLanguage]);
 
     const handlePickImage = React.useCallback(async () => {
         if (saving) return;
@@ -184,9 +206,19 @@ export default function UserModifyScreen({ navigation }: Props) {
 
     const onSave = React.useCallback(async () => {
         const trimmedName = normalizeText(form.name);
+        const trimmedNickname = normalizeText(form.nickname);
+        const trimmedLinkedinUrl = normalizeText(form.linkedinUrl);
+        const trimmedStudentNumber = normalizeText(form.studentNumber);
+        const trimmedMajor = normalizeText(form.major);
+        const trimmedCampus = normalizeText(form.campus);
 
         if (!trimmedName) {
             Alert.alert(t("mypage.needName", "이름을 입력해주세요."));
+            return;
+        }
+
+        if (trimmedLinkedinUrl && !/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/.+/i.test(trimmedLinkedinUrl)) {
+            Alert.alert(t("mypage.profileEdit.invalidLinkedinUrl", "LinkedIn 주소 형식이 올바르지 않습니다."));
             return;
         }
 
@@ -197,6 +229,11 @@ export default function UserModifyScreen({ navigation }: Props) {
 
             updatedMe = await updateMyProfile({
                 name: trimmedName,
+                nickname: normalizeOptionalText(trimmedNickname),
+                linkedinUrl: normalizeOptionalText(trimmedLinkedinUrl),
+                studentNumber: normalizeOptionalText(trimmedStudentNumber),
+                major: normalizeOptionalText(trimmedMajor),
+                campus: normalizeOptionalText(trimmedCampus),
             });
 
             if (removeProfileImage) {
@@ -212,8 +249,13 @@ export default function UserModifyScreen({ navigation }: Props) {
             }
 
             const nextInitial: ProfileForm = {
-                ...form,
                 name: trimmedName,
+                email: form.email,
+                nickname: trimmedNickname,
+                linkedinUrl: trimmedLinkedinUrl,
+                studentNumber: trimmedStudentNumber,
+                major: trimmedMajor,
+                campus: trimmedCampus,
             };
 
             setInitialForm(nextInitial);
@@ -388,7 +430,34 @@ export default function UserModifyScreen({ navigation }: Props) {
                         </View>
 
                         <View style={styles.field}>
-                            <AppText style={styles.label}>E-mail</AppText>
+                            <AppText style={styles.label}>{t("mypage.profileEdit.nickname", "닉네임")}</AppText>
+                            <AppTextInput
+                                style={styles.input}
+                                value={form.nickname}
+                                onChangeText={(txt) => setForm((prev) => ({ ...prev, nickname: txt }))}
+                                editable={!saving}
+                                placeholder={t("mypage.profileEdit.nicknamePlaceholder", "닉네임을 입력해주세요")}
+                                placeholderTextColor="rgba(0,0,0,0.35)"
+                            />
+                        </View>
+
+                        <View style={styles.field}>
+                            <AppText style={styles.label}>{t("mypage.profileEdit.linkedin", "LinkedIn")}</AppText>
+                            <AppTextInput
+                                style={styles.input}
+                                value={form.linkedinUrl}
+                                onChangeText={(txt) => setForm((prev) => ({ ...prev, linkedinUrl: txt }))}
+                                editable={!saving}
+                                placeholder="https://www.linkedin.com/in/..."
+                                placeholderTextColor="rgba(0,0,0,0.35)"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                keyboardType="url"
+                            />
+                        </View>
+
+                        <View style={styles.field}>
+                            <AppText style={styles.label}>{t("mypage.profileEdit.email", "E-mail")}</AppText>
                             <Pressable onPress={() => { if (!saving) setEmailConfirmOpen(true); }}>
                                 <AppTextInput
                                     style={[styles.input, styles.inputReadonly]}
@@ -399,26 +468,47 @@ export default function UserModifyScreen({ navigation }: Props) {
                             </Pressable>
                         </View>
 
-                        <View style={styles.field}>
-                            <AppText style={styles.label}>{t("mypage.birth")}</AppText>
-                            <Pressable onPress={handleServicePreparing}>
-                                <AppTextInput
-                                    style={[styles.input, styles.inputReadonly]}
-                                    value={birth}
-                                    editable={false}
-                                    pointerEvents="none"
-                                />
-                            </Pressable>
-                        </View>
+                        {isStudentUser ? (
+                            <>
+                                <View style={styles.field}>
+                                    <AppText style={styles.label}>{t("mypage.profileEdit.studentId", "학번")}</AppText>
+                                    <AppTextInput
+                                        style={styles.input}
+                                        value={form.studentNumber}
+                                        onChangeText={(txt) => setForm((prev) => ({ ...prev, studentNumber: txt }))}
+                                        editable={!saving}
+                                        placeholder={t("mypage.profileEdit.studentIdPlaceholder", "학번을 입력해주세요")}
+                                        placeholderTextColor="rgba(0,0,0,0.35)"
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                    />
+                                </View>
 
-                        <View style={styles.field}>
-                            <AppText style={styles.label}>{t("mypage.schoolMajor")}</AppText>
-                            <AppTextInput
-                                style={[styles.input, styles.inputReadonly]}
-                                value={schoolMajor}
-                                editable={false}
-                            />
-                        </View>
+                                <View style={styles.field}>
+                                    <AppText style={styles.label}>{t("mypage.profileEdit.major", "전공")}</AppText>
+                                    <AppTextInput
+                                        style={styles.input}
+                                        value={form.major}
+                                        onChangeText={(txt) => setForm((prev) => ({ ...prev, major: txt }))}
+                                        editable={!saving}
+                                        placeholder={t("mypage.profileEdit.majorPlaceholder", "전공을 입력해주세요")}
+                                        placeholderTextColor="rgba(0,0,0,0.35)"
+                                    />
+                                </View>
+
+                                <View style={styles.field}>
+                                    <AppText style={styles.label}>{t("mypage.profileEdit.campus", "캠퍼스")}</AppText>
+                                    <AppTextInput
+                                        style={styles.input}
+                                        value={form.campus}
+                                        onChangeText={(txt) => setForm((prev) => ({ ...prev, campus: txt }))}
+                                        editable={!saving}
+                                        placeholder={t("mypage.profileEdit.campusPlaceholder", "캠퍼스를 입력해주세요")}
+                                        placeholderTextColor="rgba(0,0,0,0.35)"
+                                    />
+                                </View>
+                            </>
+                        ) : null}
                     </View>
 
                     <View style={styles.bottomMargin} />

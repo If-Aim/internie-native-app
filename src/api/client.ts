@@ -1,7 +1,7 @@
 // src/api/client.ts
 import { API_BASE_URL } from "@env";
 import { jwtDecode } from "jwt-decode";
-import { getAccessToken, saveAccessToken, clearAccessToken, getRefreshToken, saveRefreshToken, clearRefreshToken, clearTokens } from "../auth/tokenStorage";
+import { getAccessToken, saveAccessToken, getRefreshToken, saveRefreshToken, clearTokens } from "../auth/tokenStorage";
 
 /** URL util */
 function buildUrl(path: string) {
@@ -922,6 +922,7 @@ export type UserBase = {
     name?: string | null;
     kakaoName?: string | null;
     nickname: string | null;
+    linkedinUrl?: string | null;
     profileImage: string | null;
     verificationImage: string | null;
     roleSet: string[];
@@ -929,8 +930,12 @@ export type UserBase = {
     rejectionReason?: string | null;
     school: UserSchool | null;
     studentNumber?: string | null;
+    major?: string | null;
+    campus?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
+    companyName?: string | null;
+    departmentName?: string | null;
     jumpOrganization?: JumpOrganization | null;
 };
 export type UserMe = UserBase;
@@ -943,9 +948,14 @@ export type UploadFileLike = {
 export type UpdateMyProfileJsonInput = {
     name?: string | null;
     nickname?: string | null;
+    linkedinUrl?: string | null;
+    studentNumber?: string | null;
+    major?: string | null;
+    campus?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
 };
+
 export type AdminUserFile = {
     fileId: number;
     url: string;
@@ -959,12 +969,17 @@ export type SelectMySchoolResponse = UserBase & {
     school: UserSchool | null;
 };
 
+export type OnboardingUserType = "STUDENT" | "COMPANY";
+
 export type SubmitOnboardingInput = {
     name?: string | null;
+    userType?: OnboardingUserType | null;
     studentNumber?: string | null;
     interestJob?: string | null;
     interestCompany?: string | null;
     jumpOrganizationId?: number | null;
+    companyName?: string | null;
+    departmentName?: string | null;
 };
 
 export type SubmitOnboardingResponse = UserBase;
@@ -1047,11 +1062,6 @@ export async function getUserMe(): Promise<UserMe> {
 export async function applyMyVerification(
     file: UploadFileLike
 ): Promise<ApplyVerificationResponse> {
-    const userId = await getUserIdFromAccessToken();
-    if (!userId) {
-        throw new ApiError(401, "로그인 정보에서 userId를 찾을 수 없습니다.");
-    }
-
     const formData = new FormData();
 
     formData.append(
@@ -1064,20 +1074,22 @@ export async function applyMyVerification(
     );
 
     return apiUpload<ApplyVerificationResponse>(
-        `/users/${userId}/apply-verification`,
+        "/users/me/apply-verification",
         formData,
         { method: "POST" }
     );
 }
 // 프로필 수정 (텍스트)
-export async function updateMyProfile(
-    input: UpdateMyProfileJsonInput
-): Promise<UserMe> {
+export async function updateMyProfile(input: UpdateMyProfileJsonInput): Promise<UserMe> {
     return api<UserMe>("/users/me", {
         method: "PATCH",
         body: JSON.stringify({
             name: input.name ?? null,
             nickname: input.nickname ?? null,
+            linkedinUrl: input.linkedinUrl ?? null,
+            studentNumber: input.studentNumber ?? null,
+            major: input.major ?? null,
+            campus: input.campus ?? null,
             interestJob: input.interestJob ?? null,
             interestCompany: input.interestCompany ?? null,
         }),

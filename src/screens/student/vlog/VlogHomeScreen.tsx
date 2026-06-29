@@ -24,7 +24,9 @@ import { styles } from "./VlogHomeScreen.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "VlogHome">;
 
-type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "team-activity";
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
+
+type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
 
 type VlogHomeCard = {
     id: string;
@@ -66,18 +68,18 @@ function formatRecordedDate(value?: string | null): string {
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}.`;
 }
 
-function toVlogCard(item: VlogResponse): VlogHomeCard | null {
+function toVlogCard(item: VlogResponse, t: TranslationFunction): VlogHomeCard | null {
     if (item.vlogProjectId == null) return null;
 
     const recordedDate = formatRecordedDate(item.lastRecordedAt);
-    const weekText = item.currentWeek ? `${item.currentWeek}주차` : "";
+    const weekText = item.currentWeek ? t("vlog.week", { week: item.currentWeek }) : "";
     const subText = [weekText, recordedDate].filter(Boolean).join(", ");
 
     return {
         id: String(item.vlogProjectId),
         projectId: item.vlogProjectId,
-        title: item.title ?? item.companyCode ?? "인턴십",
-        subText: subText || "브이로그",
+        title: item.title ?? item.companyCode ?? t("vlog.defaultInternship"),
+        subText: subText || t("vlog.defaultSubText"),
         thumbnailUrl: item.lastClipThumbnailUrl ?? null,
         lastClipId: item.lastClipId ?? null,
         progressPercent: item.progressPercent ?? null,
@@ -127,7 +129,7 @@ function Header({
             <AppText style={styles.appTitle}>Vlog</AppText>
 
             <View style={commonStyles.iconbtn}>
-                <Pressable style={commonStyles.icon24} onPress={() => Alert.alert("서비스 준비중입니다.")} accessibilityLabel="알림" >
+                <Pressable style={commonStyles.icon24} onPress={() => Alert.alert(t("common.preparing"))} accessibilityLabel={t("common.notice")} >
                     <BellIcon />
                 </Pressable>
             </View>
@@ -139,6 +141,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function VlogHomeScreen({ navigation }: Props): React.ReactElement {
     const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { t } = useTranslation();
 
     const [isAuthed, setIsAuthed] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -192,7 +195,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             void loadMe();
             void loadSideMenuData();
             void loadVlogHome();
-        }, [isAuthed])
+        }, [isAuthed, t])
     );
 
     async function checkAuth(): Promise<void> {
@@ -262,7 +265,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         try {
             const response = await getMyVlogProjects();
             const nextCards = (response.projects ?? [])
-                    .map(toVlogCard)
+                    .map((item) => toVlogCard(item, t))
                     .filter((item): item is VlogHomeCard => item !== null);
 
             setCards(nextCards);
@@ -290,11 +293,11 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
     function requireAuth(action: () => void): void {
         if (!isAuthed) {
             Alert.alert(
-                "로그인이 필요합니다.",
-                "로그인 후 이용할 수 있습니다.",
+                t("login.getLoginTitle"),
+                t("vlog.loginRequiredDesc"),
                 [
-                    { text: "취소", style: "cancel" },
-                    { text: "로그인", onPress: () => rootNavigation.navigate("Auth" as never) },
+                    { text: t("common.cancel"), style: "cancel" },
+                    { text: t("common.login"), onPress: () => rootNavigation.navigate("Auth" as never) },
                 ]
             );
             return;
@@ -330,29 +333,39 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                 return;
             }
 
-            Alert.alert("서비스 준비중입니다.");
+            if (menuKey === "attendance") {
+                navigation.navigate("EcaStudentMobileAttendance", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            if (menuKey === "leaderboard") {
+                navigation.navigate("EcaStudentLeaderboard", { externalActivityId: String(activityId) });
+                return;
+            }
+
+            Alert.alert(t("common.preparing"));
         });
     }
 
     function moveSystemAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveJumpAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function moveKakaoAdmin(): void {
-        Alert.alert("앱에서는 관리자 페이지를 지원하지 않습니다.");
+        Alert.alert(t("common.adminUnsupported"));
     }
 
     function showLoginRequiredAlert(): void {
         Alert.alert(
-            "로그인이 필요합니다.",
-            "로그인 후 이용할 수 있습니다.",
+            t("login.getLoginTitle"),
+            t("vlog.loginRequiredDesc"),
             [
-                { text: "취소", style: "cancel" },
-                { text: "로그인", onPress: () => rootNavigation.navigate("Auth" as never) },
+                { text: t("common.cancel"), style: "cancel" },
+                { text: t("common.login"), onPress: () => rootNavigation.navigate("Auth" as never) },
             ]
         );
     }
@@ -412,7 +425,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         }
 
         if (!item.lastClipId) {
-            Alert.alert("아직 영상이 없어요.", "아직 촬영된 클립이 없습니다.");
+            Alert.alert(t("vlog.noVideoTitle"), t("vlog.noClipDesc"));
             return null;
         }
 
@@ -420,14 +433,14 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             const response = await getVlogClipPlayUrl(item.projectId, item.lastClipId);
 
             if (!response.url) {
-                Alert.alert("아직 영상이 없어요", "영상 URL을 불러오지 못했습니다.");
+                Alert.alert(t("vlog.noVideoTitle"), t("vlog.videoUrlLoadFailed"));
                 return null;
             }
 
             return response.url;
         } catch (error) {
             console.error("[VLOG_HOME] play url error:", error);
-            Alert.alert("영상을 불러오지 못했습니다.", "잠시 후 다시 시도해주세요.");
+            Alert.alert(t("vlog.videoLoadFailedTitle"), t("vlog.retryLater"));
             return null;
         }
     }
@@ -436,7 +449,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         event.stopPropagation();
 
         if (!item.lastClipId) {
-            Alert.alert("아직 영상이 없어요", "아직 촬영된 클립이 없습니다.");
+            Alert.alert(t("vlog.noVideoTitle"), t("vlog.noClipDesc"));
             return;
         }
 
@@ -526,7 +539,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             if (isVlogCompleted(item)) {
                 navigation.navigate("EditVlog", {
                     projectId: item.projectId,
-                    title: `${item.title} 브이로그`,
+                    title: t("vlog.editTitle", { title: item.title }),
                     subText: item.subText,
                 });
                 return;
@@ -559,7 +572,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
         if (!hasThumbnail && !isInlinePlaying) {
             return (
                 <View style={[styles.thumbnail, styles.thumbnailEmpty]}>
-                    <AppText style={styles.thumbnailEmptyText}>아직 촬영한 영상이 없어요</AppText>
+                    <AppText style={styles.thumbnailEmptyText}>{t("vlog.noRecordedVideo")}</AppText>
                 </View>
             );
         }
@@ -592,7 +605,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                         }}
                         onError={(error) => {
                             console.error("[VLOG_HOME] inline video error:", error);
-                            Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                            Alert.alert(t("vlog.videoPlayFailedTitle"), t("vlog.retryLater"));
                             setInlinePlayingProjectId(null);
                             setInlinePlayingClipId(null);
                             setInlineVideoUrl(null);
@@ -679,7 +692,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
 
                     {isVlogCompleted(item) ? (
                         <View style={styles.completedBadge}>
-                            <AppText style={styles.completedText}>완료</AppText>
+                            <AppText style={styles.completedText}>{t("common.done")}</AppText>
                         </View>
                     ) : item.progressPercent !== null ? (
                         <View style={[styles.progressBadge, item.progressPercent === 100 && styles.progressBadgeFull]}>
@@ -714,7 +727,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
                     ) : (
                         <View style={styles.emptyWrap}>
                             <Image source={require("../../../assets/images/internie_mascot_normal.png")} style={styles.emptyImg} resizeMode="contain" />
-                            <AppText style={styles.emptyTitle}>아직 진행중인 인턴십이 없어요{"\n"}지금 바로 만들어볼까요?</AppText>
+                            <AppText style={styles.emptyTitle}>{t("vlog.emptyHome")}</AppText>
                         </View>
                     )
                 }
@@ -725,7 +738,7 @@ export default function VlogHomeScreen({ navigation }: Props): React.ReactElemen
             <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar} pointerEvents="none" />
             <View style={styles.addButtonWrap}>
                 <Pressable style={styles.addButton} onPress={handlePressAdd}>
-                    <AppText style={styles.addButtonText}>인턴십 추가하기</AppText>
+                    <AppText style={styles.addButtonText}>{t("vlog.addInternship")}</AppText>
                 </Pressable>
             </View>
 

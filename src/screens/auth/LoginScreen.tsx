@@ -7,6 +7,7 @@ import { styles } from "./Login.style";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import appleAuth from "@invertase/react-native-apple-authentication";
+import { syncPushToken } from "../../notifications/pushNotification";
 import type { AuthStackParamList } from "../../navigation/AuthNavigator";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import AppText from "../../../AppText";
@@ -49,6 +50,12 @@ export default function LoginScreen(_props: Props) {
     const [loginError, setLoginError] = useState<string | null>(null);
     const [kakaoMethodOpen, setKakaoMethodOpen] = useState(false);
 
+    const syncPushTokenSafely = async (): Promise<void> => {
+        await syncPushToken().catch((error) => {
+            console.log("[PUSH] sync after login failed:", error);
+        });
+    };
+
     const moveAfterLogin = async (onboardingCompleted: boolean) => {
         await saveOnboardingCompleted(onboardingCompleted === true);
 
@@ -62,6 +69,7 @@ export default function LoginScreen(_props: Props) {
     const handleServerKakaoLogin = async (kakaoAccessToken: string) => {
         try {
             const data = await exchangeKakaoToken(kakaoAccessToken);
+            await syncPushTokenSafely();
             await moveAfterLogin(data.onboardingCompleted);
         } catch (e) {
             if (e instanceof ApiError) {
@@ -91,6 +99,7 @@ export default function LoginScreen(_props: Props) {
                 password: trimmedPassword,
             });
 
+            await syncPushTokenSafely();
             await moveAfterLogin(data.onboardingCompleted);
         } catch (e) {
             if (e instanceof ApiError) {
@@ -107,7 +116,7 @@ export default function LoginScreen(_props: Props) {
         try {
             if (!KakaoLogin?.loginWithTalk) {
                 console.log("NativeModules.KakaoLogin =", NativeModules.KakaoLogin);
-                Alert.alert(t("login.loginFailed"), "KakaoLogin.loginWithTalk 네이티브 모듈을 찾을 수 없습니다.");
+                Alert.alert(t("login.loginFailed"), t("login.kakaoTalkNativeMissing"));
                 return;
             }
 
@@ -129,7 +138,7 @@ export default function LoginScreen(_props: Props) {
         try {
             if (!KakaoLogin?.loginWithAccount) {
                 console.log("NativeModules.KakaoLogin =", NativeModules.KakaoLogin);
-                Alert.alert(t("login.loginFailed"), "KakaoLogin.loginWithAccount 네이티브 모듈을 찾을 수 없습니다.");
+                Alert.alert(t("login.loginFailed"), t("login.kakaoAccountNativeMissing"));
                 return;
             }
 
@@ -164,7 +173,7 @@ export default function LoginScreen(_props: Props) {
     const handleGooglePress = async () => {
         try {
             if (!GoogleLogin?.signIn) {
-                Alert.alert(t("login.loginFailed"), "GoogleLogin.signIn 네이티브 모듈을 찾을 수 없습니다.");
+                Alert.alert(t("login.loginFailed"), t("login.googleNativeMissing"));
                 return;
             }
 
@@ -178,33 +187,35 @@ export default function LoginScreen(_props: Props) {
 
             const data = await loginWithGoogle(idToken);
 
+            await syncPushTokenSafely();
             await moveAfterLogin(data.onboardingCompleted);
-            } catch (e: any) {
-                if (e?.code === "GOOGLE_SIGN_IN_CANCELED") {
-                    return;
-                }
 
-                if (e?.code === "GOOGLE_NO_CREDENTIAL") {
-                    Alert.alert(
-                        t("login.loginFailed"),
-                        "사용 가능한 Google 계정을 찾을 수 없습니다. 기기에 Google 계정이 로그인되어 있는지 확인해주세요."
-                    );
-                    return;
-                }
+        } catch (e: any) {
+            if (e?.code === "GOOGLE_SIGN_IN_CANCELED") {
+                return;
+            }
 
-                if (e instanceof ApiError) {
-                    Alert.alert(
-                        t("login.loginFailed"),
-                        e.bodyText || e.message || t("login.googleLoginFailed")
-                    );
-                    return;
-                }
-
+            if (e?.code === "GOOGLE_NO_CREDENTIAL") {
                 Alert.alert(
                     t("login.loginFailed"),
-                    "Google 로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                    t("login.googleNoCredential")
                 );
+                return;
             }
+
+            if (e instanceof ApiError) {
+                Alert.alert(
+                    t("login.loginFailed"),
+                    e.bodyText || e.message || t("login.googleLoginFailed")
+                );
+                return;
+            }
+
+            Alert.alert(
+                t("login.loginFailed"),
+                t("login.googleUnexpectedError")
+            );
+        }
     };
     
     const handleBackToHome = () => {
@@ -224,7 +235,7 @@ export default function LoginScreen(_props: Props) {
             const identityToken = result.identityToken ?? "";
 
             if (!identityToken) {
-                Alert.alert(t("login.loginFailed"), "Apple identityToken을 받지 못했습니다.");
+                Alert.alert(t("login.loginFailed"), t("login.appleTokenMissing"));
                 return;
             }
 
@@ -234,8 +245,9 @@ export default function LoginScreen(_props: Props) {
             ].filter(Boolean);
 
             const fullName = fullNameParts.length > 0 ? fullNameParts.join("") : null;
-            const data = await loginWithApple({identityToken, fullName,});
+            const data = await loginWithApple({ identityToken, fullName });
 
+            await syncPushTokenSafely();
             await moveAfterLogin(data.onboardingCompleted);
         } catch (e: any) {
             if (e?.code === appleAuth.Error.CANCELED) {
@@ -245,7 +257,7 @@ export default function LoginScreen(_props: Props) {
             if (e instanceof ApiError) {
                 Alert.alert(
                     t("login.loginFailed"),
-                    e.bodyText || e.message || "Apple 로그인에 실패했습니다."
+                    e.bodyText || e.message || t("login.appleLoginFailed")
                 );
                 return;
             }
@@ -254,7 +266,7 @@ export default function LoginScreen(_props: Props) {
 
             Alert.alert(
                 t("login.loginFailed"),
-                String(e?.message || e?.code || "Apple 로그인 중 문제가 발생했습니다.")
+                String(e?.message || e?.code || t("login.appleUnexpectedError"))
             );
         }
     };

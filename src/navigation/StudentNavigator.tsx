@@ -1,6 +1,7 @@
 // src/navigation/StudentNavigator.tsx
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import type { VlogFinalVideoStatus, VlogProjectStatus } from "../api/vlog";
 
 import StudentHomeScreen from "../screens/student/HomeScreen";
@@ -16,14 +17,28 @@ import NewScheduleScreen from "../screens/student/schedule/NewScheduleScreen";
 import EditScheduleScreen from "../screens/student/schedule/EditScheduleScreen";
 import DetailScheduleScreen from "../screens/student/schedule/DetailScheduleScreen";
 
-import EcaStudentDashboard from "../screens/student/eca/dashboard/EcaStudentDashboard";
-import EcaStudentAssignment from "../screens/student/eca/assignment/EcaStudentAssignment";
-import EcaStudentAssignmentSubmit from "../screens/student/eca/assignment/EcaStudentAssignmentSubmit";
+import EcaStudentDashboard from "../screens/student/eca/dashboard/dashboard/EcaStudentDashboard";
+import EcaStudentAssignment from "../screens/student/eca/dashboard/assignment/EcaStudentAssignment";
+import EcaStudentAssignmentSubmit from "../screens/student/eca/dashboard/assignment/EcaStudentAssignmentSubmit";
+import EcaStudentAttendance from "../screens/student/eca/dashboard/attendance/EcaStudentAttendance";
+import EcaStudentAttendanceSubmit from "../screens/student/eca/dashboard/attendance/EcaStudentAttendanceSubmit";
+import EcaStudentLeaderboard from "../screens/student/eca/dashboard/leaderboard/EcaStudentLeaderboard";
+import EcaStudentLeaderboardMission from "../screens/student/eca/dashboard/leaderboard/EcaStudentLeaderboardMission";
+import EcaStudentNotification from "../screens/student/eca/dashboard/notification/EcaStudentNotification";
+
+import type { MyAttendanceEventResponse } from "../api/ea";
 
 import VlogHomeScreen from "../screens/student/vlog/VlogHomeScreen";
 import NewVlogScreen from "../screens/student/vlog/create/NewVlogScreen";
 import RecordVlogScreen from "../screens/student/vlog/record/RecordVlogScreen";
 import EditVlogScreen from "../screens/student/vlog/edit/EditVlogScreen";
+
+export type EcaStudentTabTransitionDirection = "forward" | "back";
+
+type EcaStudentTabRouteParams = {
+  externalActivityId: string;
+  tabTransitionDirection?: EcaStudentTabTransitionDirection;
+};
 
 export type StudentStackParamList = {
   StudentHome: undefined;
@@ -39,10 +54,15 @@ export type StudentStackParamList = {
   EditSchedule: { eventId: number };
   DetailSchedule: { eventDayId: number };
 
-  EcaStudentDashboard: { externalActivityId: string };
-  EcaStudentAssignment: { externalActivityId: string };
+  EcaStudentDashboard: EcaStudentTabRouteParams;
+  EcaStudentAssignment: EcaStudentTabRouteParams;
   EcaStudentAssignmentSubmit: { externalActivityId: string; assignmentId: string };
-  
+  EcaStudentMobileAttendance: EcaStudentTabRouteParams;
+  EcaStudentMobileAttendanceSubmit: { externalActivityId: string; eventId: number | string; event?: MyAttendanceEventResponse };
+  EcaStudentLeaderboard: EcaStudentTabRouteParams;
+  EcaStudentLeaderboardMission: { externalActivityId: string; editSubmissionId?: number | string; editMissionId?: number | string };
+  EcaStudentNotification: { externalActivityId: string };
+
   VlogHome: undefined;
   NewVlog: undefined;
   RecordVlog: {
@@ -65,6 +85,18 @@ export type StudentStackParamList = {
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
 
+function getEcaStudentTabScreenOptions({
+  route,
+}: {
+  route: { params?: EcaStudentTabRouteParams };
+}): NativeStackNavigationOptions {
+  void route;
+
+  return {
+    animation: "none",
+  };
+}
+
 export default function StudentNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -81,10 +113,15 @@ export default function StudentNavigator() {
       <Stack.Screen name="EditSchedule" component={EditScheduleScreen} />
       <Stack.Screen name="DetailSchedule" component={DetailScheduleScreen} />
 
-      <Stack.Screen name="EcaStudentDashboard" component={EcaStudentDashboard} />
-      <Stack.Screen name="EcaStudentAssignment" component={EcaStudentAssignment} />
+      <Stack.Screen name="EcaStudentDashboard" component={EcaStudentDashboard} options={getEcaStudentTabScreenOptions} />
+      <Stack.Screen name="EcaStudentAssignment" component={EcaStudentAssignment} options={getEcaStudentTabScreenOptions} />
       <Stack.Screen name="EcaStudentAssignmentSubmit" component={EcaStudentAssignmentSubmit} />
-
+      <Stack.Screen name="EcaStudentMobileAttendance" component={EcaStudentAttendance} options={getEcaStudentTabScreenOptions} />
+      <Stack.Screen name="EcaStudentMobileAttendanceSubmit" component={EcaStudentAttendanceSubmit} />
+      <Stack.Screen name="EcaStudentLeaderboard" component={EcaStudentLeaderboard} options={getEcaStudentTabScreenOptions} />
+      <Stack.Screen name="EcaStudentLeaderboardMission" component={EcaStudentLeaderboardMission} />
+      <Stack.Screen name="EcaStudentNotification" component={EcaStudentNotification} />
+      
       <Stack.Screen name="VlogHome" component={VlogHomeScreen} />
       <Stack.Screen name="NewVlog" component={NewVlogScreen} />
       <Stack.Screen name="RecordVlog" component={RecordVlogScreen} />

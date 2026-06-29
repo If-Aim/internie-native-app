@@ -3,12 +3,13 @@ import { Alert, Animated, Image, Pressable, ScrollView, View } from "react-nativ
 import Svg, { Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { syncPushToken } from "../../notifications/pushNotification";
 
 import AppText from "../../../AppText";
 import type { StudentExternalActivityResponse } from "../../api/ea";
 import { DRAWER_WIDTH, sideMenuStyles } from "./StudentSideMenu.style";
 
-type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "team-activity";
+type ActivityMenuKey = "dashboard" | "assignment" | "attendance" | "leaderboard" | "team-activity";
 type MainMenuKey = "home" | "vlog" | "mypage";
 
 const ACTIVE_COLOR = "#0166FF";
@@ -143,11 +144,11 @@ export default function StudentMobileSideMenu({
     
     if (!mounted) return null;
 
-    const activityMenus: Array<{ key: ActivityMenuKey; label: string; disabled: boolean }> = [
-        { key: "dashboard", label: isKo ? "대시보드" : "Dashboard", disabled: false },
-        { key: "assignment", label: isKo ? "과제 제출 현황" : "Assignment Status", disabled: false },
-        { key: "attendance", label: isKo ? "출석 현황" : "Attendance", disabled: true },
-        { key: "team-activity", label: isKo ? "팀 활동" : "Team Activity", disabled: true },
+    const activityMenus: Array<{ key: ActivityMenuKey; labelKey: string; disabled: boolean }> = [
+        { key: "dashboard", labelKey: "ecaStudent.appPage.bottomNav.dashboard", disabled: false },
+        { key: "assignment", labelKey: "ecaStudent.appPage.bottomNav.assignment", disabled: false },
+        { key: "attendance", labelKey: "ecaStudent.appPage.bottomNav.attendance", disabled: false },
+        { key: "leaderboard", labelKey: "ecaStudent.appPage.bottomNav.leaderboard", disabled: false },
     ];
 
     const hasActivities = activities.length > 0;
@@ -157,10 +158,14 @@ export default function StudentMobileSideMenu({
 
     async function toggleLang(): Promise<void> {
         await i18n.changeLanguage(isKo ? "en" : "ko");
+
+        syncPushToken().catch((error) => {
+            console.log("[PUSH] language sync failed:", error);
+        });
     }
 
     function showPreparing(): void {
-        Alert.alert(isKo ? "서비스 준비중입니다." : "Coming Soon");
+        Alert.alert(t("common.preparing"));
     }
 
     function closeAfter(action: () => void): void {
@@ -251,7 +256,7 @@ export default function StudentMobileSideMenu({
                                                                 }}
                                                             >
                                                                 <AppText style={[sideMenuStyles.activityMenuText, active ? sideMenuStyles.activityMenuTextActive : null]}>
-                                                                    {menu.label}
+                                                                    {t(menu.labelKey)}
                                                                 </AppText>
                                                             </Pressable>
                                                         );

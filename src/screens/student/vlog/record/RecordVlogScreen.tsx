@@ -1,9 +1,11 @@
 import React from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, PixelRatio, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, Animated, AppState, Easing, Image, InteractionManager, Modal, PixelRatio, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import type { GestureResponderEvent } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Video, { type VideoRef } from "react-native-video";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { createThumbnail } from "react-native-create-thumbnail";
 import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission, useVideoOutput } from "react-native-vision-camera";
 import Svg, { Circle, Path } from "react-native-svg";
@@ -18,6 +20,8 @@ import { commonStyles } from "../../../../theme/common.Style";
 import { styles } from "./RecordVlogScreen.style";
 
 type Props = NativeStackScreenProps<StudentStackParamList, "RecordVlog">;
+
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
 
 type MissionItem = {
     id: string;
@@ -69,17 +73,17 @@ function parseApiDate(value?: string | null): Date | null {
     return date;
 }
 
-function formatTodayText(): string {
+function formatTodayText(t: TranslationFunction): string {
     const today = new Date();
 
-    return `${today.getMonth() + 1}월 ${today.getDate()}일`;
+    return t("vlog.date.monthDay", { month: today.getMonth() + 1, day: today.getDate() });
 }
 
-function getCurrentWeekText(startDate?: string | null): string { // 오늘날 기준week 계산
+function getCurrentWeekText(startDate: string | null | undefined, t: TranslationFunction): string { // 오늘날 기준week 계산
     const start = parseApiDate(startDate);
 
     if (!start) {
-        return `1주차, ${formatTodayText()}`;
+        return t("vlog.weekWithDate", { week: 1, date: formatTodayText(t) });
     }
 
     const today = startOfDay(new Date());
@@ -87,16 +91,16 @@ function getCurrentWeekText(startDate?: string | null): string { // 오늘날 �
     const diffDays = Math.max(0, Math.floor((today.getTime() - startDay.getTime()) / 86400000));
     const week = Math.floor(diffDays / 7) + 1;
 
-    return `${week}주차, ${formatTodayText()}`;
+    return t("vlog.weekWithDate", { week, date: formatTodayText(t) });
 }
 
-function formatMissionDuration(seconds?: number | null): string {
+function formatMissionDuration(seconds: number | null | undefined, t: TranslationFunction): string {
     const safeSeconds = Number.isFinite(seconds ?? NaN) ? Math.max(0, seconds ?? 0) : 0;
 
-    return `${safeSeconds}초`;
+    return t("vlog.seconds", { seconds: safeSeconds });
 }
 
-function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
+function groupMissionsByWeek(missions: VlogResponse[], t: TranslationFunction): WeekItem[] {
     const weekMap = new Map<number, VlogResponse[]>();
 
     missions.forEach((mission) => {
@@ -118,10 +122,10 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
 
                     return {
                         id: mission.missionId ?? `${week}-${mission.order ?? 0}`,
-                        title: mission.title ?? "브이로그 미션",
-                        durationText: formatMissionDuration(mission.durationSec),
-                        background: mission.description ?? "미션 설명이 없습니다.",
-                        composition: mission.tip ?? "자유롭게 촬영해주세요.",
+                        title: mission.title ?? t("vlog.record.defaultMissionTitle"),
+                        durationText: formatMissionDuration(mission.durationSec, t),
+                        background: mission.description ?? t("vlog.record.defaultMissionDesc"),
+                        composition: mission.tip ?? t("vlog.record.defaultMissionTip"),
                         completed: missionStatus === "COMPLETED",
                         locked: false,
                         clipId: mission.lastClipId ?? null,
@@ -133,23 +137,23 @@ function groupMissionsByWeek(missions: VlogResponse[]): WeekItem[] {
                 return {
                     id: `week-${week}`,
                     week,
-                    dateText: formatTodayText(),
+                    dateText: formatTodayText(t),
                     completedCount,
                     totalCount: missionItems.length,
-                    description: `${week}주차에 진행할 브이로그 미션입니다.`,
+                    description: t("vlog.record.weekDescription", { week }),
                     missions: missionItems,
                 };
             });
 }
 
-function toFreeCaptureItems(clips?: VlogClipResponse[] | null): FreeCaptureItem[] {
+function toFreeCaptureItems(clips: VlogClipResponse[] | null | undefined, t: TranslationFunction): FreeCaptureItem[] {
     return (clips ?? [])
             .filter((clip) => clip.type === "FREE_RECORD")
             .map((clip, index) => ({
                 id: `free-${clip.clipId ?? index}`,
                 clipId: clip.clipId ?? null,
-                title: clip.displayTitle ?? clip.customTitle ?? `자유미션 ${index + 1}`,
-                durationText: formatMissionDuration(clip.durationSeconds),
+                title: clip.displayTitle ?? clip.customTitle ?? t("vlog.record.freeMissionIndexed", { index: index + 1 }),
+                durationText: formatMissionDuration(clip.durationSeconds, t),
                 thumbnailUrl: clip.thumbnailUrl ?? null,
             }));
 }
@@ -271,13 +275,14 @@ function Header({
     onBackClick: () => void;
     onMenuClick: () => void;
 }): React.ReactElement {
+    const { t } = useTranslation();
 
     return (
         <View style={styles.topbarRow}>
-            <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel="뒤로가기">
+            <Pressable style={commonStyles.iconbtn} onPress={onBackClick} accessibilityLabel={t("common.prev")}>
                 <BackIcon />
             </Pressable>
-            <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel="메뉴">
+            <Pressable style={commonStyles.iconbtn} onPress={onMenuClick} accessibilityLabel={t("common.menu")}>
                 <ThreeDotIcon />
             </Pressable>
         </View>
@@ -285,9 +290,11 @@ function Header({
 }
 
 function CameraCloseButton({ top, left, right, onClose }: { top: number; left?: number; right?: number; onClose: () => void }): React.ReactElement {
+    const { t } = useTranslation();
+
     return (
         <View style={[styles.cameraCloseButtonWrap, { top, left, right }]}>
-            <Pressable style={styles.cameraCloseIconBox} onPress={onClose} accessibilityLabel="카메라 닫기">
+            <Pressable style={styles.cameraCloseIconBox} onPress={onClose} accessibilityLabel={t("vlog.cameraClose")}>
                 <CameraCloseIcon />
             </Pressable>
         </View>
@@ -386,6 +393,7 @@ function CaptureSavingDots(): React.ReactElement {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function RecordVlogScreen({ navigation, route }: Props): React.ReactElement {
+    const { t } = useTranslation();
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
     const isLandscape = width > height;
@@ -399,9 +407,11 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
     const recordingStartedAtRef = React.useRef<number | null>(null);
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
     const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+    const isFocused = useIsFocused();
+    const permissionRequestingRef = React.useRef(false);
 
     const projectId = route.params.projectId;
-    const [title, setTitle] = React.useState(route.params?.title ?? "인턴십A");
+    const [title, setTitle] = React.useState(route.params?.title ?? t("vlog.record.defaultTitle"));
     const [subText, setSubText] = React.useState(route.params?.subText ?? "");
     const [progressPercent, setProgressPercent] = React.useState(route.params?.progressPercent ?? 0);
     const [completedMissionCount, setCompletedMissionCount] = React.useState(route.params?.completedMissionCount ?? 0);
@@ -478,7 +488,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
     React.useEffect(() => {
         void loadProjectDetail();
-    }, [projectId]);
+    }, [projectId, t]);
 
     React.useEffect(() => {
         if (!recording) {
@@ -509,17 +519,17 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             const missions = detail.missions ?? [];
 
             setTitle(detail.title ?? title);
-            setSubText(getCurrentWeekText(detail.startDate));
+            setSubText(getCurrentWeekText(detail.startDate, t));
             setProgressPercent(detail.progressPercent ?? 0);
             setCompletedMissionCount(detail.completedMissionCount ?? 0);
             setTotalMissionCount(detail.totalMissionCount ?? 0);
             setHeroThumbnailUrl(detail.lastClipThumbnailUrl ?? null);
             setHeroLastClipId(detail.lastClipId ?? null);
-            setWeeks(groupMissionsByWeek(missions));
-            setFreeClips(toFreeCaptureItems(detail.clips));
+            setWeeks(groupMissionsByWeek(missions, t));
+            setFreeClips(toFreeCaptureItems(detail.clips, t));
         } catch (error) {
             console.error("[RECORD_VLOG] load project error:", error);
-            Alert.alert("불러오기 실패", "브이로그 정보를 불러오지 못했습니다.");
+            Alert.alert(t("vlog.loadFailedTitle"), t("vlog.record.detailLoadFailed"));
         } finally {
             setLoading(false);
         }
@@ -595,7 +605,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
     async function loadHeroVideoUrl(): Promise<string | null> {
         if (!heroLastClipId) {
-            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 영상이 없습니다.");
+            Alert.alert(t("vlog.noVideoTitle"), t("vlog.noRecordedVideoDesc"));
             return null;
         }
 
@@ -603,14 +613,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             const response = await getVlogClipPlayUrl(projectId, heroLastClipId);
 
             if (!response.url) {
-                Alert.alert("재생할 영상이 없습니다.", "영상 URL을 불러오지 못했습니다.");
+                Alert.alert(t("vlog.noVideoTitle"), t("vlog.videoUrlLoadFailed"));
                 return null;
             }
 
             return response.url;
         } catch (error) {
             console.error("[RECORD_VLOG] hero play url error:", error);
-            Alert.alert("영상을 불러오지 못했습니다.", "잠시 후 다시 시도해주세요.");
+            Alert.alert(t("vlog.videoLoadFailedTitle"), t("vlog.retryLater"));
             return null;
         }
     }
@@ -619,7 +629,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         event.stopPropagation();
 
         if (!heroLastClipId) {
-            Alert.alert("재생할 영상이 없습니다.", "아직 촬영된 영상이 없습니다.");
+            Alert.alert(t("vlog.noVideoTitle"), t("vlog.noRecordedVideoDesc"));
             return;
         }
 
@@ -730,7 +740,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             setDeleteCompleteModalOpen(true);
         } catch (error) {
             console.error("[RECORD_VLOG] delete project error:", error);
-            Alert.alert("삭제 실패", "브이로그를 삭제하지 못했습니다.");
+            Alert.alert(t("vlog.deleteFailedTitle"), t("vlog.record.deleteFailedDesc"));
         } finally {
             setDeleting(false);
         }
@@ -806,19 +816,54 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         return Math.max(1, Math.min(elapsedSeconds, maxSeconds));
     }
 
+    async function requestCapturePermissions(): Promise<boolean> {
+        if (permissionRequestingRef.current) return false;
+        if (!isFocused || AppState.currentState !== "active") return false;
+
+        permissionRequestingRef.current = true;
+
+        try {
+            return await new Promise<boolean>((resolve) => {
+                InteractionManager.runAfterInteractions(async () => {
+                    try {
+                        if (!isFocused || AppState.currentState !== "active") {
+                            resolve(false);
+                            return;
+                        }
+
+                        const cameraGranted = hasCameraPermission || await requestCameraPermission();
+
+                        if (!cameraGranted) {
+                            resolve(false);
+                            return;
+                        }
+
+                        const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
+
+                        resolve(Boolean(microphoneGranted));
+                    } catch (error) {
+                        console.error("[RECORD_VLOG] permission request error:", error);
+                        resolve(false);
+                    }
+                });
+            });
+        } finally {
+            permissionRequestingRef.current = false;
+        }
+    }
+
     async function openCaptureCamera(target: { type: "MISSION" | "FREE"; mission: MissionItem | null; freeClip: FreeCaptureItem | null }): Promise<void> {
         if (recording || savingClip) return;
 
-        const cameraGranted = hasCameraPermission || await requestCameraPermission();
-        const microphoneGranted = hasMicrophonePermission || await requestMicrophonePermission();
+        const permissionGranted = await requestCapturePermissions();
 
-        if (!cameraGranted || !microphoneGranted) {
-            Alert.alert("권한이 필요합니다.", "브이로그 촬영을 위해 카메라와 마이크 권한이 필요합니다.");
+        if (!permissionGranted) {
+            Alert.alert(t("vlog.permissionRequiredTitle"), t("vlog.cameraMicPermissionDesc"));
             return;
         }
 
         if (!cameraDevice) {
-            Alert.alert("카메라 오류", "사용 가능한 카메라를 찾지 못했습니다.");
+            Alert.alert(t("vlog.cameraErrorTitle"), t("vlog.cameraUnavailable"));
             return;
         }
 
@@ -856,14 +901,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     console.error("[RECORD_VLOG] recording error:", error);
                     recorderRef.current = null;
                     setRecording(false);
-                    Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+                    Alert.alert(t("vlog.recordFailedTitle"), t("vlog.recordFailedDesc"));
                 }
             );
         } catch (error) {
             console.error("[RECORD_VLOG] start recording error:", error);
             recorderRef.current = null;
             setRecording(false);
-            Alert.alert("촬영 실패", "영상을 촬영하지 못했습니다.");
+            Alert.alert(t("vlog.recordFailedTitle"), t("vlog.recordFailedDesc"));
         }
     }
 
@@ -879,7 +924,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
     function handleCloseCamera(): void {
         if (recording) {
-            Alert.alert("촬영 중입니다.", "촬영 중에는 카메라를 닫을 수 없습니다.");
+            Alert.alert(t("vlog.recordingTitle"), t("vlog.cannotCloseCameraWhileRecording"));
             return;
         }
 
@@ -893,7 +938,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const nextCameraDevice = nextPosition === "front" ? frontCameraDevice : backCameraDevice;
 
         if (!nextCameraDevice) {
-            Alert.alert("카메라 오류", "전환할 수 있는 카메라를 찾지 못했습니다.");
+            Alert.alert(t("vlog.cameraErrorTitle"), t("vlog.cameraSwitchUnavailable"));
             return;
         }
 
@@ -953,7 +998,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
     async function uploadCaptureResultVideo(result: typeof captureResult): Promise<{ clipInput: VlogClipCompleteInput; thumbnailUri: string | null }> {
         if (!result.videoUri) {
-            throw new Error("촬영 영상 주소가 없습니다.");
+            throw new Error(t("vlog.record.videoUriMissing"));
         }
 
         const now = Date.now();
@@ -977,7 +1022,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         }
 
         if (!thumbnailUri) {
-            throw new Error("썸네일을 생성하지 못했습니다.");
+            throw new Error(t("vlog.thumbnailCreateFailed"));
         }
 
         const upload = await createVlogUploadUrl({
@@ -988,7 +1033,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         });
 
         if (!upload.uploadUrl || !upload.fileKey) {
-            throw new Error("영상 업로드 URL을 발급받지 못했습니다.");
+            throw new Error(t("vlog.record.videoUploadUrlMissing"));
         }
 
         await uploadFileToPresignedUrl(upload.uploadUrl, result.videoUri, contentType);
@@ -1001,7 +1046,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         });
 
         if (!thumbnailUpload.uploadUrl || !thumbnailUpload.fileKey) {
-            throw new Error("썸네일 업로드 URL을 발급받지 못했습니다.");
+            throw new Error(t("vlog.record.thumbnailUploadUrlMissing"));
         }
 
         await uploadFileToPresignedUrl(thumbnailUpload.uploadUrl, thumbnailUri, thumbnailContentType);
@@ -1015,7 +1060,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 sizeBytes: null,
                 durationSeconds,
                 thumbnailKey: thumbnailUpload.fileKey,
-                customTitle: result.type === "FREE" ? "자유 촬영" : null,
+                customTitle: result.type === "FREE" ? t("vlog.freeCapture") : null,
             },
         };
     }
@@ -1026,7 +1071,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const currentResult = captureResult;
 
         if (!currentResult.videoUri) {
-            Alert.alert("저장 실패", "촬영한 영상 정보가 없습니다.");
+            Alert.alert(t("vlog.saveFailedTitle"), t("vlog.record.videoInfoMissing"));
             return;
         }
 
@@ -1047,7 +1092,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 } else {
                     await createFreeClip(projectId, {
                         ...clipInput,
-                        customTitle: "자유 촬영",
+                        customTitle: t("vlog.freeCapture"),
                     });
                 }
             } else {
@@ -1081,7 +1126,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         } catch (error) {
             console.error("[RECORD_VLOG] save clip error:", error);
             setCaptureResult((prev) => ({ ...prev, mode: "READY" }));
-            Alert.alert("저장 실패", "촬영한 영상을 저장하지 못했습니다.");
+            Alert.alert(t("vlog.saveFailedTitle"), t("vlog.record.saveClipFailed"));
         } finally {
             setSavingClip(false);
         }
@@ -1199,14 +1244,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
                 <View style={styles.missionInfoRow}>
                     <View style={styles.missionBadge}>
-                        <AppText style={styles.missionBadgeText}>배경</AppText>
+                        <AppText style={styles.missionBadgeText}>{t("vlog.record.background")}</AppText>
                     </View>
                     <AppText style={styles.missionDesc}>{mission.background}</AppText>
                 </View>
 
                 <View style={styles.missionInfoRow}>
                     <View style={styles.missionBadge}>
-                        <AppText style={styles.missionBadgeText}>구도</AppText>
+                        <AppText style={styles.missionBadgeText}>{t("vlog.record.composition")}</AppText>
                     </View>
                     <AppText style={styles.missionDesc}>{mission.composition}</AppText>
                 </View>
@@ -1216,7 +1261,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     onPress={() => handlePressRecord(mission)}
                 >
                     <AppText style={[styles.missionRecordText, mission.completed ? styles.missionRecordTextActive : null]}>
-                        {mission.completed ? "다시 촬영하기" : "촬영하기"}
+                        {mission.completed ? t("vlog.recordAgain") : t("vlog.recordAction")}
                     </AppText>
                 </Pressable>
             </View>
@@ -1233,7 +1278,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     <CheckCircleIcon active={complete} />
 
                     <View style={styles.weekTitleWrap}>
-                        <AppText style={styles.weekTitle}>{week.week}주차</AppText>
+                        <AppText style={styles.weekTitle}>{t("vlog.week", { week: week.week })}</AppText>
                     </View>
 
                     <AppText style={styles.weekCount}>{week.completedCount}/{week.totalCount}</AppText>
@@ -1268,27 +1313,27 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 <View style={[styles.captureOverlay, styles.captureOverlayLight]}>
                     <View style={styles.captureBody}>
                         <CaptureSavingDots />
-                        <AppText style={styles.captureSavingTitle}>브이로그 저장중</AppText>
+                        <AppText style={styles.captureSavingTitle}>{t("vlog.record.savingVlog")}</AppText>
                     </View>
                 </View>
             );
         }
 
         if (captureResult.mode === "DONE") {
-            const subTitle = captureResult.isEditReady ? "편집해볼까요?" : "다른 미션도 해볼까요?";
-            const primaryText = captureResult.isEditReady ? "편집하기" : "다른 미션하기";
+            const subTitle = captureResult.isEditReady ? t("vlog.record.readyToEdit") : t("vlog.record.tryOtherMission");
+            const primaryText = captureResult.isEditReady ? t("vlog.editAction") : t("vlog.record.otherMission");
 
             return (
                 <View style={[styles.captureOverlay, styles.captureOverlayLight]}>
                     <View style={styles.captureBody}>
                         <Image source={require("../../../../assets/images/internie_mascot_normal.png")} style={styles.captureSuccessImg} resizeMode="contain" />
-                        <AppText style={styles.captureSuccessTitle}>브이로그가{"\n"}생성되었어요</AppText>
+                        <AppText style={styles.captureSuccessTitle}>{t("vlog.record.created")}</AppText>
                         <AppText style={styles.captureSuccessSubTitle}>{subTitle}</AppText>
                     </View>
 
                     <View style={styles.captureActionArea}>
                         <Pressable style={styles.captureAgainButton} onPress={handlePressCaptureHome}>
-                            <AppText style={styles.captureAgainText}>처음으로</AppText>
+                            <AppText style={styles.captureAgainText}>{t("vlog.record.toStart")}</AppText>
                         </Pressable>
 
                         <Pressable style={styles.captureNextButton} onPress={handlePressCaptureDonePrimary}>
@@ -1310,16 +1355,16 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
 
                 <View style={styles.captureBody}>
                     <CaptureCheckIcon />
-                    <AppText style={styles.captureTitle}>촬영완료!</AppText>
+                    <AppText style={styles.captureTitle}>{t("vlog.record.captureComplete")}</AppText>
                 </View>
 
                 <View style={styles.captureActionArea}>
                     <Pressable style={styles.captureAgainButton} onPress={handleRetryCapture}>
-                        <AppText style={styles.captureAgainText}>다시 촬영하기</AppText>
+                        <AppText style={styles.captureAgainText}>{t("vlog.recordAgain")}</AppText>
                     </Pressable>
 
                     <Pressable style={styles.captureNextButton} onPress={handleConfirmClip} disabled={savingClip}>
-                        <AppText style={styles.captureNextText}>다음으로</AppText>
+                        <AppText style={styles.captureNextText}>{t("vlog.next")}</AppText>
                     </Pressable>
                 </View>
             </View>
@@ -1378,10 +1423,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
         const cameraFoldButtonLeft = isLandscape ? landscapeFoldOpenLeft : portraitFoldLeft;
         const cameraFoldButtonTop = isLandscape ? landscapeFoldTop : portraitFoldOpenTop;
 
-        const missionTitle = captureTarget?.type === "FREE" ? "자유 촬영" : captureTarget?.mission?.title ?? "브이로그 미션";
-        const missionDuration = captureTarget?.type === "FREE" ? "6초" : captureTarget?.mission?.durationText ?? "6초";
-        const missionBackground = captureTarget?.mission?.background ?? "나의 인턴십 과정을 자유롭게 촬영해보세요.";
-        const missionComposition = captureTarget?.mission?.composition ?? "자유롭게 촬영해주세요.";
+        const missionTitle = captureTarget?.type === "FREE" ? t("vlog.freeCapture") : captureTarget?.mission?.title ?? t("vlog.record.defaultMissionTitle");
+        const missionDuration = captureTarget?.type === "FREE" ? t("vlog.sixSeconds") : captureTarget?.mission?.durationText ?? t("vlog.sixSeconds");
+        const missionBackground = captureTarget?.mission?.background ?? t("vlog.record.freeCaptureDesc");
+        const missionComposition = captureTarget?.mission?.composition ?? t("vlog.record.defaultMissionTip");
 
         return (
             <Modal visible={cameraOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={handleCloseCamera}>
@@ -1453,14 +1498,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                                     >
                                         <View style={styles.cameraMissionInfoRow}>
                                             <View style={styles.cameraMissionBadge}>
-                                                <AppText style={styles.cameraMissionBadgeText}>배경</AppText>
+                                                <AppText style={styles.cameraMissionBadgeText}>{t("vlog.record.background")}</AppText>
                                             </View>
                                             <AppText style={styles.cameraMissionDesc}>{missionBackground}</AppText>
                                         </View>
 
                                         <View style={styles.cameraMissionInfoRow}>
                                             <View style={styles.cameraMissionBadge}>
-                                                <AppText style={styles.cameraMissionBadgeText}>구도</AppText>
+                                                <AppText style={styles.cameraMissionBadgeText}>{t("vlog.record.composition")}</AppText>
                                             </View>
                                             <AppText style={styles.cameraMissionDesc}>{missionComposition}</AppText>
                                         </View>
@@ -1514,13 +1559,13 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                                 ]}
                                 onPress={toggleCameraPosition}
                                 disabled={recording}
-                                accessibilityLabel="카메라 전후면 전환"
+                                accessibilityLabel={t("vlog.cameraSwitch")}
                             >
                                 <CameraSwitchIcon />
                             </Pressable>
 
                             {recording ? (
-                                <AppText style={styles.cameraRecordTime}>{recordSeconds}/{getCaptureMaxDurationSeconds()}초</AppText>
+                                <AppText style={styles.cameraRecordTime}>{t("vlog.record.secondsProgress", { current: recordSeconds, total: getCaptureMaxDurationSeconds() })}</AppText>
                             ) : null}
                         </View>
                     </View>
@@ -1536,14 +1581,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     <CheckCircleIcon active={freeClips.length >= 0} />
 
                     <View style={styles.weekTitleWrap}>
-                        <AppText style={styles.weekTitle}>자유 촬영</AppText>
+                        <AppText style={styles.weekTitle}>{t("vlog.freeCapture")}</AppText>
                     </View>
 
                     <ChevronIcon open={true} />
                 </View>
 
                 <View style={styles.weekBody}>
-                    <AppText style={styles.weekDesc}>나의 인턴십 과정을 자유롭게 촬영해보세요. 하루에 2번만 가능해요.</AppText>
+                    <AppText style={styles.weekDesc}>{t("vlog.record.freeCaptureDescWithLimit")}</AppText>
 
                     {freeClips.map((clip) => renderFreeClip(clip))}
 
@@ -1554,13 +1599,13 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             </View>
 
                             <View style={styles.missionTitleWrap}>
-                                <AppText style={styles.missionTitle}>나의 일상을 자유롭게 기록해볼까요?</AppText>
-                                <AppText style={styles.missionDuration}>6초</AppText>
+                                <AppText style={styles.missionTitle}>{t("vlog.record.freeCapturePrompt")}</AppText>
+                                <AppText style={styles.missionDuration}>{t("vlog.sixSeconds")}</AppText>
                             </View>
                         </View>
 
                         <Pressable style={styles.missionRecordButton} onPress={() => handlePressFreeCapture(null)}>
-                            <AppText style={styles.missionRecordText}>촬영하기</AppText>
+                            <AppText style={styles.missionRecordText}>{t("vlog.recordAction")}</AppText>
                         </Pressable>
                     </View>
                 </View>
@@ -1587,7 +1632,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                 </View>
 
                 <Pressable style={[styles.missionRecordButton, styles.missionRecordButtonActive]} onPress={() => handlePressFreeCapture(clip)} >
-                    <AppText style={[styles.missionRecordText, styles.missionRecordTextActive]}>다시 촬영하기</AppText>
+                    <AppText style={[styles.missionRecordText, styles.missionRecordTextActive]}>{t("vlog.recordAgain")}</AppText>
                 </Pressable>
             </View>
         );
@@ -1604,7 +1649,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             setDeleteModalOpen(true);
                         }}
                     >
-                        <AppText style={styles.menuDeleteText}>삭제하기</AppText>
+                        <AppText style={styles.menuDeleteText}>{t("common.delete")}</AppText>
                     </Pressable>
                 </Pressable>
             </Modal>
@@ -1619,7 +1664,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     <Pressable style={styles.modalDim} onPress={() => setDeleteModalOpen(false)} />
 
                     <View style={styles.deleteModalBox}>
-                        <AppText style={styles.deleteModalTitle}>브이로그를 삭제하시겠어요?</AppText>
+                        <AppText style={styles.deleteModalTitle}>{t("vlog.record.deleteConfirmTitle")}</AppText>
                         <View style={styles.deleteModalButtonRow}>
                             <Pressable
                                 style={styles.deleteConfirmButton}
@@ -1628,10 +1673,10 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                                     handleDeleteProject().catch(console.error);
                                 }}
                             >
-                                <AppText style={styles.deleteConfirmText}>{deleting ? "삭제 중..." : "예"}</AppText>
+                                <AppText style={styles.deleteConfirmText}>{deleting ? t("vlog.deleting") : t("common.yes")}</AppText>
                             </Pressable>
                             <Pressable style={styles.deleteCancelButton} onPress={() => setDeleteModalOpen(false)} disabled={deleting}>
-                                <AppText style={styles.deleteCancelText}>아니요</AppText>
+                                <AppText style={styles.deleteCancelText}>{t("common.no")}</AppText>
                             </Pressable>
                         </View>
                     </View>
@@ -1648,7 +1693,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     <View style={styles.modalDim} />
 
                     <View style={styles.deleteCompleteModalBox}>
-                        <AppText style={styles.deleteCompleteModalTitle}>브이로그가 삭제되었어요</AppText>
+                        <AppText style={styles.deleteCompleteModalTitle}>{t("vlog.record.deleteComplete")}</AppText>
 
                         <Pressable
                             style={styles.deleteCompleteButton}
@@ -1657,7 +1702,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                                 navigation.goBack();
                             }}
                         >
-                            <AppText style={styles.deleteCompleteButtonText}>확인</AppText>
+                            <AppText style={styles.deleteCompleteButtonText}>{t("common.confirm")}</AppText>
                         </Pressable>
                     </View>
                 </View>
@@ -1716,14 +1761,14 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                             }}
                             onError={(error) => {
                                 console.error("[RECORD_VLOG] hero video error:", error);
-                                Alert.alert("영상 재생에 실패했습니다.", "잠시 후 다시 시도해주세요.");
+                                Alert.alert(t("vlog.videoPlayFailedTitle"), t("vlog.retryLater"));
                                 resetHeroPlayer();
                             }}
                         />
                     ) : resolvedHeroThumbnailUrl ? (
                         <Image source={{ uri: resolvedHeroThumbnailUrl }} style={styles.heroThumbnailImage} resizeMode="cover" />
                     ) : (
-                        <AppText style={styles.heroEmptyText}>아직 촬영한 영상이 없어요</AppText>
+                        <AppText style={styles.heroEmptyText}>{t("vlog.noRecordedVideo")}</AppText>
                     )}
 
                     {heroLastClipId ? (
@@ -1789,7 +1834,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
                     ) : null}
                 </View>
 
-                <AppText style={styles.sectionTitle}>인턴십 일정</AppText>
+                <AppText style={styles.sectionTitle}>{t("vlog.record.internshipSchedule")}</AppText>
 
                 <View style={styles.weekList}>
                     {loading ? (
@@ -1808,7 +1853,7 @@ export default function RecordVlogScreen({ navigation, route }: Props): React.Re
             <LinearGradient colors={["rgba(255, 255, 255, 0)", "#F0F6FF"]} locations={[0, 0.1469]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.bottomGradientBar} pointerEvents="none" />
             <View style={styles.editButtonWrap}>
                 <Pressable style={styles.editButton} onPress={handlePressEdit}>
-                    <AppText style={styles.editButtonText}>편집하기</AppText>
+                    <AppText style={styles.editButtonText}>{t("vlog.editAction")}</AppText>
                 </Pressable>
             </View>
 

@@ -1,20 +1,20 @@
 {
 	"comment_login": "로그인 관련",
 	"login": {
-        "title": "Welcome",
+        "title": "Log In",
         "subtitle": "A new standard of hiring built through process, Internie",
-		"desktopTitle": "Welcome",
-        "desktopSubtitle": "A new standard of hiring built through process, Internie",
+		"desktopTitle": "Log In",
+        "desktopSubtitle": "Welcome to Internie",
         "id": "ID",
-		"pw": "Password",
-		"idPlaceholder": "Enter your ID",
-        "passwordPlaceholder": "Enter your password",
-        "findId": "Forgot ID?",
-        "findPassword": "Forgot password?",
-        "socialLogin": "Or sign in with",
+		"pw": "P/W",
+		"idPlaceholder": "Please enter your ID",
+        "passwordPlaceholder": "Please enter your password",
+        "findId": "Find ID",
+        "findPassword": "Find Password",
+        "socialLogin": "Or Easy Login",
         "loginButton": "Log in",
         "loginLoading": "Logging in...",
-        "loginFailed": "Login Failed",
+		"loginFailed": "Login Failed",
         "signupPrompt": "New to Internie?",
         "signupLink": "Sign up",
         "startWithKakao": "Continue with Kakao",
@@ -23,9 +23,9 @@
         "startWithGoogle": "Continue with Google",
 		"startWithApple": "Continue with Apple",
         "startWithGoogleAria": "Continue with Google",
-        "loginWithGoogle": "Log in with Google",
+        "loginWithGoogle": "Google Login",
         "getLoginTitle": "Login Required",
-        "getLoginSub": "Registration of the schedule and recording of the answer will be available after logging in.",
+        "getLoginSub": "Would you like to log in?",
 		"googleNotReady": "Google login is being prepared. Please try again shortly.",
 		"googleLoginFailed": "Google login failed.",
 		"localLoginRequired": "Please enter both your ID and password.",
@@ -38,7 +38,21 @@
 		"withKakaoTalk": "Continue with KakaoTalk",
 		"withKakaoAccount": "Continue with Kakao Account",
 		"googleTokenMissing": "Google ID token is missing.",
-		"authorizationHeaderMissing": "Authorization header is missing."
+		"authorizationHeaderMissing": "Authorization header is missing.",
+		"googlePreparing": "Preparing Google login",
+		"googleLoadFailedShort": "Google login unavailable",
+        "googleLoadFailed": "Failed to load Google login. Please check your browser settings or network.",
+		"invalidLogin": "The ID or password is incorrect.",
+		"withdrawnAccount": "This account has been deleted. You can sign up again with the same email address after 30 days.",
+		"privacy": "Privacy",
+        "kakaoTalkNativeMissing": "KakaoLogin.loginWithTalk native module was not found.",
+        "kakaoAccountNativeMissing": "KakaoLogin.loginWithAccount native module was not found.",
+        "googleNativeMissing": "GoogleLogin.signIn native module was not found.",
+        "googleNoCredential": "No available Google account was found. Please check that a Google account is signed in on this device.",
+        "googleUnexpectedError": "Something went wrong during Google login. Please try again shortly.",
+        "appleTokenMissing": "Apple identityToken was not received.",
+        "appleLoginFailed": "Apple login failed.",
+        "appleUnexpectedError": "Something went wrong during Apple login."
     },
     "signup": {
         "title": "Sign Up",
@@ -46,8 +60,7 @@
 		"hasAccount": "Already have an account?",
         "returnLogin": "Login",
 		"next": "Next",
-		"prev": "Previous",
-
+		"prev": "Back",
         "loginIdPlaceholder": "Enter your ID",
 		"checkLoginId": "Check ID",
 		"checking": "Checking...",
@@ -57,18 +70,24 @@
 		"loginIdAvailable": "This ID is available.",
 		"alreadyAccount": "An account with this information already exists.",
         "passwordPlaceholder": "Enter your password",
-		"passwordConfirm": "Confirm Password",
+		"passwordConfirm": "Check Password",
         "passwordConfirmPlaceholder": "Confirm your password",
         "name": "Name",
         "namePlaceholder": "Enter your name",
 		"email": "Email",
         "emailPlaceholder": "Enter your email",
-        "loginIdGuide": "ID must be 4–20 characters using lowercase letters or numbers",
-        "passwordGuide": "Password must be 8–20 characters long and include letters, numbers, and special characters (@$!%*#?&).",
-
+		"loginIdGuide": "Use 4–20 characters with lowercase letters, numbers, _, or -",
+		"loginIdInvalidChar": "Only lowercase letters, numbers, _, and - are allowed",
+		"loginIdInvalidLength": "ID must be 4–20 characters",
+		"passwordGuide": "Use 8–20 characters with letters, numbers, and @$!%*#?&",
+		"passwordInvalidChar": "Allowed special characters are @$!%*#?&",
+		"passwordInvalidLength": "Password must be 8–20 characters",
+		"passwordMissingLetter": "Include at least one letter",
+		"passwordMissingNumber": "Include at least one number",
+		"passwordMissingSpecial": "Include at least one special character (@$!%*#?&)",
 		"sending": "Sending...",
 		"verifyCode": "Verification Code",
-		"sendVerifyCode": "Send code",
+		"sendVerifyCode": "Send Code",
 		"getEmailVC": "Verify",
 		"enterVerify": "Verify",
 		"resendEmailVC": "Resend",
@@ -101,6 +120,7 @@
 		"emailVerifiedDone": "Email verification completed for {{email}}.",
 		"emailCodeResent": "A new verification code has been sent to {{email}}.",
 		"emailCooldownActive": "Please wait before requesting another verification code.",
+		
 		"alreadyLocal": "An account with this email already exists.",
 		"alreadyGoogle": "This account is already registered\nwith Google.",
 		"alreadyKakao": "This account is already registered\nwith Kakao.",
@@ -109,7 +129,8 @@
 		"invalidPasswordFormat": "The password format is invalid."
     },
 	"findId": {
-		"title": "Email Verifying",
+		"title": "Find ID",
+		"subtitle": "Verify your email and receive your ID at the email address you used when signing up.",
 		"emailLabel": "Email",
 		"emailPlaceholder": "Enter your email.",
 		"codeLabel": "Code",
@@ -127,6 +148,7 @@
 		"checkMailbox": "Please check your mailbox",
 		"emailRequired": "Please enter your email.",
 		"codeRequired": "Please enter the verification code.",
+		"codeExpired": "The verification code has expired. Please request a new one.",
 		"codeSendFail": "Failed to send the verification code.",
 		"codeVerifyFail": "Failed to verify the code.",
 		"accountNotFound": "No matching account was found.",
@@ -161,6 +183,7 @@
 		"requiredLoginIdEmail": "Please enter your ID and email.",
 		"codeSendFail": "Failed to send the verification code.",
 		"codeRequired": "Please enter the verification code.",
+		"codeExpired": "The verification code has expired. Please request a new one.",
 		"codeVerifyFail": "The verification code is invalid.",
 
 		"passwordRequired": "Please enter your password.",
@@ -177,6 +200,11 @@
 
 	"comment_main": "기본 컴포넌트 관련",
 	"common": {
+        "prev": "Back",
+        "edit": "Edit",
+        "select": "Select",
+        "filter": "Filter",
+		"search": "Search",
 		"time": "Time",
 		"close": "Close",
 		"record": "Record",
@@ -187,16 +215,42 @@
 		"save": "Save",
 		"dateRange": "Period",
         "loading": "Loading…",
-		"done": "Done",
-		"cancel": "Cancel"
-	},
+        "done": "Done",
+        "cancel": "Cancel",
+        "login": "Log in",
+        "continue": "Continue",
+        "error": "Error",
+        "notice": "Notice",
+        "saved": "Saved.",
+        "saveFail": "Update failed",
+        "saveFailDefault": "Failed to update.",
+        "preparing": "Coming Soon",
+        "adminUnsupported": "Admin pages are not supported in the app.",
+        "move": "Move",
+        "delete": "Delete",
+        "yes": "Yes",
+        "no": "No"
+    },
 	"menu": {
 		"home": "Home",
 		"mypage": "Profile",
+		"profile": "Profile",
 		"recent": "Recent Activity",
 		"settings": "Settings & Privacy",
 		"vlog": "Vlog",
-		"language": "Language"
+		"language": "Language",
+		"programAdminPage": "Program Admin"
+	},
+	"clientAdmin": {
+		"defaultAdminName": "Admin",
+		"adminLabel": "{{name}}",
+		"dashboard": "Dashboard",
+		"analysis": "Participants",
+		"settings": "Settings",
+		"comingSoon": "Coming Soon",
+		"kakaoClientName": "Kakao Venture",
+		"jumpClientName": "JUMP",
+		"defaultClientName": "Client"
 	},
 	"empty": {
 		"title": "No schedules yet.",
@@ -218,7 +272,16 @@
 		"edit": "Edit Schedule"
 	},
 	"calendar": {
-		"selectMonth": "Select Month"
+		"selectMonth": "Select Month",
+        "weekdaysShort": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        }
 	},
 	"filter": {
 		"title": "Filter",
@@ -233,7 +296,55 @@
 		"date": {
 			"today": "{{day}} Today",
 			"weekday": "{{day}} {{weekday}}"
+		},
+		"emailVerify": {
+			"title": "Email Verification",
+			"desc": "Please verify your email to keep your account secure and sign in reliably.",
+			"emailPlaceholder": "Enter your email",
+			"codePlaceholder": "Enter the verification code",
+			"sending": "Sending",
+			"sendCode": "Get Code",
+			"later": "Later",
+			"verifying": "Verifying",
+			"verify": "Verify",
+			"emailRequired": "Please enter your email.",
+			"existingAccountTitle": "An account already exists.",
+			"existingAccountDesc": "Please log in with that account.",
+			"codeSent": "A verification code has been sent to {{email}}.",
+			"codeSendFail": "Failed to send the verification code.",
+			"emailVerifyFailed": "Email verification failed.",
+			"complete": "Email verification has been completed.",
+			"invalidOrExpiredCode": "The verification code is invalid or has expired."
 		}
+	},
+	"questions": {
+		"permissionTitle": "Microphone Permission",
+		"permissionMessage": "Microphone permission is required to record.",
+		"allow": "Allow",
+		"deny": "Deny",
+		"uploadTooLargeTitle": "Cannot Upload",
+		"uploadTooLargeMessage": "The recording file is too large to upload.\nPlease record a shorter answer and try again.",
+		"sttUploadFailedTitle": "STT Upload Failed",
+		"errorTitle": "Error",
+		"sttNetworkError": "A network error occurred while uploading STT.",
+		"noticeTitle": "Notice",
+		"emptyQuestions": "There are no questions to show.",
+		"completedQuestions": "You have completed all questions.\nPlease continue from the next schedule.",
+		"questionFetchFailedTitle": "Failed to Load Questions",
+		"questionNetworkError": "A network error occurred while loading questions.",
+		"micPermissionRequired": "Please allow microphone permission to record.",
+		"uploadFailedTitle": "Upload Failed",
+		"uploadFailedMessage": "Upload failed.\nPlease check your network and try again.",
+		"fallbackTitle": "Record",
+		"progress": "Progress",
+		"loadingQuestion": "Loading questions…",
+		"micStart": "Start Recording",
+		"recordingNow": "Speak now",
+		"preparingRecord": "Internie is getting\nready to record!",
+		"micStop": "Stop Recording",
+		"recordComplete": "Recording complete!",
+		"analyzingTitle": "Analyzing Competency",
+		"analyzingDesc": "Internie is analyzing your answer!\nThis may take about 5 minutes."
 	},
 
 	"comment_schedule": "일정 관련",
@@ -265,6 +376,7 @@
 		"complete": "Updated successfully.",
 		
 		"deleteFailedWithMessage": "Failed to delete the schedule.\n({{message}})",
+		"editFailedWithMessage": "Failed to update the schedule.\n({{message}})",
 		"cannotDeleteWithRecording": "Schedules with recordings cannot be deleted.",
 		"cannotDeleteHasRecord": "Schedules with saved records cannot be deleted.",
 		"startDateLockedAfterFirstRecording": "The start date cannot be changed after the first recording date.",
@@ -290,7 +402,114 @@
         "needName": "Please enter your name.",
         "edit": "Edit",
 		"delete": "Delete",
+
+		"profileEdit": {
+			"nickname": "Nickname",
+			"nicknamePlaceholder": "Nickname",
+			"linkedin": "LinkedIn",
+			"email": "Email",
+			"studentId": "Student ID",
+			"studentIdPlaceholder": "Student ID",
+			"major": "Major",
+			"majorPlaceholder": "Major",
+			"campus": "Campus",
+			"campusPlaceholder": "Campus",
+			"invalidLinkedinUrl": "Please enter a valid LinkedIn URL.",
+			"updateFailed": "Failed to update profile",
+			"emailChangeTitle": "Change Email",
+			"emailChangeConfirmDesc": "Email verification is required to change your email. Do you want to continue?",
+			"emailVerifyTitle": "Email Verification",
+			"emailVerifyDesc": "Please verify your email to change it.",
+			"emailPlaceholder": "Please enter your email",
+			"codePlaceholder": "Please enter the verification code",
+			"sendCode": "Get Code",
+			"sending": "Sending",
+			"later": "Later",
+			"verify": "Verify",
+			"verifying": "Verifying",
+			"cancel": "Cancel",
+			"continue": "Continue",
+			"emailRequired": "Please enter your email.",
+			"codeRequired": "Please enter the verification code.",
+			"sameEmail": "This is the same as your current email. Please enter a different email.",
+			"existingAccount": "An account already exists with this email. Please log in with that account.",
+			"codeSent": "A verification code has been sent to {{email}}.",
+			"sendCodeFailed": "Failed to send the verification code.",
+			"emailSendError": "An error occurred while sending the email.",
+			"emailVerifyFailed": "Email verification failed.",
+			"sameEmailNotChanged": "The email was not changed because it is the same as your current email.",
+			"emailChangeComplete": "Your email has been changed.",
+			"codeInvalidOrExpired": "The verification code is invalid or has expired.",
+			"emailVerifyError": "An error occurred during email verification."
+		},
+
+		"verifyCodePage": {
+			"codeRequired": "Please enter the verification code.",
+			"verifyComplete": "Verification has been completed.",
+			"invalidCode": "The verification code is incorrect.",
+			"alreadyJoinedActivity": "You have already joined this activity.",
+			"disabledInviteCode": "This invitation code is disabled.",
+			"verifyFailed": "Verification failed.",
+			"centerLoadFailed": "Failed to load the center list.",
+			"centerSaveComplete": "Your center has been saved.",
+			"centerSaveFailed": "Failed to save your center.",
+			"studentNumberRequired": "Please enter your student ID.",
+			"studentNumberSaveComplete": "Your student ID has been saved.",
+			"studentNumberSaveFailed": "Failed to save your student ID.",
+			"selectCenterTitle": "Select Center",
+			"selectCenterDesc": "Please select your JUMP center.",
+			"selectCenterPlaceholder": "Select Center",
+			"centerListLabel": "Center List",
+			"loading": "Loading...",
+			"close": "Close",
+			"saving": "Saving...",
+			"save": "Save",
+			"studentNumberTitle": "Enter Student ID",
+			"studentNumberDesc": "Kakao-verified users need to enter their student ID.",
+			"studentNumberPlaceholder": "Enter Student ID",
+			"selectJumpCenter": "Select JUMP Center",
+			"editStudentNumber": "Edit Student ID",
+			"checking": "Checking...",
+            "alreadyVerified": "This code has already been verified."
+		},
+        "certificates": {
+            "actionMessage": "What would you like to do?",
+            "preview": "Preview",
+            "previewFailed": "Preview Failed",
+            "fileOpenFailed": "Could not open the file.",
+            "share": "Share",
+            "shareFailed": "Share Failed",
+            "shareUnavailable": "Could not share this file."
+        },
+        "schoolVerifyPage": {
+            "schoolNotFound": "School not found.",
+            "invalidSchool": "The school information is invalid.",
+            "schoolSelectFailed": "Failed to select the school.",
+            "queryRequired": "Please enter a search term.",
+            "schoolSearchFailed": "Failed to search schools.",
+            "alreadyApproved": "This user has already been approved.",
+            "userNotFound": "User not found.",
+            "uploadFailed": "Upload failed. Please try again.",
+            "title": "Select your school",
+            "searching": "Searching...",
+            "noSearchResults": "No search results.",
+            "saving": "Saving...",
+            "next": "Next",
+            "uploadTitle": "A student ID photo is required\nto verify your student status",
+            "uploadGuide": "For privacy, please hide\ncard numbers and sensitive details.",
+            "pickPhoto": "Choose Photo",
+            "takeStudentCardPhoto": "Take Student ID Photo",
+            "uploadComplete": "Student ID Uploaded",
+            "studentCardPhotoLabel": "(Student ID Photo)",
+            "reviewHint": "Student verification may take\nabout one week.",
+            "repickPhoto": "Choose Another Photo",
+            "submitting": "Submitting...",
+            "submit": "Submit",
+            "submitted": "Submitted"
+        },
+		
 		"Withdraw": "Delete Account",
+        "memberFallback": "Member",
 		"WithdrawTitle": "Are you leaving us, {{name}}?",
 		"WithdrawTitle2": "We’re really sorry to see you go",
 		"WithdrawDesc": "If you delete your Internie account, your records, certificates,",
@@ -298,6 +517,15 @@
 		"WithdrawDesc3": "This data cannot be restored.",
 		"WithdrawQuestion": "We’d like to know why you’re leaving, {{name}}",
 		"WithdrawReasonSelect": "Select a reason",
+
+		"WithdrawNoticeTitle": "Please check before deleting your account",
+		"WithdrawNoticeDesc": "After deleting your account, it will be immediately deactivated and all account information will be permanently deleted after 30 days.",
+		"WithdrawNoticeDesc2": "You cannot sign up again with the same email address for 30 days after deletion.",
+		"WithdrawSubmit": "Delete Account",
+		"WithdrawSubmitting": "Processing...",
+        "withdrawErrorDesc": "An error occurred while deleting your account.",
+        "withdrawConfirmTitle": "Delete Account",
+        "withdrawConfirmDesc": "Are you sure you want to delete your account?\nThis action cannot be undone.",
         "WithdrawR": {
 			"reason": {
 				"notUsing": "No longer using the service",
@@ -322,6 +550,7 @@
 		"notSet": "Not Set",
 		"certs": "My Certificates",
 		"noCerts": "No certificate issued.",
+        "rejectReasonLabel": "Reason:",
 		"editProfile": "Edit Profile",
 		"verifyCode": "Verification Code",
 		"logout": "Logout"
@@ -336,6 +565,32 @@
 	"mypage_modal": {
 		"title": "Student ID Verification Failed",
 		"reVerify": "Try Again"
+	},
+
+	"userModify": {
+		"emailRequired": "Please enter your email.",
+		"sameEmail": "This is the same as your current email. Please enter a different email.",
+		"existingAccount": "An account already exists with this email. Please log in with that account.",
+		"codeSent": "A verification code has been sent to {{email}}.",
+		"codeSendFail": "Failed to send the verification code.",
+		"emailSendError": "An error occurred while sending the email.",
+		"codeRequired": "Please enter the verification code.",
+		"emailVerifyFail": "Email verification failed.",
+		"emailNotChanged": "The email was not changed because it is the same as your current email.",
+		"emailChanged": "Your email has been changed.",
+		"invalidOrExpiredCode": "The verification code is invalid or has expired.",
+		"emailVerifyError": "An error occurred during email verification.",
+		"changeEmailTitle": "Change Email",
+		"changeEmailDesc": "Email verification is required to change your email. Do you want to continue?",
+		"emailVerifyTitle": "Email Verification",
+		"emailVerifyDesc": "Please verify your email to change it.",
+		"emailPlaceholder": "Please enter your email",
+		"codePlaceholder": "Please enter the verification code",
+		"sending": "Sending",
+		"sendCode": "Get Code",
+		"later": "Later",
+		"verifying": "Verifying",
+		"verifyNow": "Verify"
 	},
 
 	"comment_onboarding": "Onboarding",
@@ -361,12 +616,532 @@
 		"verifyFailed": "Verification failed.",
 		"step4Title": "Select your center",
 		"institutionPlaceholder": "Select a center",
+		"institutionEmpty": "No centers are available.",
 		"next": "Next",
 		"skip": "Skip",
-		"finish": "Done"
+		"finish": "Done",
+		
+		"desktopTitle": "Enter Member Information",
+		"nameLabel": "Name",
+		"realNamePlaceholder": "Please enter your real name",
+		"memberTypeLabel": "Member Type",
+		"student": "Student",
+		"company": "Company",
+		"goalLabel": "Set Your Goals",
+		"companyInfoLabel": "Company Information",
+		"companyNamePlaceholder": "Company Name",
+		"departmentNamePlaceholder": "Department Name",
+		"verifyCodeLabel": "Verification Code",
+		"verifyCodeRequired": "Please enter the verification code.",
+		"institutionLabel": "Select Institution",
+		"institutionSelectPlaceholder": "Please select an institution",
+		"studentNumberLabel": "Student Number",
+		"studentNumberTitle": "Please enter your student number",
+		"studentNumberPlaceholder": "Please enter your student number",
+		"saveFailed": "Failed to save onboarding information."
 	},
+  
+	"ECA_student" : "대외활동 학생 관련",
+	"ecaStudent" : {
+		"home": "Home",
+		"ecaStudentSubmenuEmpty": "No assigned programs",
+		"ecaStudentSubmenuLoading": "Loading...",
+		"dashboard": "Dashboard",
+		"assignment": "Assignments",
+		"attendance": "Attendance",
+		"team": "Team",
+		"ecaClientAdminName": "{{studentName}}",
 
-	"comment_error": "에러 관련",
+		"appPage": {
+			"defaultUserName": "User",
+			"bottomNav": {
+				"dashboard": "Dashboard",
+				"assignment": "Assignment",
+				"attendance": "Attendance",
+				"leaderboard": "Leaderboard"
+			}
+		},
+
+		"notificationPage": {
+			"title": "Notification",
+			"loading": "Loading notifications...",
+			"empty": "No notifications.",
+			"loadFailed": "Failed to load notifications.",
+			"deleteAll": "Delete all",
+			"deleteAllConfirm": "Delete all received notifications?",
+			"deleteAllFailed": "Failed to delete notifications."
+		},
+
+		"status": {
+			"upcoming": "Scheduled",
+			"ongoing": "In Progress",
+			"completed": "Completed",
+			"delayed": "Delayed"
+		},
+
+		"dashboardPage": {
+			"activityFallback": "Program",
+			"loading": "Loading dashboard information.",
+			"scheduleTitle": "All Schedules",
+			"emptySchedule": "No schedules have been registered.",
+			"todayFormat": "{{month}}/{{day}}, {{weekday}}",
+			"attendanceScheduleTitle": "{{month}}/{{day}} Attendance {{type}}",
+			"attendanceNameWithType": "{{name}} {{type}}",
+			"weekday": {
+				"0": "Sunday",
+				"1": "Monday",
+				"2": "Tuesday",
+				"3": "Wednesday",
+				"4": "Thursday",
+				"5": "Friday",
+				"6": "Saturday"
+			},
+			"attendanceType": {
+				"CLASS_START": "Start",
+				"CLASS_END": "End"
+			},
+			"scheduleType": {
+				"attendance": "Attendance",
+				"assignment": "Assignment"
+			},
+			"filter": {
+				"allTypes": "All schedule types",
+				"noTypes": "No schedule types selected"
+			},
+			"sort": {
+				"asc": "Oldest date first",
+				"desc": "Latest date first"
+			},
+			"aria": {
+				"notification": "Notifications"
+			},
+			"error": {
+				"activityNotFound": "Program information could not be found.",
+				"dashboardLoadFailed": "Failed to load dashboard information."
+			}
+		},
+
+		"assignmentPage": {
+			"title": "Assignments",
+			"filter": "Filter",
+			"loading": "Loading assignments.",
+			"empty": "No assignments have been assigned.",
+			"status": {
+				"evaluated": "graded",
+				"submitted": "submitted",
+				"late": "late",
+				"missing": "missing",
+				"assigned": "assigned"
+			},
+			"alert": {
+				"filterPreparing": "The filter feature is being prepared."
+			},
+			"error": {
+				"activityNotFound": "Program information could not be found.",
+				"activityDeletedOrNotFound": "This program has been deleted or does not exist.",
+				"accessDenied": "This program cannot be accessed.",
+				"assignmentLoadFailed": "Failed to load assignments."
+			}
+		},
+
+		"assignmentSubmitPage": {
+			"back": "Back",
+			"loading": "Loading assignment information.",
+			"infoTitle": "Assignment Information",
+			"assignmentName": "Assignment Name",
+			"assignmentPeriod": "Assignment Period",
+			"teamOrIndividual": "Team/Individual",
+			"resultFormLabel": "Submission Type",
+			"uploadTitle": "Upload Assignment",
+			"fileUploadGuide": "Upload files",
+			"fileLabel": "File",
+			"linkLabel": "Link",
+			"linkPlaceholder": "Paste a link",
+			"linkNoInfo": "No link information",
+			"linkDelete": "Delete link",
+			"submittedAssignment": "Submitted Assignment",
+			"lastModifiedAt": "Last edited",
+			"evaluatedNotice": "Evaluation is complete, so you cannot edit or resubmit this assignment.",
+			"fileDownload": "Download file",
+			"fileDelete": "Delete file",
+			"submissionFileFallback": "submission-file-{{fileId}}",
+			"fileTypeWarning": "Please check the assignment format.",
+			"evaluationCompletedButton": "Evaluation Complete",
+			"savingButton": "Saving",
+			"editButton": "Edit",
+			"submitButton": "Submit",
+			"evaluationTitle": "Evaluation",
+			"totalScore": "Total Score",
+			"feedbackTitle": "Feedback",
+			"noFeedback": "No feedback has been provided.",
+			"submitSuccessTitle": "Submission Complete",
+			"submitFailTitle": "Submission Failed",
+			"confirmButton": "Confirm",
+			"retryButton": "Try Again",
+			"resultForm": {
+				"WRITING": "Document",
+				"VIDEO": "Video",
+				"IMAGE": "Photo",
+				"LINK": "Link",
+				"ETC": "Other"
+			},
+			"assignmentForm": {
+				"individual": "Individual",
+				"team": "Team",
+				"teamWithName": "Team · {{teamName}}"
+			},
+			"alert": {
+				"emptyFile": "Empty files cannot be submitted.",
+				"fileDownloadFailed": "Failed to download the file.",
+				"linkRequired": "Please enter a link to submit.",
+				"fileOrLinkRequired": "Please upload a file or enter a link to submit.",
+				"invalidLink": "Please enter a link that starts with http or https.",
+				"invalidFileType": "This file type is not allowed for the assignment.",
+				"linkOpenFailed": "Unable to open the link.",
+				"fileUrlMissing": "File URL information is missing.",
+				"fileOpenFailed": "Unable to open the file."
+			},
+			"error": {
+				"assignmentNotFound": "Assignment information could not be found.",
+				"assignmentLoadFailed": "Failed to load assignment information."
+			}
+		},
+
+		"attendancePage": {
+			"fallbackTitle": "Attendance",
+			"loading": "Loading attendance information.",
+			"empty": "No attendance events have been registered.",
+			"type": {
+				"CLASS_START": "Start",
+				"CLASS_END": "End"
+			},
+			"status": {
+				"NOT_CHECKED": "Not Checked",
+				"PRESENT": "Present",
+				"LATE": "Late",
+				"VERY_LATE": "Very Late",
+				"EARLY_LEAVE": "Early Leave",
+				"VERY_EARLY_LEAVE": "Very Early Leave",
+				"ABSENT": "Absent"
+			},
+			"error": {
+				"activityNotFound": "Program information could not be found.",
+				"attendanceLoadFailed": "Failed to load attendance information."
+			}
+		},
+
+		"attendanceSubmitPage": {
+			"fallbackTitle": "Attendance",
+			"type": {
+				"CLASS_START": "Start",
+				"CLASS_END": "End"
+			},
+			"noCheckedStudents": "No students have checked in yet.",
+			"upload": "Upload",
+			"uploading": "Uploading...",
+			"checkIn": "Check-In",
+			"retake": "Retake",
+			"cameraGuide": "Please take a photo with your face clearly visible.",
+			"checkInComplete": "Check-In Complete!",
+			"alert": {
+				"alreadyChecked": "Check-in has already been completed.",
+				"notAvailableTime": "This is not an available check-in time.",
+				"cameraNotSupported": "This browser does not support the web camera.",
+				"cameraUnavailable": "No available camera was found.",
+				"cameraSwitchUnavailable": "No camera is available to switch to.",
+				"cameraPermissionRequired": "Please allow camera permission.",
+				"cameraNotReady": "The camera is not ready yet.",
+				"photoCaptureFailed": "Failed to capture the photo.",
+				"galleryOpenFailed": "Unable to select a photo.",
+				"galleryPermissionRequired": "Please check photo access permission.",
+				"imageOnly": "Only image files can be selected.",
+				"checkInFailed": "Failed to check in.",
+				"photoRequired": "Please select a photo to upload."
+			},
+			"error": {
+				"attendanceNotFound": "Attendance information could not be found.",
+				"attendanceDetailLoadFailed": "Failed to load attendance detail information."
+			},
+			"aria": {
+				"back": "Back",
+				"close": "Close",
+				"camera": "Camera",
+				"selectedImage": "Selected image",
+				"galleryImage": "Gallery image",
+				"capturedSelfie": "Captured selfie",
+				"closeCamera": "Close camera",
+				"hideGuide": "Hide guide",
+				"showGuide": "Show guide",
+				"takePhoto": "Take photo",
+				"switchCamera": "Switch camera",
+				"closeSuccessMessage": "Close success message"
+			}
+		},
+
+		"leaderboardPage": {
+			"loading": "Loading...",
+			"me": "Me",
+			"activityFallback": "Class",
+			"ranking": "Ranking",
+			"rankingEmpty": "Ranking is empty.",
+			"myPoints": "My points",
+			"missionLog": "Mission Log",
+			"missionLogEmpty": "Mission log is empty.",
+			"getPoint": "Get Point",
+			"categoryFallback": "Category",
+			"filter": {
+				"label": "Filter",
+				"all": "All"
+			},
+			"rank": {
+				"place": "{{rankOrdinal}} Place"
+			},
+			"logStatus": {
+				"pending": "Pending",
+				"approved": "Approved",
+				"rejected": "Rejected",
+				"all": "All"
+			},
+			"category": {
+				"ELICIT": "Elicit",
+				"DISCOVER": "Discover",
+				"INSIGHT": "Insight",
+				"SYNTHESIZE": "Synthesize",
+				"OWN": "Own",
+				"NURTURE": "Nurture"
+			},
+			"aria": {
+				"back": "Back"
+			},
+			"error": {
+				"activityNotFound": "Program information could not be found.",
+				"leaderboardLoadFailed": "Failed to load leaderboard information."
+			}
+		},
+
+		"leaderboardMissionPage": {
+			"title": "Get Point",
+			"loading": "Loading...",
+			"selectMission": "Select a Mission",
+			"next": "Next",
+			"uploadEvidence": "Upload Evidence",
+			"evidence": "Evidence",
+			"submissionFormat": "Submission Format",
+			"submission": "Submission",
+			"file": "File",
+			"fileUploadGuide": "Please upload a file",
+			"filesSelected": "{{fileCount}} files selected",
+			"link": "Link",
+			"linkPlaceholder": "Copy your link here",
+			"saving": "Saving",
+			"submit": "Submit",
+			"editSubmit": "Edit",
+			"completed": "Completed!",
+			"approvalNotice": "Scores will be updated after admin approval",
+			"save": "Save",
+			"categoryFallback": "Category",
+			"filter": {
+				"label": "Filter",
+				"all": "All"
+			},
+			"missionFilter": {
+				"all": "All ({{missionCount}})",
+				"available": "Available ({{missionCount}})",
+				"maxedOut": "Maxed Out ({{missionCount}})"
+			},
+			"category": {
+				"ELICIT": "Elicit",
+				"DISCOVER": "Discover",
+				"INSIGHT": "Insight",
+				"SYNTHESIZE": "Synthesize",
+				"OWN": "Own",
+				"NURTURE": "Nurture"
+			},
+			"evidenceType": {
+				"IMAGE": "Photo",
+				"DOCUMENT": "Document",
+				"VIDEO": "Video",
+				"LINK": "Link",
+				"TEXT": "Text",
+				"ETC": "Other"
+			},
+			"alert": {
+				"emptyFile": "Empty files cannot be submitted.",
+				"fileRequired": "Please submit a file.",
+				"linkRequired": "Please enter a link.",
+				"invalidLink": "Please enter a link that starts with http or https.",
+				"invalidFileTypeTitle": "Check File Type",
+				"invalidFileType": "One or more selected files are not allowed.",
+				"submitFailed": "Failed to submit the mission."
+			},
+			"empty": "There are no missions to show.",
+			"aria": {
+				"back": "Back",
+				"removeFile": "Remove file"
+			},
+			"error": {
+				"activityNotFound": "Program information could not be found.",
+				"missionLoadFailed": "Failed to load missions."
+			}
+		},
+
+		"organizationDisplayLabel": "Organization",
+        "organizationLoading": "Loading...",
+        "organizationSelectPlaceholder": "Select {{organizationLabel}}",
+        "organizationNameFallback": "{{organizationLabel}} name",
+        "selectOrganizationFirst": "Please select an {{organizationLabel}} first.",
+        "welcomeAdmin": "Welcome, {{adminName}}",
+        "defaultAdminName": "Manager",
+        "createActivity": "+ add program",
+        "myActivities": "My Programs",
+        "organizationAllActivities": "All {{organizationLabel}} Programs",
+        "emptyData": "No data available",
+        "reset": "Reset",
+        "more": "More",
+        "markCompleted": "Mark as completed",
+        "markIncomplete": "Mark as incomplete",
+        "updateActivityStatusFailed": "Failed to update the program status."
+    },
+
+    "vlog": {
+        "addInternship": "Add Internship",
+        "cameraClose": "Close Camera",
+        "loadFailedTitle": "Load Failed",
+        "permissionRequiredTitle": "Permission Required",
+        "cameraMicPermissionDesc": "Camera and microphone permissions are required to record a vlog.",
+        "cameraErrorTitle": "Camera Error",
+        "cameraUnavailable": "No available camera was found.",
+        "recordFailedTitle": "Recording Failed",
+        "recordFailedDesc": "Could not record the video.",
+        "recordCompleteTitle": "Recording Complete",
+        "thumbnailCreateFailed": "Could not create a thumbnail for the recorded video.",
+        "recordingTitle": "Recording",
+        "cannotCloseCameraWhileRecording": "You cannot close the camera while recording.",
+        "cameraSwitchUnavailable": "No camera is available to switch to.",
+        "saveFailedTitle": "Save Failed",
+        "recordAgain": "Record Again",
+        "recordAction": "Record",
+        "sixSeconds": "6 sec",
+        "cameraSwitch": "Switch Camera",
+        "next": "Next",
+        "saving": "Saving...",
+        "seconds": "{{seconds}} sec",
+        "freeCapture": "Free Capture",
+        "week": "Week {{week}}",
+        "noVideoTitle": "No video to play.",
+        "videoUrlLoadFailed": "Could not load the video URL.",
+        "videoPlayFailedTitle": "Video playback failed.",
+        "videoLoadFailedTitle": "Could not load the video.",
+        "retryLater": "Please try again shortly.",
+        "deleteFailedTitle": "Delete Failed",
+        "addFailedTitle": "Add Failed",
+        "uploadFailedTitle": "Upload Failed",
+        "adding": "Adding...",
+        "addingShort": "Adding",
+        "deleting": "Deleting...",
+        "editAction": "Edit",
+        "defaultSubText": "Vlog",
+        "defaultInternship": "Internship",
+        "loginRequiredDesc": "You can use this after logging in.",
+        "noClipDesc": "No clips have been recorded yet.",
+        "editTitle": "{{title}} Vlog",
+        "emptyHome": "No internships are in progress yet.\nWould you like to create one now?",
+        "noRecordedVideo": "No video has been recorded yet",
+        "noRecordedVideoDesc": "No video has been recorded yet.",
+        "date": {
+            "monthDay": "{{month}}/{{day}}"
+        },
+        "weekWithDate": "Week {{week}}, {{date}}",
+        "new": {
+            "companyLoadFailed": "Failed to load the company list.",
+            "selectCompanyTitle": "Please select a company.",
+            "selectCompanyDesc": "Please select the company where you are doing your internship first.",
+            "checkInputTitle": "Please check your input.",
+            "projectTitle": "{{company}} Internship",
+            "savedDesc": "The vlog internship has been added.",
+            "saveFailedDesc": "Could not add the vlog internship.",
+            "myCompany": "My Company",
+            "companyEmpty": "No companies are available.",
+            "companyPlaceholder": "Select a company",
+            "internshipIntro": "Internship Intro",
+            "testRecordPrompt": "Try a test recording.",
+            "testRecordComplete": "Test recording is complete.",
+            "otRecordComplete": "Startup Internship OT Recording Complete",
+            "otRecord": "Record Startup Internship OT",
+            "onboardingMission": "Record the Internship Onboarding Scene"
+        },
+        "record": {
+            "defaultTitle": "Internship A",
+            "detailLoadFailed": "Could not load the vlog information.",
+            "defaultMissionTitle": "Vlog Mission",
+            "defaultMissionDesc": "No mission description is available.",
+            "defaultMissionTip": "Record freely.",
+            "weekDescription": "Vlog missions for week {{week}}.",
+            "freeMissionIndexed": "Free Mission {{index}}",
+            "deleteFailedDesc": "Could not delete the vlog.",
+            "videoUriMissing": "Recorded video URI is missing.",
+            "videoUploadUrlMissing": "Could not issue a video upload URL.",
+            "thumbnailUploadUrlMissing": "Could not issue a thumbnail upload URL.",
+            "videoInfoMissing": "Recorded video information is missing.",
+            "saveClipFailed": "Could not save the recorded video.",
+            "background": "Background",
+            "composition": "Composition",
+            "savingVlog": "Saving Vlog",
+            "readyToEdit": "Ready to edit?",
+            "tryOtherMission": "Try another mission?",
+            "otherMission": "Do Another Mission",
+            "created": "Your vlog\nhas been created",
+            "toStart": "Start Over",
+            "captureComplete": "Recording Complete",
+            "freeCaptureDesc": "Freely record your internship journey.",
+            "secondsProgress": "{{current}}/{{total}} sec",
+            "freeCaptureDescWithLimit": "Freely record your internship journey. You can do this up to twice a day.",
+            "freeCapturePrompt": "Want to freely record your day?",
+            "deleteConfirmTitle": "Delete this vlog?",
+            "deleteComplete": "Your vlog has been deleted.",
+            "internshipSchedule": "Internship Schedule"
+        },
+        "edit": {
+            "defaultTitle": "Internship Vlog",
+            "recordWeeks": "{{week}} weeks of records",
+            "defaultClipTitle": "Vlog Clip",
+            "extraVideo": "Extra Video",
+            "savePermissionRequired": "Permission to save videos is required.",
+            "downloadFailedWithStatus": "Video download failed: {{status}}",
+            "detailLoadFailed": "Could not load the editing information.",
+            "noIncludedClip": "No clips are included in the edit.",
+            "seekFailedTitle": "Move Failed",
+            "seekFailedDesc": "Could not move to that section.",
+            "noClip": "No Clip",
+            "excludeFailedDesc": "Could not remove the clip from the edit list.",
+            "includeFailedDesc": "Could not add the excluded video back.",
+            "reorderFailedTitle": "Order Save Failed",
+            "reorderFailedDesc": "Could not save the clip order.",
+            "titleEditFailed": "Could not update the clip title.",
+            "exportPreparingDesc": "Export is being prepared.",
+            "finalVideoIdMissing": "Final video ID was not received.",
+            "finalVideoDownloadUrlMissing": "Final video download URL was not received.",
+            "finalFileName": "{{title}} Vlog.mp4",
+            "exportFailedTitle": "Export Failed",
+            "exportFailedDesc": "Could not export the vlog.",
+            "fileErrorTitle": "File Error",
+            "videoOnly": "Only video files can be added.",
+            "addClipFailed": "Could not add the video.",
+            "addVideo": "Add Video",
+            "addFromGallery": "Add from My Gallery",
+            "goRecordMission": "Go Record a Mission Video",
+            "addExcludedAgain": "Add Excluded Videos Back",
+            "noExcludedClip": "No excluded videos.",
+            "savedTitle": "Your vlog\nhas been saved",
+            "emptyClip": "No clips to edit.",
+            "addRecording": "Add Recording",
+            "exportPreparing": "Export Preparing",
+            "exporting": "Exporting",
+            "export": "Export"
+        }
+    },
+
+    "comment_error": "에러 관련",
 	"error": {
 		"unknown": "An unknown error occurred.",
 		"authRequired": "Authentication is required. Please log in.",
@@ -380,9 +1155,409 @@
 		"failGetMyCerts": "Failed to load your certificates.",
 		"failToDownload": "Failed to download",
 		"imageRequired": "Only image files can be uploaded.",
+		"imageLoadFail": "Failed to load the image.",
+		"imagePickFail": "Failed to select the image.",
 		"failSetCareerGoal": "Failed to save. Please try again later.",
 
 		"cannotLoadSchedule": "Unable to load the schedule. Please select it again from the list.",
 		"invalidAccessMissingEventId": "Invalid access. The event ID is missing."
-	}
+	},
+
+	"privacyPolicy": {
+        "title": "Privacy Policy",
+        "intro": [
+            "aim (hereinafter referred to as the “Company”) processes personal information lawfully and manages it securely in accordance with the Personal Information Protection Act and other applicable laws to protect the rights and freedoms of data subjects.",
+            "In accordance with Article 30 of the Personal Information Protection Act, the Company establishes and discloses this Privacy Policy to inform data subjects of the procedures and standards for personal information processing and to handle related grievances promptly and smoothly."
+        ],
+        "section1": {
+            "title": "1. Purposes of Processing Personal Information, Collected Items, and Retention and Use Periods",
+            "description": "The Company collects and uses personal information for the following purposes during membership registration or service use.",
+            "common": {
+                "title": "1) Common Items",
+                "table": {
+                    "headers": [
+                        "Legal Basis",
+                        "Category",
+                        "Purpose of Processing",
+                        "Collected Items",
+                        "Retention and Use Period"
+                    ],
+                    "rows": [
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Membership registration and login",
+                            "User identification, member management, authorization, and service provision",
+                            "Email, password, social login member identifier, name, email, profile photo, mobile phone number, etc.",
+                            "Destroyed without delay upon membership withdrawal"
+                        ],
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Program operation and participant management",
+                            "Institution/program operation, participant registration, team assignment, and activity management",
+                            "Name, affiliation, role, team information, program participation information",
+                            "Until membership withdrawal"
+                        ],
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Attendance management",
+                            "Attendance verification, participation rate calculation, and activity history management",
+                            "Name, attendance status, attendance time, participation rate, attendance correction history",
+                            "Until membership withdrawal"
+                        ],
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Assignment submission and evaluation",
+                            "Submission receipt, submission status management, evaluation, and feedback provision",
+                            "Submitted files, file names, submission date and time, version history, evaluation scores, feedback, peer evaluation scores and comments",
+                            "Until membership withdrawal"
+                        ],
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Team collaboration and communication",
+                            "Team chat, material sharing, role management, and notification delivery",
+                            "Chat content, uploaded files, role records, delivery logs",
+                            "Until membership withdrawal"
+                        ],
+                        [
+                            "Article 15(1)4 of the Personal Information Protection Act (Performance of Contract)",
+                            "Inquiries and grievance handling",
+                            "Inquiry receipt, identity verification, response, and dispute handling",
+                            "Name, email, contact information, inquiry details, consultation history",
+                            "3 years after inquiry handling is completed or the retention period required by applicable laws"
+                        ]
+                    ]
+                }
+            },
+            "voice": {
+                "title": "2) Use of Voice Recording Feature",
+                "table": {
+                    "headers": [
+                        "Legal Basis",
+                        "Category",
+                        "Purpose of Processing",
+                        "Collected Items",
+                        "Retention and Use Period"
+                    ],
+                    "rows": [
+                        [
+                            "Article 15(1)1 of the Personal Information Protection Act (Consent of Data Subject)",
+                            "Voice recording",
+                            "Storage of voice reflection records, speech-to-text conversion, record organization, summary generation, and report draft creation",
+                            "Voice files, text extracted from voice (transcripts), recording time, record title",
+                            "Original voice files, transcripts, and generated records: until membership withdrawal or deletion request"
+                        ]
+                    ]
+                }
+            },
+            "optional": {
+                "title": "3) Optional Information and Marketing",
+                "table": {
+                    "headers": [
+                        "Legal Basis",
+                        "Category",
+                        "Purpose of Processing",
+                        "Collected Items",
+                        "Retention and Use Period"
+                    ],
+                    "rows": [
+                        [
+                            "Article 15(1)1 of the Personal Information Protection Act (Consent of Data Subject)",
+                            "Optional profile information",
+                            "Profile configuration and improved user convenience",
+                            "Profile photo, self-introduction, interests, and other optional input information",
+                            "Until membership withdrawal or withdrawal of consent"
+                        ]
+                    ]
+                }
+            },
+            "ai": {
+                "title": "4) Improvement of AI Features",
+                "table": {
+                    "headers": [
+                        "Legal Basis",
+                        "Category",
+                        "Purpose of Processing",
+                        "Collected Items",
+                        "Retention and Use Period"
+                    ],
+                    "rows": [
+                        [
+                            "Separate consent of the data subject or legal basis for processing pseudonymized information",
+                            "AI analysis and improvement",
+                            "Improvement of summary, recommendation, and evaluation support features, and service quality improvement",
+                            "Pseudonymized records, transcripts, usage logs, evaluation data",
+                            "Until withdrawal of consent or achievement of purpose"
+                        ]
+                    ]
+                }
+            },
+            "legalRetention": {
+                "title": "5) Retention Under Applicable Laws",
+                "table": {
+                    "headers": [
+                        "Retained Information",
+                        "Retention Period",
+                        "Legal Basis"
+                    ],
+                    "rows": [
+                        [
+                            "Records on contracts or withdrawal of offers",
+                            "5 years",
+                            "Act on Consumer Protection in Electronic Commerce"
+                        ],
+                        [
+                            "Records on payment and supply of goods or services",
+                            "5 years",
+                            "Act on Consumer Protection in Electronic Commerce"
+                        ],
+                        [
+                            "Records on consumer complaints or dispute handling",
+                            "3 years",
+                            "Act on Consumer Protection in Electronic Commerce"
+                        ],
+                        [
+                            "Website visit records",
+                            "3 months",
+                            "Protection of Communications Secrets Act"
+                        ]
+                    ]
+                }
+            }
+        },
+        "section2": {
+            "title": "2. Processing of Personal Information of Children Under 14",
+            "paragraph": [
+                "As a rule, the Company does not target children under the age of 14 and does not collect or use personal information of children under the age of 14.",
+                "The Company verifies users’ age requirements during membership registration and service use, and membership registration or service use may be restricted if a user is under the age of 14.",
+                "If the Company confirms that it has unknowingly collected personal information of a child under the age of 14, it will take necessary measures, such as deleting the personal information without delay or restricting its use."
+            ]
+        },
+        "section3": {
+            "title": "3. Provision of Personal Information to Third Parties",
+            "paragraph": [
+                "The Company may provide personal information of data subjects to third parties as follows when necessary for service operation.",
+                "When providing personal information, the Company takes necessary measures, such as providing required notices or obtaining consent, in accordance with the Personal Information Protection Act and other applicable laws."
+            ],
+            "institution": {
+                "title": "1) Provision to Institutions Participated in by Users",
+                "table": {
+                    "headers": [
+                        "Recipient",
+                        "Purpose of Provision",
+                        "Provided Items",
+                        "Retention and Use Period"
+                    ],
+                    "rows": [
+                        [
+                            "Operating institutions, host institutions, or responsible institutions of programs in which the user participates or to which the user belongs",
+                            "Participant verification, program operation, attendance management, assignment operation, evaluation and feedback provision, activity history management, and completion, selection, and performance verification",
+                            "Name, affiliation, team information, role, attendance information, assignment submission status and submissions, evaluation results, feedback, peer evaluation results, voice transcripts",
+                            "Until the end of the relevant institution’s program operation period or until the retention period under applicable laws and the institution’s operational policies"
+                        ]
+                    ]
+                }
+            },
+            "legalProvision": {
+                "title": "2) Provision Under Laws",
+                "description": "The Company may provide personal information in accordance with applicable laws in any of the following cases.",
+                "list": [
+                    "Where the data subject has given separate prior consent",
+                    "Where there are special provisions in laws or it is necessary to comply with legal obligations",
+                    "Where it is necessary for the urgent interests of the life, body, or property of the data subject or a third party",
+                    "Where there is a lawful request from an investigative agency or other authority under applicable laws"
+                ]
+            },
+            "permissionNotice": {
+                "title": "3) Notice on Permission-Based Access Within the Service",
+                "paragraph": [
+                    "For program operation, the Company may grant the responsible staff or operators of an institution in which the user participates permission to access the participant’s personal information and activity information.",
+                    "In such cases, the scope of accessible information is limited to the minimum necessary for program operation purposes."
+                ]
+            }
+        },
+        "section4": {
+            "title": "4. Outsourcing of Personal Information Processing",
+            "description": "The Company may outsource personal information processing tasks as follows to ensure smooth handling of personal information-related work.",
+            "table": {
+                "headers": [
+                    "Processor",
+                    "Outsourced Task"
+                ],
+                "rows": [
+                    [
+                        "Amazon Web Services, Inc.",
+                        "Provision of system development and operating environment for service provision"
+                    ],
+                    [
+                        "OpenAI, L.L.C.",
+                        "Speech-to-text conversion, summaries, or AI feature provision"
+                    ]
+                ]
+            },
+            "footer": "When entering into outsourcing contracts, the Company reflects necessary matters in the contracts and supervises processors so that personal information is processed securely in accordance with applicable personal information protection laws."
+        },
+        "section5": {
+            "title": "5. Overseas Transfer of Personal Information",
+            "description": "The Company may transfer some personal information collected during service use overseas as follows.",
+            "table": {
+                "headers": [
+                    "Recipient",
+                    "Country of Transfer",
+                    "Transferred Items",
+                    "Purpose of Transfer",
+                    "Retention Period"
+                ],
+                "rows": [
+                    [
+                        "OpenAI, L.L.C.",
+                        "The United States and other overseas infrastructure regions operated or processed by OpenAI",
+                        "Voice files, text extracted from voice (transcripts), prompts entered by users, and response results",
+                        "Speech-to-text conversion (STT), text summarization, and AI feature provision",
+                        "During processing for OpenAI service provision and for the period under OpenAI’s relevant policies or contracts"
+                    ]
+                ]
+            },
+            "paragraph1": [
+                "When overseas transfer is necessary, the Company provides required notices in accordance with applicable laws and takes necessary protective measures so that personal information is processed securely.",
+                "According to OpenAI’s official documentation, API data residency requires separate configuration, and even when data residency is configured, system data may be processed and stored outside the selected region."
+            ],
+            "paragraph2": [
+                "※ If the Company applies OpenAI API data residency separately in the future, this section may change depending on the actual applied region and processing scope.",
+                "According to OpenAI’s official documentation, API data residency is configured at the project level and may not apply to some system data that is not customer content."
+            ]
+        },
+        "section6": {
+            "title": "6. Procedures and Methods for Destroying Personal Information",
+            "description": "When personal information becomes unnecessary due to expiration of the retention period, achievement of the processing purpose, or other reasons, the Company destroys the personal information without delay.",
+            "list": [
+                {
+                    "title": "Destruction procedure",
+                    "paragraph": "The Company selects personal information for which a reason for destruction has occurred and destroys it according to internal procedures."
+                },
+                {
+                    "title": "Destruction method",
+                    "children": [
+                        "Information in electronic file format is deleted by a method that prevents recovery or reproduction.",
+                        "Information recorded in paper documents is shredded or incinerated."
+                    ]
+                }
+            ]
+        },
+        "section7": {
+            "title": "7. Rights and Obligations of Data Subjects and Legal Representatives and How to Exercise Them",
+            "description": "Data subjects may exercise the following rights related to personal information protection against the Company at any time.",
+            "rights": [
+                "Request to access personal information",
+                "Request to correct or delete personal information",
+                "Request to suspend processing of personal information",
+                "Request to withdraw consent",
+                "Request for explanation, objection, and review regarding automated decisions"
+            ],
+            "paragraph1": "Data subjects may exercise the above rights through in-service features, email, or the customer center. When a data subject makes a request, the Company will take necessary measures without delay in accordance with applicable laws.",
+            "paragraph2": "Through features provided within the service, data subjects may directly handle the following matters.",
+            "selfService": [
+                "Edit my information",
+                "Withdraw membership"
+            ],
+            "paragraph3": [
+                "For rights that are not directly provided within the service, data subjects may submit requests by email or through the customer center.",
+                "However, requests for access, correction, deletion, or suspension of processing may be restricted under applicable laws, or where such requests may infringe on another person’s personal information or rights."
+            ]
+        },
+        "section8": {
+            "title": "8. Measures to Ensure the Security of Personal Information",
+            "description1": "The Company takes the following measures to ensure the security of personal information.",
+            "measures": [
+                "Administrative measures: Establishment and implementation of internal management plans, employee training, management of access rights to personal information, and separate operation of administrator privileges",
+                "Technical measures: Secure storage of passwords and authentication information (hashing), access control, operation of security programs, creation and management of access records for personal information processing systems, and encryption during transmission",
+                "Physical measures: Access control for personal information processing systems and data storage spaces"
+            ],
+            "description2": "The Company applies encryption measures to the following sections to ensure secure processing during personal information transmission.",
+            "encryptionScopes": [
+                "All data transmission sections of web and app services",
+                "Interface sections between internal and external systems",
+                "Database backup transmission sections and administrator page access sections"
+            ]
+        },
+        "section9": {
+            "title": "9. Installation, Operation, and Refusal of Automatic Personal Information Collection Devices",
+            "paragraph": [
+                "The Company may use cookies or similar technologies to maintain login status and authenticate members within the scope necessary to provide the service.",
+                "The Company may also use related SDKs to provide Kakao Login and Google Login features."
+            ],
+            "list": [
+                {
+                    "title": "Collected items",
+                    "body": "Cookies or session information for maintaining login status"
+                },
+                {
+                    "title": "Purpose of use",
+                    "body": "Provision of essential features such as login maintenance, member authentication, and account linking"
+                },
+                {
+                    "title": "How to refuse",
+                    "body": "Users may refuse cookie storage through browser settings. However, if cookie storage is refused, use of some services may be restricted."
+                }
+            ],
+            "footer": "The Company does not operate advertising cookies or third-party behavioral information collection features."
+        },
+        "section10": {
+            "title": "10. Criteria for Additional Use and Provision",
+            "paragraph": [
+                "As a rule, the Company uses and provides personal information only within the scope consented to by the data subject.",
+                "However, where personal information may be additionally used or provided without consent under Article 15(3) or Article 17(4) of the Personal Information Protection Act, the Company comprehensively considers the following matters."
+            ],
+            "criteria": [
+                "Whether it is related to the original purpose of collection",
+                "Whether additional use or provision is foreseeable in light of the circumstances of personal information collection or processing practices",
+                "Whether it unfairly infringes on the interests of the data subject",
+                "Whether security measures such as pseudonymization or encryption have been taken"
+            ]
+        },
+        "section11": {
+            "title": "11. Processing of Pseudonymized Information",
+            "paragraph1": "The Company may pseudonymize and use personal information so that a specific individual cannot be identified when necessary for statistical compilation, scientific research, service quality improvement, and similar purposes.",
+            "paragraph2": "In such cases, the Company pseudonymizes only the minimum necessary items and takes necessary protective measures such as separate storage and access control to prevent re-identification of pseudonymized information."
+        },
+        "section12": {
+            "title": "12. Matters Concerning Automated Decisions",
+            "paragraph1": "The Company may perform automated or semi-automated processing during service operation. Examples may include participation rate calculation, late submission determination, comprehensive score generation, recommendation of excellent participant candidates, and generation of summary drafts.",
+            "paragraph2": "The Company uses these results as reference information and operates the service so that final decisions that significantly affect data subjects are made after human review."
+        },
+        "section13": {
+            "title": "13. Personal Information Protection Officer and Requests to Access Personal Information",
+            "table": {
+                "headers": [
+                    "Category",
+                    "Details"
+                ],
+                "rows": [
+                    [
+                        "Personal Information Protection Officer",
+                        "Yujin Kim\npurieu@ewha.ac.kr"
+                    ],
+                    [
+                        "Department in Charge of Personal Information Protection",
+                        "aim\naim2a.kor@gmail.com"
+                    ]
+                ]
+            },
+            "paragraph": "Data subjects may contact the above contacts regarding all personal information protection-related inquiries, complaint handling, and remedies arising while using the Company’s services."
+        },
+        "section14": {
+            "title": "14. Remedies for Infringement of Data Subject Rights",
+            "paragraph": "Data subjects may contact the following institutions for reporting, consultation, or dispute mediation regarding personal information infringement.",
+            "agencies": [
+                "Personal Information Dispute Mediation Committee",
+                "Personal Information Infringement Report Center",
+                "Supreme Prosecutors’ Office",
+                "National Police Agency"
+            ]
+        },
+        "section15": {
+            "title": "15. Addendum",
+            "effectiveDate": "This Privacy Policy is effective from April 27, 2026.",
+            "paragraph": "If the Company changes this Privacy Policy, it will disclose the details before and after the change through notices within the service or separate guidance so that data subjects can easily review them."
+        }
+    }
 }

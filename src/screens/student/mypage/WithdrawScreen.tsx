@@ -24,8 +24,7 @@ type Props = NativeStackScreenProps<StudentStackParamList, "Withdraw">;
 type WithdrawReason = typeof REASONS[number] | "";
 
 export default function WithdrawScreen({ navigation }: Props): React.ReactElement {
-    const { t, i18n } = useTranslation();
-    const isKo = (i18n.resolvedLanguage ?? i18n.language).startsWith("ko");
+    const { t } = useTranslation();
 
     const [me, setMe] = React.useState<UserMe | null>(null);
     const [reason, setReason] = React.useState<WithdrawReason>("");
@@ -33,7 +32,7 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
     const [open, setOpen] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
 
-    const displayName = (me?.name ?? "").trim() || (isKo ? "회원" : "member");
+    const displayName = (me?.name ?? "").trim() || t("mypage.memberFallback");
     const isEtcReason = reason === "mypage.WithdrawR.reason.etc";
     const trimmedDetail = detail.trim();
     const canSubmit = !!reason && !submitting && (!isEtcReason || !!trimmedDetail);
@@ -80,8 +79,8 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
         } catch (e) {
             console.error("withdraw failed:", e);
             Alert.alert(
-                isKo ? "오류" : "Error",
-                isKo ? "회원탈퇴 중 오류가 발생했습니다." : "An error occurred while deleting your account."
+                t("common.error"),
+                t("mypage.withdrawErrorDesc")
             );
         } finally {
             setSubmitting(false);
@@ -92,11 +91,11 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
         if (!canSubmit) return;
 
         Alert.alert(
-            isKo ? "회원 탈퇴" : "Delete account",
-            isKo ? "정말 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다." : "Are you sure you want to delete your account?\nThis action cannot be undone.",
+            t("mypage.withdrawConfirmTitle"),
+            t("mypage.withdrawConfirmDesc"),
             [
-                { text: isKo ? "취소" : "Cancel", style: "cancel" },
-                { text: isKo ? "탈퇴하기" : "Delete", style: "destructive", onPress: handleWithdraw },
+                { text: t("common.cancel"), style: "cancel" },
+                { text: t("mypage.WithdrawSubmit"), style: "destructive", onPress: handleWithdraw },
             ]
         );
     };
@@ -160,7 +159,7 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
                     {isEtcReason ? (
                         <AppTextInput
                             style={styles.detailInput}
-                            placeholder={t("mypage.WithdrawR.reason.detailPlaceholder", "서비스 탈퇴 사유를 적어주세요")}
+                            placeholder={t("mypage.WithdrawR.reason.detailPlaceholder")}
                             value={detail}
                             onChangeText={setDetail}
                             multiline
@@ -180,7 +179,7 @@ export default function WithdrawScreen({ navigation }: Props): React.ReactElemen
             <View style={styles.submitDock} pointerEvents="box-none">
                 <Pressable style={[styles.submitBtn, !canSubmit ? styles.submitBtnDisabled : null]} onPress={confirmWithdraw} disabled={!canSubmit}>
                     <AppText style={[styles.submitBtnText, !canSubmit ? styles.submitBtnTextDisabled : null]}>
-                        {submitting ? (isKo ? "처리 중..." : "Processing...") : (isKo ? "탈퇴하기" : "Delete account")}
+                        {submitting ? t("mypage.WithdrawSubmitting") : t("mypage.WithdrawSubmit")}
                     </AppText>
                 </Pressable>
             </View>
