@@ -962,6 +962,7 @@ export type PushDeviceTokenRequest = {
     platform?: PushDevicePlatform;
     deviceId?: string | null;
     appVersion?: string | null;
+    locale?: string | null;
 };
 
 export async function registerPushDeviceToken(input: PushDeviceTokenRequest): Promise<void> {

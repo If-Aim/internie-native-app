@@ -3,6 +3,7 @@ import { Alert, Animated, Image, Pressable, ScrollView, View } from "react-nativ
 import Svg, { Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { syncPushToken } from "../../notifications/pushNotification";
 
 import AppText from "../../../AppText";
 import type { StudentExternalActivityResponse } from "../../api/ea";
@@ -157,6 +158,10 @@ export default function StudentMobileSideMenu({
 
     async function toggleLang(): Promise<void> {
         await i18n.changeLanguage(isKo ? "en" : "ko");
+
+        syncPushToken().catch((error) => {
+            console.log("[PUSH] language sync failed:", error);
+        });
     }
 
     function showPreparing(): void {

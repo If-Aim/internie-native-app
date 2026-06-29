@@ -131,7 +131,7 @@ export const styles = StyleSheet.create({
     missionNextButtonText: { color: "#0166FF", fontSize: 16, fontWeight: "700" },
     missionUploadTitle: { marginLeft: 18, marginBottom: 18 },
     missionUploadTitleText: { color: "#000000", fontSize: 24, fontWeight: "700", lineHeight: 28 },
-    missionSubmitSection: { gap: 16, paddingHorizontal: 7, },
+    missionSubmitSection: { gap: 16, paddingHorizontal: 7, paddingBottom: 180, },
     missionSubmitCard: { paddingTop: 20, paddingHorizontal: 20, paddingBottom: 8, borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 10, backgroundColor: "#FFFFFF" },
     missionSubmitCardTitle: { marginBottom: 24, color: "#000000", fontSize: 16, fontWeight: "700", lineHeight: 20 },
     missionInfoField: { marginBottom: 20 },

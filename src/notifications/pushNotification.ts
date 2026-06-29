@@ -1,11 +1,16 @@
 import messaging, { type RemoteMessage } from "@react-native-firebase/messaging";
 import { PermissionsAndroid, Platform } from "react-native";
+import i18n from "../i18n";
 import { registerPushDeviceToken } from "../api/ea";
 
 function getPushPlatform(): "ANDROID" | "IOS" | "UNKNOWN" {
     if (Platform.OS === "android") return "ANDROID";
     if (Platform.OS === "ios") return "IOS";
     return "UNKNOWN";
+}
+
+function getPushLocale(): string {
+    return i18n.resolvedLanguage ?? i18n.language ?? "en";
 }
 
 async function requestPushPermission(): Promise<void> {
@@ -15,6 +20,7 @@ async function requestPushPermission(): Promise<void> {
 
     if (Platform.OS === "ios") {
         await messaging().requestPermission();
+        await messaging().registerDeviceForRemoteMessages();
     }
 }
 
@@ -28,6 +34,7 @@ export async function syncPushToken(): Promise<void> {
     await registerPushDeviceToken({
         token,
         platform: getPushPlatform(),
+        locale: getPushLocale(),
     });
 }
 
@@ -36,6 +43,7 @@ export function subscribePushTokenRefresh(): () => void {
         await registerPushDeviceToken({
             token,
             platform: getPushPlatform(),
+            locale: getPushLocale(),
         });
     });
 }
